@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarnStation Pro - High Speed</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <!-- Ad SDK -->
+    <script src="https://libtl.com/sdk.js" data-zone="10352096" data-sdk="show_10352096" defer></script>
+    
+    <style>
+        :root { --primary: #0ea5e9; --bg: #020617; }
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: var(--bg); color: white; -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .active-tab { color: var(--primary); border-top: 2px solid var(--primary); }
+        #loader { position: fixed; inset: 0; background: #020617; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+        .btn-press:active { transform: scale(0.95); }
+        .notify-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #020617; }
+        .admin-card { border-left: 4px solid #ef4444; background: linear-gradient(90deg, rgba(239, 68, 68, 0.1) 0%, rgba(15, 23, 42, 0.7) 100%); }
+    </style>
+</head>
+<body class="min-h-screen pb-24">
+
+    <!-- Loading Screen -->
+    <div id="loader">
+        <div class="relative w-16 h-16">
+            <div class="absolute inset-0 border-4 border-sky-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p class="mt-6 text-[10px] font-bold tracking-[4px] text-sky-400 uppercase animate-pulse">সার্ভার সিঙ্ক হচ্ছে</p>
+        <button onclick="hideLoader()" class="mt-8 px-6 py-2 bg-white/5 rounded-full text-[9px] text-slate-500 uppercase tracking-widest border border-white/5">Skip</button>
+    </div>
+
+    <!-- Header -->
+    <header class="glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-black tracking-tighter text-white">SAFIN <span class="text-sky-500">STATION</span></h1>
+            <p id="top-uid" class="text-[8px] text-slate-500 font-mono uppercase">ID: অফলাইন</p>
+        </div>
+        <div class="bg-sky-500/10 border border-sky-500/20 px-3 py-1.5 rounded-xl flex items-center gap-2">
+            <i class="fas fa-wallet text-sky-400 text-xs"></i>
+            <span id="bal-header" class="text-sm font-bold">0.00</span>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-5">
+        <!-- Home Section -->
+        <section id="home-page" class="space-y-6">
+            <div class="glass rounded-[2.5rem] p-10 text-center relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-sky-500/10 blur-3xl rounded-full"></div>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-3 font-semibold">আপনার বর্তমান ব্যালেন্স</p>
+                <div class="text-6xl font-black flex items-center justify-center gap-1">
+                    <span class="text-2xl text-slate-600 mt-2">৳</span>
+                    <span id="bal-main">0.00</span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Daily Missions</h3>
+                <div onclick="doWork('ad')" class="glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-sky-500 btn-press cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-play-circle"></i></div>
+                        <div><p class="font-bold text-sm">প্রিমিয়াম অ্যাড দেখুন</p><p class="text-[10px] text-slate-400">বোনাস: ৳ ০.০৫</p></div>
+                    </div>
+                    <i class="fas fa-chevron-right text-[10px] text-slate-700"></i>
+                </div>
+                <div onclick="doWork('link')" class="glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-indigo-500 btn-press cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-globe"></i></div>
+                        <div><p class="font-bold text-sm">ডাইরেক্ট লিঙ্ক ভিজিট</p><p class="text-[10px] text-slate-400">বোনাস: ৳ ০.১০</p></div>
+                    </div>
+                    <i class="fas fa-chevron-right text-[10px] text-slate-700"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wallet Section -->
+        <section id="wallet-page" class="hidden space-y-6">
+            <div class="glass p-6 rounded-[2.5rem]">
+                <h3 class="text-sm font-bold mb-5 text-sky-400 uppercase tracking-widest">টাকা উত্তোলন (Withdraw)</h3>
+                <div class="flex gap-2 mb-4">
+                    <button id="btn-bkash" onclick="selMethod('Bkash')" class="flex-1 py-4 rounded-2xl border border-pink-500/20 text-pink-500 text-[10px] font-bold uppercase tracking-widest">Bkash</button>
+                    <button id="btn-nagad" onclick="selMethod('Nagad')" class="flex-1 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase tracking-widest">Nagad</button>
+                </div>
+                <input type="number" id="w-num" placeholder="01XXXXXXXXX" class="w-full bg-slate-900/50 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-sm placeholder:opacity-30">
+                <input type="number" id="w-amt" placeholder="সর্বনিম্ন উত্তোলন ১০ টাকা" class="w-full bg-slate-900/50 p-4 rounded-2xl mb-5 border border-white/5 outline-none text-sm placeholder:opacity-30">
+                <button onclick="requestWithdraw()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-sky-500/20 btn-press">উত্তোলন রিকোয়েস্ট দিন</button>
+            </div>
+            <div id="user-history" class="space-y-3"></div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin-page" class="hidden space-y-6">
+            <div onclick="handleSecret()" class="glass p-8 rounded-[2.5rem] text-center border-sky-500/20">
+                <div class="w-20 h-20 bg-sky-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-sky-500/20">
+                    <i class="fas fa-user-shield text-3xl text-sky-400"></i>
+                </div>
+                <h2 class="text-xl font-bold">@finalsafin</h2>
+                <p class="text-[9px] text-slate-500 mt-2 uppercase tracking-[3px]">অ্যাডমিন অথেন্টিকেশন প্রয়োজন</p>
+            </div>
+
+            <div id="admin-panel" class="hidden space-y-8">
+                <div class="flex gap-2 bg-white/5 p-1 rounded-2xl">
+                    <button onclick="switchAdminTab('requests')" id="tab-req" class="flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl">পেমেন্ট রিকোয়েস্ট</button>
+                    <button onclick="switchAdminTab('users')" id="tab-users" class="flex-1 py-2 text-[10px] font-bold uppercase text-slate-500">ইউজার ম্যানেজ</button>
+                </div>
+
+                <!-- Admin Requests Content -->
+                <div id="admin-req-content" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="glass p-4 rounded-3xl text-center">
+                            <p class="text-[8px] text-slate-500 uppercase font-bold mb-1">Status</p>
+                            <p class="text-lg font-black text-green-400">লাইভ</p>
+                        </div>
+                        <div class="glass p-4 rounded-3xl text-center border-red-500/20">
+                            <p class="text-[8px] text-red-500 uppercase font-bold mb-1">পেন্ডিং মোট</p>
+                            <p id="admin-total-pending" class="text-lg font-black text-red-400">৳0</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end px-1">
+                            <h4 class="text-xs font-bold text-red-400 uppercase tracking-widest">Withdrawal List</h4>
+                            <span id="queue-count" class="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full font-bold">0</span>
+                        </div>
+                        <div id="admin-withdraws-list" class="space-y-4 pb-10"></div>
+                    </div>
+                </div>
+
+                <!-- Admin User Management Content -->
+                <div id="admin-users-content" class="hidden space-y-4">
+                    <div class="glass p-6 rounded-3xl">
+                        <h4 class="text-xs font-bold mb-4 uppercase text-sky-400 tracking-widest">ব্যালেন্স আপডেট করুন</h4>
+                        <input type="text" id="manage-uid" placeholder="ইউজার আইডি (Full UID)" class="w-full bg-black/30 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-xs">
+                        <input type="number" id="manage-amt" placeholder="নতুন ব্যালেন্সের পরিমাণ" class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs">
+                        <button onclick="updateUserBalanceManually()" class="w-full bg-sky-600 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest btn-press">ব্যালেন্স সেট করুন</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/5 px-8 py-3 flex justify-around items-center z-[100]">
+        <button onclick="nav('home')" id="n-home" class="flex flex-col items-center gap-1 active-tab">
+            <i class="fas fa-home-alt text-lg"></i>
+            <span class="text-[8px] uppercase font-bold tracking-widest">Home</span>
+        </button>
+        <button onclick="nav('wallet')" id="n-wallet" class="flex flex-col items-center gap-1 text-slate-600">
+            <i class="fas fa-wallet text-lg"></i>
+            <span class="text-[8px] uppercase font-bold tracking-widest">Wallet</span>
+        </button>
+        <button onclick="nav('admin')" id="n-admin" class="relative flex flex-col items-center gap-1 text-slate-600">
+            <div id="admin-notif" class="hidden notify-dot"></div>
+            <i class="fas fa-fingerprint text-lg"></i>
+            <span class="text-[8px] uppercase font-bold tracking-widest">Admin</span>
+        </button>
+    </nav>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 backdrop-blur-xl p-8">
+        <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center">
+            <i class="fas fa-key text-sky-400 text-3xl mb-6"></i>
+            <input type="password" id="admin-key" placeholder="অ্যাডমিন কি" class="w-full bg-black/50 p-4 rounded-2xl border border-white/10 outline-none mb-6 text-center text-xl tracking-[5px]">
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('admin-modal').classList.add('hidden')" class="flex-1 text-[10px] text-slate-500 font-bold uppercase">বাতিল</button>
+                <button onclick="verifyAdmin()" class="flex-1 bg-sky-600 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest">লগইন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Toast -->
+    <div id="msg" class="fixed bottom-32 left-1/2 -translate-x-1/2 glass border-sky-500/50 px-8 py-3 rounded-full text-[10px] font-bold hidden z-[300] shadow-2xl"></div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
+            authDomain: "ern-93752.firebaseapp.com",
+            projectId: "ern-93752",
+            storageBucket: "ern-93752.firebasestorage.app",
+            messagingSenderId: "159583001756",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159",
+            measurementId: "G-S8FXSQMLR3"
+        };
+
+        const appId = "safin-station-v4";
+        let db, auth, user, userData = { balance: 0 }, selectedMethod = "", secretCount = 0;
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+
+        // Authentication Handler
+        auth.onAuthStateChanged(async (u) => {
+            if (u) {
+                user = u;
+                document.getElementById('top-uid').innerText = "ID: " + u.uid.toUpperCase();
+                startAppListeners(u.uid);
+            } else {
+                auth.signInAnonymously();
+            }
+        });
+
+        function startAppListeners(uid) {
+            // User Data Listener
+            const profileRef = db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data');
+            profileRef.onSnapshot(snap => {
+                if (snap.exists) {
+                    userData = snap.data();
+                    updateUI();
+                } else {
+                    profileRef.set({ 
+                        balance: 0, 
+                        clicks: 0, 
+                        uid: uid, 
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+                }
+                hideLoader();
+            }, (err) => hideLoader());
+
+            // History Listener
+            db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('withdraws').orderBy('timestamp', 'desc').onSnapshot(snap => {
+                const list = document.getElementById('user-history');
+                list.innerHTML = `<h4 class="text-[10px] font-bold text-slate-600 uppercase px-1">আপনার রিকোয়েস্টসমূহ</h4>`;
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = "glass p-4 rounded-2xl flex justify-between items-center border-white/5";
+                    div.innerHTML = `
+                        <div>
+                            <p class="text-[10px] font-black text-sky-400 uppercase">${data.method}</p>
+                            <p class="text-xs font-bold">${data.number}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-black">৳${data.amount}</p>
+                            <p class="text-[8px] font-bold uppercase ${data.status === 'Paid' ? 'text-green-500' : 'text-yellow-500'}">${data.status}</p>
+                        </div>`;
+                    list.appendChild(div);
+                });
+            }, (err) => {});
+
+            // Admin Notify
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
+                const dot = document.getElementById('admin-notif');
+                snap.size > 0 ? dot.classList.remove('hidden') : dot.classList.add('hidden');
+            });
+        }
+
+        function updateUI() {
+            const b = (userData.balance || 0).toFixed(2);
+            document.getElementById('bal-header').innerText = b;
+            document.getElementById('bal-main').innerText = b;
+        }
+
+        function hideLoader() {
+            const l = document.getElementById('loader');
+            if (l) {
+                l.style.opacity = '0';
+                setTimeout(() => l.style.display = 'none', 500);
+            }
+        }
+
+        // Job Handler
+        window.doWork = async (type) => {
+            if (type === 'ad') {
+                if (typeof show_10352096 === 'function') {
+                    toast("অ্যাড লোড হচ্ছে...");
+                    show_10352096().then(() => grantReward(0.05)).catch(() => {
+                        toast("পুনরায় চেষ্টা করুন...");
+                        setTimeout(() => grantReward(0.05), 3000);
+                    });
+                } else {
+                    toast("সার্ভার কানেক্ট হচ্ছে...");
+                    setTimeout(() => grantReward(0.05), 3000);
+                }
+            } else {
+                window.open("https://omg10.com/4/10927827", '_blank');
+                toast("৮ সেকেন্ড অপেক্ষা করুন...");
+                setTimeout(() => grantReward(0.10), 8000);
+            }
+        };
+
+        async function grantReward(amt) {
+            if (!user) return;
+            const ref = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data');
+            await ref.update({
+                balance: firebase.firestore.FieldValue.increment(amt),
+                clicks: firebase.firestore.FieldValue.increment(1),
+                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast(`৳${amt} বোনাস যোগ হয়েছে!`);
+        }
+
+        // Withdraw Handler
+        window.selMethod = (m) => {
+            selectedMethod = m;
+            document.getElementById('btn-bkash').className = m === 'Bkash' ? "flex-1 py-4 rounded-2xl bg-pink-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-pink-500/20 text-pink-500 text-[10px] font-bold uppercase";
+            document.getElementById('btn-nagad').className = m === 'Nagad' ? "flex-1 py-4 rounded-2xl bg-orange-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase";
+        };
+
+        window.requestWithdraw = async () => {
+            const num = document.getElementById('w-num').value;
+            const amt = parseFloat(document.getElementById('w-amt').value);
+            
+            if (!selectedMethod) return toast("মেথড সিলেক্ট করুন");
+            if (num.length < 11) return toast("সঠিক নম্বর দিন");
+            if (isNaN(amt) || amt < 10) return toast("সর্বনিম্ন ১০ টাকা");
+            if (amt > userData.balance) return toast("ব্যালেন্স পর্যাপ্ত নয়");
+
+            const wData = {
+                method: selectedMethod,
+                number: num,
+                amount: amt,
+                uid: user.uid,
+                status: 'Pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const batch = db.batch();
+            const withdrawId = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc().id;
+            
+            const userWRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc(withdrawId);
+            const adminQRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(withdrawId);
+            const profileRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data');
+
+            batch.set(userWRef, wData);
+            batch.set(adminQRef, wData);
+            batch.update(profileRef, { balance: firebase.firestore.FieldValue.increment(-amt) });
+
+            try {
+                await batch.commit();
+                toast("সফলভাবে রিকোয়েস্ট পাঠানো হয়েছে!");
+                document.getElementById('w-num').value = "";
+                document.getElementById('w-amt').value = "";
+            } catch (e) {
+                toast("ত্রুটি হয়েছে!");
+            }
+        };
+
+        // Admin Security
+        window.handleSecret = () => {
+            secretCount++;
+            if (secretCount >= 5) {
+                secretCount = 0;
+                document.getElementById('admin-modal').classList.remove('hidden');
+            }
+        };
+
+        window.verifyAdmin = () => {
+            const key = document.getElementById('admin-key').value;
+            if (key === "Safin@098") {
+                document.getElementById('admin-panel').classList.remove('hidden');
+                document.getElementById('admin-modal').classList.add('hidden');
+                loadAdminPanelData();
+                toast("অ্যাডমিন লগইন সফল");
+            } else {
+                toast("ভুল সিকিউরিটি কি");
+            }
+        };
+
+        function loadAdminPanelData() {
+            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
+                const list = document.getElementById('admin-withdraws-list');
+                const queueCount = document.getElementById('queue-count');
+                const totalPendingDisp = document.getElementById('admin-total-pending');
+                
+                queueCount.innerText = snap.size;
+                list.innerHTML = "";
+                let total = 0;
+
+                snap.forEach(docSnap => {
+                    const d = docSnap.data();
+                    total += d.amount;
+                    const div = document.createElement('div');
+                    div.className = "glass p-5 rounded-[2rem] admin-card flex justify-between items-center";
+                    div.innerHTML = `
+                        <div>
+                            <p class="text-[10px] font-black uppercase text-red-500 mb-1">${d.method}</p>
+                            <p class="text-lg font-bold tracking-wider text-white">${d.number}</p>
+                            <p class="text-[8px] opacity-30 font-mono">UID: ${d.uid}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xl font-black text-white">৳${d.amount}</p>
+                            <button onclick="approvePayment('${docSnap.id}', '${d.uid}')" class="mt-2 text-[10px] bg-sky-500 text-white px-4 py-2 rounded-xl font-bold uppercase shadow-lg shadow-sky-500/20">Mark Paid</button>
+                        </div>`;
+                    list.appendChild(div);
+                });
+                totalPendingDisp.innerText = "৳" + total.toFixed(0);
+            });
+        }
+
+        window.approvePayment = async (id, targetUid) => {
+            if (confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
+                const batch = db.batch();
+                const qRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(id);
+                const userWRef = db.collection('artifacts').doc(appId).collection('users').doc(targetUid).collection('withdraws').doc(id);
+                
+                batch.delete(qRef);
+                batch.update(userWRef, { status: 'Paid' });
+                await batch.commit();
+                toast("পেমেন্ট ক্লিয়ার করা হয়েছে!");
+            }
+        };
+
+        window.updateUserBalanceManually = async () => {
+            const uid = document.getElementById('manage-uid').value.trim();
+            const amount = parseFloat(document.getElementById('manage-amt').value);
+            if (!uid || isNaN(amount)) return toast("সব তথ্য দিন");
+            
+            try {
+                const ref = db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data');
+                await ref.update({ balance: amount });
+                toast("ব্যালেন্স আপডেট সফল!");
+                document.getElementById('manage-uid').value = "";
+                document.getElementById('manage-amt').value = "";
+            } catch(e) {
+                toast("ইউজার আইডি ভুল!");
+            }
+        };
+
+        // Navigation
+        window.nav = (p) => {
+            ['home', 'wallet', 'admin'].forEach(s => document.getElementById(s + '-page').classList.add('hidden'));
+            document.getElementById(p + '-page').classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(b => b.classList.replace('active-tab', 'text-slate-600'));
+            document.getElementById('n-' + p).classList.replace('text-slate-600', 'active-tab');
+        };
+
+        window.switchAdminTab = (tab) => {
+            const reqContent = document.getElementById('admin-req-content');
+            const userContent = document.getElementById('admin-users-content');
+            const reqBtn = document.getElementById('tab-req');
+            const userBtn = document.getElementById('tab-users');
+
+            if (tab === 'requests') {
+                reqContent.classList.remove('hidden');
+                userContent.classList.add('hidden');
+                reqBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl";
+                userBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase text-slate-500";
+            } else {
+                reqContent.classList.add('hidden');
+                userContent.classList.remove('hidden');
+                reqBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase text-slate-500";
+                userBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl";
+            }
+        };
+
+        function toast(m) {
+            const t = document.getElementById('msg');
+            t.innerText = m;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
