@@ -13,7 +13,8 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-    <!-- Ad SDK -->
+    
+    <!-- Monetag SDK - Zone: 10352096 -->
     <script src="https://libtl.com/sdk.js" data-zone="10352096" data-sdk="show_10352096" defer></script>
     
     <style>
@@ -25,6 +26,11 @@
         .btn-press:active { transform: scale(0.95); }
         .notify-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #020617; }
         .admin-card { border-left: 4px solid #ef4444; background: linear-gradient(90deg, rgba(239, 68, 68, 0.1) 0%, rgba(15, 23, 42, 0.7) 100%); }
+        
+        /* Notice Animation */
+        .notice-container { background: rgba(14, 165, 233, 0.1); border-bottom: 1px solid rgba(14, 165, 233, 0.2); padding: 8px 0; overflow: hidden; }
+        .marquee { white-space: nowrap; animation: marquee 20s linear infinite; display: inline-block; padding-left: 100%; font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
     </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -36,7 +42,11 @@
             <div class="absolute inset-0 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
         <p class="mt-6 text-[10px] font-bold tracking-[4px] text-sky-400 uppercase animate-pulse">সার্ভার সিঙ্ক হচ্ছে</p>
-        <button onclick="hideLoader()" class="mt-8 px-6 py-2 bg-white/5 rounded-full text-[9px] text-slate-500 uppercase tracking-widest border border-white/5">Skip</button>
+    </div>
+
+    <!-- Live Notice Bar -->
+    <div class="notice-container">
+        <div class="marquee" id="live-notice">সার্ভার থেকে নোটিশ লোড হচ্ছে... অনুগ্রহ করে একটু অপেক্ষা করুন।</div>
     </div>
 
     <!-- Header -->
@@ -68,7 +78,7 @@
                 <div onclick="doWork('ad')" class="glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-sky-500 btn-press cursor-pointer">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-play-circle"></i></div>
-                        <div><p class="font-bold text-sm">প্রিমিয়াম অ্যাড দেখুন</p><p class="text-[10px] text-slate-400">বোনাস: ৳ ০.০৫</p></div>
+                        <div><p class="font-bold text-sm">প্রিমিয়াম অ্যাড দেখুন</p><p class="text-[10px] text-slate-400">বোনাস: ৳ ০.০৫</p></div>
                     </div>
                     <i class="fas fa-chevron-right text-[10px] text-slate-700"></i>
                 </div>
@@ -91,7 +101,7 @@
                     <button id="btn-nagad" onclick="selMethod('Nagad')" class="flex-1 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase tracking-widest">Nagad</button>
                 </div>
                 <input type="number" id="w-num" placeholder="01XXXXXXXXX" class="w-full bg-slate-900/50 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-sm placeholder:opacity-30">
-                <input type="number" id="w-amt" placeholder="সর্বনিম্ন উত্তোলন ১০ টাকা" class="w-full bg-slate-900/50 p-4 rounded-2xl mb-5 border border-white/5 outline-none text-sm placeholder:opacity-30">
+                <input type="number" id="w-amt" placeholder="সর্বনিম্ন উত্তোলন ১০ টাকা" class="w-full bg-slate-900/50 p-4 rounded-2xl mb-5 border border-white/5 outline-none text-sm placeholder:opacity-30 text-white">
                 <button onclick="requestWithdraw()" class="w-full bg-sky-600 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-sky-500/20 btn-press">উত্তোলন রিকোয়েস্ট দিন</button>
             </div>
             <div id="user-history" class="space-y-3"></div>
@@ -104,7 +114,7 @@
                     <i class="fas fa-user-shield text-3xl text-sky-400"></i>
                 </div>
                 <h2 class="text-xl font-bold">@finalsafin</h2>
-                <p class="text-[9px] text-slate-500 mt-2 uppercase tracking-[3px]">অ্যাডমিন অথেন্টিকেশন প্রয়োজন</p>
+                <p class="text-[9px] text-slate-500 mt-2 uppercase tracking-[3px]">অ্যাডমিন অথেন্টিকেশন প্রয়োজন</p>
             </div>
 
             <div id="admin-panel" class="hidden space-y-8">
@@ -136,10 +146,17 @@
 
                 <!-- Admin User Management Content -->
                 <div id="admin-users-content" class="hidden space-y-4">
-                    <div class="glass p-6 rounded-3xl">
+                    <!-- NEW: Update Notice Box -->
+                    <div class="glass p-6 rounded-3xl border-l-4 border-indigo-500">
+                        <h4 class="text-xs font-bold mb-4 uppercase text-indigo-400 tracking-widest">লাইভ নোটিশ আপডেট</h4>
+                        <input type="text" id="admin-notice-input" placeholder="নোটিশটি এখানে লিখুন..." class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs text-white">
+                        <button onclick="updateLiveNotice()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest btn-press">সেট নোটিশ</button>
+                    </div>
+
+                    <div class="glass p-6 rounded-3xl border-l-4 border-sky-500">
                         <h4 class="text-xs font-bold mb-4 uppercase text-sky-400 tracking-widest">ব্যালেন্স আপডেট করুন</h4>
-                        <input type="text" id="manage-uid" placeholder="ইউজার আইডি (Full UID)" class="w-full bg-black/30 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-xs">
-                        <input type="number" id="manage-amt" placeholder="নতুন ব্যালেন্সের পরিমাণ" class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs">
+                        <input type="text" id="manage-uid" placeholder="ইউজার আইডি (Full UID)" class="w-full bg-black/30 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-xs text-white">
+                        <input type="number" id="manage-amt" placeholder="নতুন ব্যালেন্সের পরিমাণ" class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs text-white">
                         <button onclick="updateUserBalanceManually()" class="w-full bg-sky-600 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest btn-press">ব্যালেন্স সেট করুন</button>
                     </div>
                 </div>
@@ -168,10 +185,10 @@
     <div id="admin-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 backdrop-blur-xl p-8">
         <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center">
             <i class="fas fa-key text-sky-400 text-3xl mb-6"></i>
-            <input type="password" id="admin-key" placeholder="অ্যাডমিন কি" class="w-full bg-black/50 p-4 rounded-2xl border border-white/10 outline-none mb-6 text-center text-xl tracking-[5px]">
+            <input type="password" id="admin-key" placeholder="অ্যাডমিন কি" class="w-full bg-black/50 p-4 rounded-2xl border border-white/10 outline-none mb-6 text-center text-xl tracking-[5px] text-white">
             <div class="flex gap-3">
                 <button onclick="document.getElementById('admin-modal').classList.add('hidden')" class="flex-1 text-[10px] text-slate-500 font-bold uppercase">বাতিল</button>
-                <button onclick="verifyAdmin()" class="flex-1 bg-sky-600 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest">লগইন</button>
+                <button onclick="verifyAdmin()" class="flex-1 bg-sky-600 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-white">লগইন</button>
             </div>
         </div>
     </div>
@@ -194,12 +211,10 @@
         const appId = "safin-station-v4";
         let db, auth, user, userData = { balance: 0 }, selectedMethod = "", secretCount = 0;
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
 
-        // Authentication Handler
         auth.onAuthStateChanged(async (u) => {
             if (u) {
                 user = u;
@@ -211,6 +226,13 @@
         });
 
         function startAppListeners(uid) {
+            // Live Notice Listener
+            db.collection('artifacts').doc(appId).collection('public').doc('config').onSnapshot(snap => {
+                if(snap.exists) {
+                    document.getElementById('live-notice').innerText = snap.data().notice || "EarnStation Pro-এ স্বাগতম!";
+                }
+            });
+
             // User Data Listener
             const profileRef = db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data');
             profileRef.onSnapshot(snap => {
@@ -218,12 +240,7 @@
                     userData = snap.data();
                     updateUI();
                 } else {
-                    profileRef.set({ 
-                        balance: 0, 
-                        clicks: 0, 
-                        uid: uid, 
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp() 
-                    });
+                    profileRef.set({ balance: 0, clicks: 0, uid: uid, lastActive: firebase.firestore.FieldValue.serverTimestamp() });
                 }
                 hideLoader();
             }, (err) => hideLoader());
@@ -249,7 +266,7 @@
                 });
             }, (err) => {});
 
-            // Admin Notify
+            // Admin Notify Snapshot
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
                 const dot = document.getElementById('admin-notif');
                 snap.size > 0 ? dot.classList.remove('hidden') : dot.classList.add('hidden');
@@ -270,13 +287,13 @@
             }
         }
 
-        // Job Handler
+        // Job Handler (Monetag SDK Fixed)
         window.doWork = async (type) => {
             if (type === 'ad') {
                 if (typeof show_10352096 === 'function') {
                     toast("অ্যাড লোড হচ্ছে...");
                     show_10352096().then(() => grantReward(0.05)).catch(() => {
-                        toast("পুনরায় চেষ্টা করুন...");
+                        toast("পুনরায় চেষ্টা করুন...");
                         setTimeout(() => grantReward(0.05), 3000);
                     });
                 } else {
@@ -285,8 +302,8 @@
                 }
             } else {
                 window.open("https://omg10.com/4/10927827", '_blank');
-                toast("৮ সেকেন্ড অপেক্ষা করুন...");
-                setTimeout(() => grantReward(0.10), 8000);
+                toast("১০ সেকেন্ড অপেক্ষা করুন...");
+                setTimeout(() => grantReward(0.10), 10000);
             }
         };
 
@@ -298,10 +315,10 @@
                 clicks: firebase.firestore.FieldValue.increment(1),
                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
             });
-            toast(`৳${amt} বোনাস যোগ হয়েছে!`);
+            toast(`৳${amt} বোনাস যোগ হয়েছে!`);
         }
 
-        // Withdraw Handler
+        // Withdraw Functions
         window.selMethod = (m) => {
             selectedMethod = m;
             document.getElementById('btn-bkash').className = m === 'Bkash' ? "flex-1 py-4 rounded-2xl bg-pink-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-pink-500/20 text-pink-500 text-[10px] font-bold uppercase";
@@ -311,49 +328,29 @@
         window.requestWithdraw = async () => {
             const num = document.getElementById('w-num').value;
             const amt = parseFloat(document.getElementById('w-amt').value);
-            
             if (!selectedMethod) return toast("মেথড সিলেক্ট করুন");
             if (num.length < 11) return toast("সঠিক নম্বর দিন");
             if (isNaN(amt) || amt < 10) return toast("সর্বনিম্ন ১০ টাকা");
-            if (amt > userData.balance) return toast("ব্যালেন্স পর্যাপ্ত নয়");
+            if (amt > userData.balance) return toast("ব্যালেন্স পর্যাপ্ত নয়");
 
-            const wData = {
-                method: selectedMethod,
-                number: num,
-                amount: amt,
-                uid: user.uid,
-                status: 'Pending',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
+            const wId = Date.now().toString();
+            const wData = { method: selectedMethod, number: num, amount: amt, uid: user.uid, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
 
             const batch = db.batch();
-            const withdrawId = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc().id;
-            
-            const userWRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc(withdrawId);
-            const adminQRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(withdrawId);
-            const profileRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data');
+            batch.set(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc(wId), wData);
+            batch.set(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(wId), wData);
+            batch.update(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data'), { balance: firebase.firestore.FieldValue.increment(-amt) });
 
-            batch.set(userWRef, wData);
-            batch.set(adminQRef, wData);
-            batch.update(profileRef, { balance: firebase.firestore.FieldValue.increment(-amt) });
-
-            try {
-                await batch.commit();
-                toast("সফলভাবে রিকোয়েস্ট পাঠানো হয়েছে!");
-                document.getElementById('w-num').value = "";
-                document.getElementById('w-amt').value = "";
-            } catch (e) {
-                toast("ত্রুটি হয়েছে!");
-            }
+            await batch.commit();
+            toast("সফলভাবে রিকোয়েস্ট পাঠানো হয়েছে!");
+            document.getElementById('w-num').value = "";
+            document.getElementById('w-amt').value = "";
         };
 
-        // Admin Security
+        // Admin Auth & Functions
         window.handleSecret = () => {
             secretCount++;
-            if (secretCount >= 5) {
-                secretCount = 0;
-                document.getElementById('admin-modal').classList.remove('hidden');
-            }
+            if (secretCount >= 5) { secretCount = 0; document.getElementById('admin-modal').classList.remove('hidden'); }
         };
 
         window.verifyAdmin = () => {
@@ -363,9 +360,7 @@
                 document.getElementById('admin-modal').classList.add('hidden');
                 loadAdminPanelData();
                 toast("অ্যাডমিন লগইন সফল");
-            } else {
-                toast("ভুল সিকিউরিটি কি");
-            }
+            } else { toast("ভুল সিকিউরিটি কি"); }
         };
 
         function loadAdminPanelData() {
@@ -373,11 +368,9 @@
                 const list = document.getElementById('admin-withdraws-list');
                 const queueCount = document.getElementById('queue-count');
                 const totalPendingDisp = document.getElementById('admin-total-pending');
-                
                 queueCount.innerText = snap.size;
                 list.innerHTML = "";
                 let total = 0;
-
                 snap.forEach(docSnap => {
                     const d = docSnap.data();
                     total += d.amount;
@@ -386,12 +379,12 @@
                     div.innerHTML = `
                         <div>
                             <p class="text-[10px] font-black uppercase text-red-500 mb-1">${d.method}</p>
-                            <p class="text-lg font-bold tracking-wider text-white">${d.number}</p>
-                            <p class="text-[8px] opacity-30 font-mono">UID: ${d.uid}</p>
+                            <p class="text-lg font-bold text-white">${d.number}</p>
+                            <p class="text-[8px] opacity-30">UID: ${d.uid}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-xl font-black text-white">৳${d.amount}</p>
-                            <button onclick="approvePayment('${docSnap.id}', '${d.uid}')" class="mt-2 text-[10px] bg-sky-500 text-white px-4 py-2 rounded-xl font-bold uppercase shadow-lg shadow-sky-500/20">Mark Paid</button>
+                            <button onclick="approvePayment('${docSnap.id}', '${d.uid}')" class="mt-2 text-[10px] bg-sky-500 text-white px-4 py-2 rounded-xl font-bold uppercase shadow-lg">Mark Paid</button>
                         </div>`;
                     list.appendChild(div);
                 });
@@ -400,35 +393,33 @@
         }
 
         window.approvePayment = async (id, targetUid) => {
-            if (confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
+            if (confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
                 const batch = db.batch();
-                const qRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(id);
-                const userWRef = db.collection('artifacts').doc(appId).collection('users').doc(targetUid).collection('withdraws').doc(id);
-                
-                batch.delete(qRef);
-                batch.update(userWRef, { status: 'Paid' });
+                batch.delete(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(id));
+                batch.update(db.collection('artifacts').doc(appId).collection('users').doc(targetUid).collection('withdraws').doc(id), { status: 'Paid' });
                 await batch.commit();
-                toast("পেমেন্ট ক্লিয়ার করা হয়েছে!");
+                toast("পেমেন্ট সম্পন্ন!");
             }
         };
+
+        // NEW: Live Notice Update Function
+        window.updateLiveNotice = async () => {
+            const noticeTxt = document.getElementById('admin-notice-input').value;
+            if(!noticeTxt) return toast("নোটিশ লিখুন");
+            await db.collection('artifacts').doc(appId).collection('public').doc('config').set({ notice: noticeTxt }, { merge: true });
+            toast("লাইভ নোটিশ আপডেট হয়েছে!");
+            document.getElementById('admin-notice-input').value = "";
+        }
 
         window.updateUserBalanceManually = async () => {
             const uid = document.getElementById('manage-uid').value.trim();
             const amount = parseFloat(document.getElementById('manage-amt').value);
             if (!uid || isNaN(amount)) return toast("সব তথ্য দিন");
-            
-            try {
-                const ref = db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data');
-                await ref.update({ balance: amount });
-                toast("ব্যালেন্স আপডেট সফল!");
-                document.getElementById('manage-uid').value = "";
-                document.getElementById('manage-amt').value = "";
-            } catch(e) {
-                toast("ইউজার আইডি ভুল!");
-            }
+            await db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data').update({ balance: amount });
+            toast("ব্যালেন্স আপডেট সফল!");
         };
 
-        // Navigation
+        // Utils
         window.nav = (p) => {
             ['home', 'wallet', 'admin'].forEach(s => document.getElementById(s + '-page').classList.add('hidden'));
             document.getElementById(p + '-page').classList.remove('hidden');
@@ -441,15 +432,12 @@
             const userContent = document.getElementById('admin-users-content');
             const reqBtn = document.getElementById('tab-req');
             const userBtn = document.getElementById('tab-users');
-
             if (tab === 'requests') {
-                reqContent.classList.remove('hidden');
-                userContent.classList.add('hidden');
+                reqContent.classList.remove('hidden'); userContent.classList.add('hidden');
                 reqBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl";
                 userBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase text-slate-500";
             } else {
-                reqContent.classList.add('hidden');
-                userContent.classList.remove('hidden');
+                reqContent.classList.add('hidden'); userContent.classList.remove('hidden');
                 reqBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase text-slate-500";
                 userBtn.className = "flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl";
             }
@@ -457,10 +445,9 @@
 
         function toast(m) {
             const t = document.getElementById('msg');
-            t.innerText = m;
-            t.classList.remove('hidden');
+            t.innerText = m; t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 3000);
         }
     </script>
-</body>
+</body> 
 </html>
