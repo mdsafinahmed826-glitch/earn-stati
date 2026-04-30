@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (Compat Version for Stability) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -26,6 +26,8 @@
         .btn-press:active { transform: scale(0.95); }
         .notify-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #020617; }
         
+        #auth-screen { position: fixed; inset: 0; background: #020617; z-index: 9000; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        
         .notice-container { background: rgba(14, 165, 233, 0.1); border-bottom: 1px solid rgba(14, 165, 233, 0.2); padding: 8px 0; overflow: hidden; }
         .marquee { white-space: nowrap; animation: marquee 20s linear infinite; display: inline-block; padding-left: 100%; font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
@@ -36,6 +38,9 @@
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #0ea5e9; }
         input:checked + .slider:before { transform: translateX(20px); }
+        
+        .google-btn { background: white; color: #1f2937; font-weight: 700; padding: 12px 24px; border-radius: 16px; display: flex; items-center: center; gap: 10px; transition: all 0.3s; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .google-btn:hover { background: #f3f4f6; transform: translateY(-2px); }
     </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -49,6 +54,23 @@
         <p class="mt-6 text-[10px] font-bold tracking-[4px] text-sky-400 uppercase animate-pulse">সার্ভার সিঙ্ক হচ্ছে</p>
     </div>
 
+    <!-- Auth Screen -->
+    <div id="auth-screen">
+        <div class="text-center">
+            <div class="w-20 h-20 bg-sky-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-sky-500/20">
+                <i class="fas fa-shield-halved text-4xl text-sky-500"></i>
+            </div>
+            <h2 class="text-3xl font-black mb-2 tracking-tight">SAFIN STATION</h2>
+            <p class="text-slate-500 text-sm mb-10">আপনার ইনকাম শুরু করতে লগইন করুন</p>
+            
+            <button onclick="loginWithGoogle()" class="google-btn mx-auto">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                Continue with Google
+            </button>
+            <p class="mt-12 text-[10px] text-slate-600 uppercase tracking-widest font-bold">Safe & Secure Environment</p>
+        </div>
+    </div>
+
     <!-- Live Notice -->
     <div class="notice-container">
         <div class="marquee" id="live-notice">সার্ভার থেকে নোটিশ লোড হচ্ছে...</div>
@@ -60,9 +82,12 @@
             <h1 class="text-xl font-black tracking-tighter text-white">SAFIN <span class="text-sky-500">STATION</span></h1>
             <p id="top-uid" class="text-[8px] text-slate-500 font-mono uppercase">ID: অফলাইন</p>
         </div>
-        <div class="bg-sky-500/10 border border-sky-500/20 px-3 py-1.5 rounded-xl flex items-center gap-2">
-            <i class="fas fa-wallet text-sky-400 text-xs"></i>
-            <span id="bal-header" class="text-sm font-bold">0.00</span>
+        <div class="flex items-center gap-3">
+            <div class="bg-sky-500/10 border border-sky-500/20 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                <i class="fas fa-wallet text-sky-400 text-xs"></i>
+                <span id="bal-header" class="text-sm font-bold">0.00</span>
+            </div>
+            <img id="user-avatar" class="w-8 h-8 rounded-full border border-white/10 hidden" src="" alt="">
         </div>
     </header>
 
@@ -75,10 +100,14 @@
                     <span class="text-2xl text-slate-600 mt-2">৳</span>
                     <span id="bal-main">0.00</span>
                 </div>
+                <p id="welcome-msg" class="mt-4 text-xs font-bold text-sky-500"></p>
             </div>
 
             <div class="space-y-4">
-                <h3 id="mission-title" class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Daily Missions</h3>
+                <div class="flex justify-between items-center px-1">
+                    <h3 id="mission-title" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daily Missions</h3>
+                    <span class="text-[10px] text-sky-500 font-bold bg-sky-500/10 px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+                </div>
                 
                 <div id="work-ad" class="hidden glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-sky-500 btn-press cursor-pointer" onclick="doWork('ad')">
                     <div class="flex items-center gap-4">
@@ -120,12 +149,13 @@
 
         <!-- Admin -->
         <section id="admin-page" class="hidden space-y-6">
-            <div onclick="handleSecret()" class="glass p-8 rounded-[2.5rem] text-center border-sky-500/20">
+            <div onclick="handleSecret()" class="glass p-8 rounded-[2.5rem] text-center border-sky-500/20 relative overflow-hidden">
                 <div class="w-20 h-20 bg-sky-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-user-shield text-3xl text-sky-400"></i>
                 </div>
                 <h2 class="text-xl font-bold">@finalsafin</h2>
                 <p class="text-[9px] text-slate-500 mt-2 uppercase tracking-[3px]">অ্যাডমিন অথেন্টিকেশন</p>
+                <button onclick="logout()" class="mt-4 text-[10px] text-red-500 font-bold uppercase bg-red-500/10 px-4 py-2 rounded-xl border border-red-500/20">লগআউট করুন</button>
             </div>
 
             <div id="admin-panel" class="hidden space-y-8">
@@ -143,7 +173,6 @@
                 </div>
 
                 <div id="admin-users-content" class="hidden space-y-4">
-                    <!-- MISSION CONTROL CENTER -->
                     <div class="glass p-6 rounded-3xl border-l-4 border-emerald-500">
                         <h4 class="text-xs font-bold mb-4 uppercase text-emerald-400 tracking-widest">মিশন কন্ট্রোল সেন্টার</h4>
                         <div class="space-y-4">
@@ -228,13 +257,41 @@
         db = firebase.firestore();
         auth = firebase.auth();
 
+        // Authentication State Listener
         auth.onAuthStateChanged(u => {
             if (u) { 
                 user = u; 
+                document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('top-uid').innerText = "ID: " + u.uid.substring(0,10).toUpperCase(); 
+                document.getElementById('welcome-msg').innerText = "স্বাগতম, " + (u.displayName || "ইউজার");
+                
+                if(u.photoURL) {
+                    const avatar = document.getElementById('user-avatar');
+                    avatar.src = u.photoURL;
+                    avatar.classList.remove('hidden');
+                }
+                
                 startListeners(u.uid); 
-            } else { auth.signInAnonymously(); }
+            } else { 
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('auth-screen').style.display = 'flex';
+            }
         });
+
+        // Google Login
+        window.loginWithGoogle = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(err => {
+                toast("লগইন ত্রুটি: " + err.message);
+            });
+        };
+
+        // Logout
+        window.logout = () => {
+            if(confirm("আপনি কি লগআউট করতে চান?")) {
+                auth.signOut();
+            }
+        };
 
         function startListeners(uid) {
             // Config Listener
@@ -261,7 +318,13 @@
                     document.getElementById('bal-header').innerText = b;
                     document.getElementById('bal-main').innerText = b;
                 } else {
-                    db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data').set({ balance: 0, uid: uid });
+                    // Create profile if first time
+                    db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data').set({ 
+                        balance: 0, 
+                        uid: uid,
+                        name: user.displayName || "User",
+                        email: user.email || ""
+                    });
                 }
             });
 
@@ -289,7 +352,7 @@
             toast("কাজ শুরু হচ্ছে...");
             if (type === 'ad') {
                 if (window.show_10352096) {
-                    show_10352096().then(() => grant(0.05)).catch(() => toast("অ্যাড লোড হয়নি"));
+                    show_10352096().then(() => grant(0.05)).catch(() => toast("অ্যাড লোড হয়নি"));
                 } else { setTimeout(() => grant(0.05), 3000); }
             } else {
                 window.open("https://omg10.com/4/10927827", '_blank');
@@ -299,7 +362,7 @@
 
         async function grant(amt) {
             await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data').update({ balance: firebase.firestore.FieldValue.increment(amt) });
-            toast("৳" + amt + " বোনাস যোগ হয়েছে!");
+            toast("৳" + amt + " বোনাস যোগ হয়েছে!");
         }
 
         window.selMethod = (m) => {
@@ -341,7 +404,7 @@
                     const d = docSnap.data(); total += d.amount;
                     const div = document.createElement('div');
                     div.className = "glass p-5 rounded-3xl flex justify-between items-center border-l-4 border-red-500";
-                    div.innerHTML = `<div><p class="text-xs font-black text-red-400 uppercase">${d.method}</p><p class="text-sm font-bold">${d.number}</p></div><div class="text-right"><p class="text-sm font-black">৳${d.amount}</p><button onclick="approve('${docSnap.id}', '${d.uid}')" class="bg-sky-500 px-4 py-1 rounded-lg text-[10px] font-bold uppercase mt-2">PAID</button></div>`;
+                    div.innerHTML = `<div><p class="text-xs font-black text-red-400 uppercase">${d.method}</p><p class="text-sm font-bold">${d.number}</p><p class="text-[8px] text-slate-500">ID: ${d.uid.substring(0,8)}</p></div><div class="text-right"><p class="text-sm font-black">৳${d.amount}</p><button onclick="approve('${docSnap.id}', '${d.uid}')" class="bg-sky-500 px-4 py-1 rounded-lg text-[10px] font-bold uppercase mt-2">PAID</button></div>`;
                     list.appendChild(div);
                 });
                 totalDisp.innerText = "৳" + total;
@@ -349,24 +412,24 @@
         }
 
         window.approve = async (id, tUid) => {
-            if(confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
+            if(confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
                 const batch = db.batch();
                 batch.delete(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(id));
                 batch.update(db.collection('artifacts').doc(appId).collection('users').doc(tUid).collection('withdraws').doc(id), { status: 'Paid' });
-                await batch.commit(); toast("পেমেন্ট অ্যাপ্রুভ হয়েছে");
+                await batch.commit(); toast("পেমেন্ট অ্যাপ্রুভ হয়েছে");
             }
         };
 
         window.updateWorkToggle = async (f, v) => {
             let update = {}; update[f] = v;
             await db.collection('artifacts').doc(appId).collection('public').doc('config').update(update);
-            toast("মিশন কন্ট্রোল আপডেট হয়েছে");
+            toast("মিশন কন্ট্রোল আপডেট হয়েছে");
         };
 
         window.updateLiveNotice = async () => {
             const val = document.getElementById('admin-notice-input').value;
             await db.collection('artifacts').doc(appId).collection('public').doc('config').update({ notice: val });
-            toast("নোটিশ সেট হয়েছে"); document.getElementById('admin-notice-input').value = "";
+            toast("নোটিশ সেট হয়েছে"); document.getElementById('admin-notice-input').value = "";
         };
 
         window.updateUserBalanceManually = async () => {
@@ -374,7 +437,7 @@
             const a = parseFloat(document.getElementById('manage-amt').value);
             if(!u || isNaN(a)) return toast("সব তথ্য দিন");
             await db.collection('artifacts').doc(appId).collection('users').doc(u).collection('profile').doc('data').update({ balance: a });
-            toast("ইউজার ব্যালেন্স সেট হয়েছে");
+            toast("ইউজার ব্যালেন্স সেট হয়েছে");
         };
 
         window.nav = (p) => {
