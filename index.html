@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase SDKs (Compat Version for Stability) -->
+    <!-- Firebase SDKs (Compat Version) -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
@@ -39,8 +39,7 @@
         input:checked + .slider { background-color: #0ea5e9; }
         input:checked + .slider:before { transform: translateX(20px); }
         
-        .google-btn { background: white; color: #1f2937; font-weight: 700; padding: 12px 24px; border-radius: 16px; display: flex; items-center: center; gap: 10px; transition: all 0.3s; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .google-btn:hover { background: #f3f4f6; transform: translateY(-2px); }
+        .google-btn { background: white; color: #1f2937; font-weight: 700; padding: 12px 24px; border-radius: 16px; display: flex; align-items: center; gap: 10px; transition: all 0.3s; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -67,7 +66,6 @@
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
                 Continue with Google
             </button>
-            <p class="mt-12 text-[10px] text-slate-600 uppercase tracking-widest font-bold">Safe & Secure Environment</p>
         </div>
     </div>
 
@@ -105,7 +103,7 @@
 
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-1">
-                    <h3 id="mission-title" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daily Missions</h3>
+                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daily Missions</h3>
                     <span class="text-[10px] text-sky-500 font-bold bg-sky-500/10 px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
                 </div>
                 
@@ -154,45 +152,31 @@
                     <i class="fas fa-user-shield text-3xl text-sky-400"></i>
                 </div>
                 <h2 class="text-xl font-bold">@finalsafin</h2>
-                <p class="text-[9px] text-slate-500 mt-2 uppercase tracking-[3px]">অ্যাডমিন অথেন্টিকেশন</p>
                 <button onclick="logout()" class="mt-4 text-[10px] text-red-500 font-bold uppercase bg-red-500/10 px-4 py-2 rounded-xl border border-red-500/20">লগআউট করুন</button>
             </div>
 
             <div id="admin-panel" class="hidden space-y-8">
                 <div class="flex gap-2 bg-white/5 p-1 rounded-2xl">
-                    <button onclick="switchAdminTab('requests')" id="tab-req" class="flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl">পেমেন্ট রিকোয়েস্ট</button>
-                    <button onclick="switchAdminTab('users')" id="tab-users" class="flex-1 py-2 text-[10px] font-bold uppercase text-slate-500">কন্ট্রোল সেন্টার</button>
+                    <button onclick="switchAdminTab('requests')" id="tab-req" class="flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl">পেমেন্ট</button>
+                    <button onclick="switchAdminTab('users')" id="tab-users" class="flex-1 py-2 text-[10px] font-bold uppercase text-slate-500">কন্ট্রোল</button>
+                    <button onclick="switchAdminTab('click-stats')" id="tab-clicks" class="flex-1 py-2 text-[10px] font-bold uppercase text-slate-500">ক্লিক লিস্ট</button>
                 </div>
 
+                <!-- Withdrawal Requests -->
                 <div id="admin-req-content" class="space-y-6">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="glass p-4 rounded-3xl text-center"><p class="text-[8px] text-slate-500 uppercase font-bold mb-1">Status</p><p class="text-lg font-black text-green-400">লাইভ</p></div>
-                        <div class="glass p-4 rounded-3xl text-center border-red-500/20"><p class="text-[8px] text-red-500 uppercase font-bold mb-1">পেন্ডিং মোট</p><p id="admin-total-pending" class="text-lg font-black text-red-400">৳0</p></div>
-                    </div>
                     <div id="admin-withdraws-list" class="space-y-4 pb-10"></div>
                 </div>
 
-                <div id="admin-users-content" class="hidden space-y-4">
-                    <div class="glass p-6 rounded-3xl border-l-4 border-emerald-500">
-                        <h4 class="text-xs font-bold mb-4 uppercase text-emerald-400 tracking-widest">মিশন কন্ট্রোল সেন্টার</h4>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl">
-                                <span class="text-xs font-bold">প্রিমিয়াম অ্যাড অপশন</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="toggle-ad" onchange="updateWorkToggle('adEnabled', this.checked)">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl">
-                                <span class="text-xs font-bold">ডাইরেক্ট লিঙ্ক অপশন</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="toggle-link" onchange="updateWorkToggle('linkEnabled', this.checked)">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        </div>
+                <!-- Click Stats Tab -->
+                <div id="admin-click-content" class="hidden space-y-4">
+                    <h4 class="text-xs font-bold uppercase text-sky-400">ইউজার ক্লিক হিস্ট্রি</h4>
+                    <div id="admin-user-clicks-list" class="space-y-3">
+                        <p class="text-xs text-slate-500 italic">লোড হচ্ছে...</p>
                     </div>
+                </div>
 
+                <!-- User Control Tab -->
+                <div id="admin-users-content" class="hidden space-y-4">
                     <div class="glass p-6 rounded-3xl border-l-4 border-indigo-500">
                         <h4 class="text-xs font-bold mb-4 uppercase text-indigo-400 tracking-widest">লাইভ নোটিশ আপডেট</h4>
                         <input type="text" id="admin-notice-input" placeholder="নোটিশ লিখুন..." class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs text-white">
@@ -200,10 +184,24 @@
                     </div>
 
                     <div class="glass p-6 rounded-3xl border-l-4 border-sky-500">
-                        <h4 class="text-xs font-bold mb-4 uppercase text-sky-400 tracking-widest">ইউজার ব্যালেন্স ম্যানেজমেন্ট</h4>
-                        <input type="text" id="manage-uid" placeholder="ইউজার আইডি (UID)" class="w-full bg-black/30 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-xs text-white">
-                        <input type="number" id="manage-amt" placeholder="ব্যালেন্সের পরিমাণ" class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs text-white">
+                        <h4 class="text-xs font-bold mb-4 uppercase text-sky-400 tracking-widest">ব্যালেন্স ম্যানেজমেন্ট</h4>
+                        <input type="text" id="manage-uid" placeholder="UID দিন" class="w-full bg-black/30 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-xs text-white">
+                        <input type="number" id="manage-amt" placeholder="পরিমাণ" class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs text-white">
                         <button onclick="updateUserBalanceManually()" class="w-full bg-sky-600 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest">সেট ব্যালেন্স</button>
+                    </div>
+
+                    <div class="glass p-6 rounded-3xl">
+                        <h4 class="text-xs font-bold mb-4 uppercase text-emerald-400 tracking-widest">মিশন অন/অফ</h4>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl">
+                                <span class="text-xs font-bold">প্রিমিয়াম অ্যাড</span>
+                                <label class="switch"><input type="checkbox" id="toggle-ad" onchange="updateWorkToggle('adEnabled', this.checked)"><span class="slider"></span></label>
+                            </div>
+                            <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl">
+                                <span class="text-xs font-bold">ডাইরেক্ট লিঙ্ক</span>
+                                <label class="switch"><input type="checkbox" id="toggle-link" onchange="updateWorkToggle('linkEnabled', this.checked)"><span class="slider"></span></label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -227,7 +225,7 @@
         </button>
     </nav>
 
-    <!-- Admin Modal -->
+    <!-- Admin Pin Modal -->
     <div id="admin-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 backdrop-blur-xl p-8">
         <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center">
             <i class="fas fa-key text-sky-400 text-3xl mb-6"></i>
@@ -250,27 +248,22 @@
         };
 
         const appId = "safin-station-v4";
-        let db, auth, user, userData = { balance: 0 }, selectedMethod = "", secretCount = 0;
-        let configData = { notice: "Welcome", adEnabled: true, linkEnabled: true };
+        let db, auth, user, userData = { balance: 0 }, secretCount = 0;
 
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
 
-        // Authentication State Listener
         auth.onAuthStateChanged(u => {
             if (u) { 
                 user = u; 
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('top-uid').innerText = "ID: " + u.uid.substring(0,10).toUpperCase(); 
                 document.getElementById('welcome-msg').innerText = "স্বাগতম, " + (u.displayName || "ইউজার");
-                
                 if(u.photoURL) {
-                    const avatar = document.getElementById('user-avatar');
-                    avatar.src = u.photoURL;
-                    avatar.classList.remove('hidden');
+                    const img = document.getElementById('user-avatar');
+                    img.src = u.photoURL; img.classList.remove('hidden');
                 }
-                
                 startListeners(u.uid); 
             } else { 
                 document.getElementById('loader').style.display = 'none';
@@ -278,39 +271,26 @@
             }
         });
 
-        // Google Login
         window.loginWithGoogle = () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => {
-                toast("লগইন ত্রুটি: " + err.message);
-            });
-        };
-
-        // Logout
-        window.logout = () => {
-            if(confirm("আপনি কি লগআউট করতে চান?")) {
-                auth.signOut();
-            }
+            // Redirect is better for Github Pages and Mobile browser link opens
+            auth.signInWithPopup(provider).catch(() => auth.signInWithRedirect(provider));
         };
 
         function startListeners(uid) {
-            // Config Listener
             db.collection('artifacts').doc(appId).collection('public').doc('config').onSnapshot(snap => {
                 if (snap.exists) {
-                    configData = snap.data();
-                    document.getElementById('live-notice').innerText = configData.notice || "Welcome!";
-                    
-                    document.getElementById('work-ad').style.display = configData.adEnabled ? 'flex' : 'none';
-                    document.getElementById('work-link').style.display = configData.linkEnabled ? 'flex' : 'none';
-                    document.getElementById('no-work').style.display = (!configData.adEnabled && !configData.linkEnabled) ? 'block' : 'none';
-                    
-                    document.getElementById('toggle-ad').checked = configData.adEnabled;
-                    document.getElementById('toggle-link').checked = configData.linkEnabled;
+                    const d = snap.data();
+                    document.getElementById('live-notice').innerText = d.notice || "Welcome!";
+                    document.getElementById('work-ad').style.display = d.adEnabled ? 'flex' : 'none';
+                    document.getElementById('work-link').style.display = d.linkEnabled ? 'flex' : 'none';
+                    document.getElementById('no-work').style.display = (!d.adEnabled && !d.linkEnabled) ? 'block' : 'none';
+                    document.getElementById('toggle-ad').checked = d.adEnabled;
+                    document.getElementById('toggle-link').checked = d.linkEnabled;
                 }
                 document.getElementById('loader').style.display = 'none';
             });
 
-            // Profile Listener
             db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data').onSnapshot(snap => {
                 if (snap.exists) { 
                     userData = snap.data(); 
@@ -318,20 +298,15 @@
                     document.getElementById('bal-header').innerText = b;
                     document.getElementById('bal-main').innerText = b;
                 } else {
-                    // Create profile if first time
                     db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data').set({ 
-                        balance: 0, 
-                        uid: uid,
-                        name: user.displayName || "User",
-                        email: user.email || ""
+                        balance: 0, premium_clicks: 0, direct_clicks: 0, uid: uid, name: user.displayName, email: user.email 
                     });
                 }
             });
 
-            // History Listener
             db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('withdraws').orderBy('timestamp', 'desc').onSnapshot(snap => {
                 const list = document.getElementById('user-history');
-                list.innerHTML = `<h4 class="text-[10px] font-bold text-slate-600 uppercase px-1">উত্তোলন হিস্ট্রি</h4>`;
+                list.innerHTML = `<h4 class="text-[10px] font-bold text-slate-600 uppercase px-1">হিস্ট্রি</h4>`;
                 snap.forEach(docSnap => {
                     const d = docSnap.data();
                     const div = document.createElement('div');
@@ -340,74 +315,71 @@
                     list.appendChild(div);
                 });
             });
-
-            // Admin Queue Listener
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
-                const dot = document.getElementById('admin-notif');
-                snap.size > 0 ? dot.classList.remove('hidden') : dot.classList.add('hidden');
-            });
         }
 
-        window.doWork = async (type) => {
+        window.doWork = (type) => {
             toast("কাজ শুরু হচ্ছে...");
             if (type === 'ad') {
                 if (window.show_10352096) {
-                    show_10352096().then(() => grant(0.05)).catch(() => toast("অ্যাড লোড হয়নি"));
-                } else { setTimeout(() => grant(0.05), 3000); }
+                    show_10352096().then(() => grant(0.05, 'premium')).catch(() => toast("অ্যাড লোড হয়নি"));
+                } else { setTimeout(() => grant(0.05, 'premium'), 3000); }
             } else {
                 window.open("https://omg10.com/4/10927827", '_blank');
-                setTimeout(() => grant(0.10), 10000);
+                setTimeout(() => grant(0.10, 'direct'), 10000);
             }
         };
 
-        async function grant(amt) {
-            await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data').update({ balance: firebase.firestore.FieldValue.increment(amt) });
+        async function grant(amt, type) {
+            const field = type === 'premium' ? 'premium_clicks' : 'direct_clicks';
+            const updateData = { 
+                balance: firebase.firestore.FieldValue.increment(amt),
+                [field]: firebase.firestore.FieldValue.increment(1),
+                last_work: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data').update(updateData);
             toast("৳" + amt + " বোনাস যোগ হয়েছে!");
         }
-
-        window.selMethod = (m) => {
-            selectedMethod = m;
-            document.getElementById('btn-bkash').className = m === 'Bkash' ? "flex-1 py-4 rounded-2xl bg-pink-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-pink-500/20 text-pink-500 text-[10px] font-bold uppercase";
-            document.getElementById('btn-nagad').className = m === 'Nagad' ? "flex-1 py-4 rounded-2xl bg-orange-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase";
-        };
-
-        window.requestWithdraw = async () => {
-            const num = document.getElementById('w-num').value;
-            const amt = parseFloat(document.getElementById('w-amt').value);
-            if (!selectedMethod) return toast("মেথড সিলেক্ট করুন");
-            if (num.length < 11) return toast("সঠিক নম্বর দিন");
-            if (isNaN(amt) || amt < 10) return toast("সর্বনিম্ন ১০ টাকা");
-            if (amt > userData.balance) return toast("ব্যালেন্স নেই");
-
-            const wId = Date.now().toString();
-            const batch = db.batch();
-            const wData = { method: selectedMethod, number: num, amount: amt, uid: user.uid, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-
-            batch.set(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc(wId), wData);
-            batch.set(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(wId), wData);
-            batch.update(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data'), { balance: firebase.firestore.FieldValue.increment(-amt) });
-
-            await batch.commit();
-            toast("রিকোয়েস্ট সফল!");
-            document.getElementById('w-num').value = ""; document.getElementById('w-amt').value = "";
-        };
 
         window.handleSecret = () => { secretCount++; if(secretCount >= 5) { secretCount=0; document.getElementById('admin-modal').classList.remove('hidden'); } };
         window.verifyAdmin = () => { if(document.getElementById('admin-key').value === "Safin@098") { document.getElementById('admin-panel').classList.remove('hidden'); document.getElementById('admin-modal').classList.add('hidden'); loadAdminData(); } else toast("ভুল পিন"); };
 
         function loadAdminData() {
+            // Withdrawal list
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
                 const list = document.getElementById('admin-withdraws-list');
-                const totalDisp = document.getElementById('admin-total-pending');
-                list.innerHTML = ""; let total = 0;
+                list.innerHTML = snap.size === 0 ? "<p class='text-xs text-center text-slate-500'>কোনো রিকোয়েস্ট নেই</p>" : "";
                 snap.forEach(docSnap => {
-                    const d = docSnap.data(); total += d.amount;
+                    const d = docSnap.data();
                     const div = document.createElement('div');
                     div.className = "glass p-5 rounded-3xl flex justify-between items-center border-l-4 border-red-500";
                     div.innerHTML = `<div><p class="text-xs font-black text-red-400 uppercase">${d.method}</p><p class="text-sm font-bold">${d.number}</p><p class="text-[8px] text-slate-500">ID: ${d.uid.substring(0,8)}</p></div><div class="text-right"><p class="text-sm font-black">৳${d.amount}</p><button onclick="approve('${docSnap.id}', '${d.uid}')" class="bg-sky-500 px-4 py-1 rounded-lg text-[10px] font-bold uppercase mt-2">PAID</button></div>`;
                     list.appendChild(div);
                 });
-                totalDisp.innerText = "৳" + total;
+            });
+
+            // Click Stats list (Fetch all users who have data)
+            db.collection('artifacts').doc(appId).collection('users').get().then(snap => {
+                const clickList = document.getElementById('admin-user-clicks-list');
+                clickList.innerHTML = "";
+                snap.forEach(async (uDoc) => {
+                    const p = await db.collection('artifacts').doc(appId).collection('users').doc(uDoc.id).collection('profile').doc('data').get();
+                    if(p.exists) {
+                        const d = p.data();
+                        const div = document.createElement('div');
+                        div.className = "glass p-4 rounded-2xl flex justify-between items-center";
+                        div.innerHTML = `
+                            <div class="max-w-[60%]">
+                                <p class="text-[10px] font-bold text-white truncate">${d.name || 'Unknown'}</p>
+                                <p class="text-[8px] text-slate-500 font-mono">${uDoc.id}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] text-sky-400 font-bold">Premium: ${d.premium_clicks || 0}</p>
+                                <p class="text-[9px] text-indigo-400 font-bold">Direct: ${d.direct_clicks || 0}</p>
+                            </div>
+                        `;
+                        clickList.appendChild(div);
+                    }
+                });
             });
         }
 
@@ -420,12 +392,6 @@
             }
         };
 
-        window.updateWorkToggle = async (f, v) => {
-            let update = {}; update[f] = v;
-            await db.collection('artifacts').doc(appId).collection('public').doc('config').update(update);
-            toast("মিশন কন্ট্রোল আপডেট হয়েছে");
-        };
-
         window.updateLiveNotice = async () => {
             const val = document.getElementById('admin-notice-input').value;
             await db.collection('artifacts').doc(appId).collection('public').doc('config').update({ notice: val });
@@ -433,11 +399,16 @@
         };
 
         window.updateUserBalanceManually = async () => {
-            const u = document.getElementById('manage-uid').value;
+            const u = document.getElementById('manage-uid').value.trim();
             const a = parseFloat(document.getElementById('manage-amt').value);
             if(!u || isNaN(a)) return toast("সব তথ্য দিন");
             await db.collection('artifacts').doc(appId).collection('users').doc(u).collection('profile').doc('data').update({ balance: a });
-            toast("ইউজার ব্যালেন্স সেট হয়েছে");
+            toast("ব্যালেন্স আপডেট সফল!");
+        };
+
+        window.updateWorkToggle = async (f, v) => {
+            let obj = {}; obj[f] = v;
+            await db.collection('artifacts').doc(appId).collection('public').doc('config').update(obj);
         };
 
         window.nav = (p) => {
@@ -448,12 +419,34 @@
         };
 
         window.switchAdminTab = (tab) => {
-            document.getElementById('admin-req-content').classList.toggle('hidden', tab === 'users');
-            document.getElementById('admin-users-content').classList.toggle('hidden', tab === 'requests');
-            document.getElementById('tab-req').classList.toggle('bg-sky-500', tab === 'requests');
-            document.getElementById('tab-users').classList.toggle('bg-sky-500', tab === 'users');
-            document.getElementById('tab-req').classList.toggle('rounded-xl', tab === 'requests');
-            document.getElementById('tab-users').classList.toggle('rounded-xl', tab === 'users');
+            document.getElementById('admin-req-content').classList.toggle('hidden', tab !== 'requests');
+            document.getElementById('admin-users-content').classList.toggle('hidden', tab !== 'users');
+            document.getElementById('admin-click-content').classList.toggle('hidden', tab !== 'click-stats');
+            
+            document.getElementById('tab-req').className = tab === 'requests' ? 'flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl' : 'flex-1 py-2 text-[10px] font-bold uppercase text-slate-500';
+            document.getElementById('tab-users').className = tab === 'users' ? 'flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl' : 'flex-1 py-2 text-[10px] font-bold uppercase text-slate-500';
+            document.getElementById('tab-clicks').className = tab === 'click-stats' ? 'flex-1 py-2 text-[10px] font-bold uppercase bg-sky-500 rounded-xl' : 'flex-1 py-2 text-[10px] font-bold uppercase text-slate-500';
+        };
+
+        window.logout = () => { if(confirm("লগআউট?")) auth.signOut(); };
+        window.selMethod = (m) => {
+            const isBkash = m === 'Bkash';
+            document.getElementById('btn-bkash').className = isBkash ? "flex-1 py-4 rounded-2xl bg-pink-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-pink-500/20 text-pink-500 text-[10px] font-bold uppercase";
+            document.getElementById('btn-nagad').className = !isBkash ? "flex-1 py-4 rounded-2xl bg-orange-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase";
+            window.selectedMethod = m;
+        };
+
+        window.requestWithdraw = async () => {
+            const num = document.getElementById('w-num').value;
+            const amt = parseFloat(document.getElementById('w-amt').value);
+            if (!window.selectedMethod || isNaN(amt) || amt < 10 || amt > userData.balance) return toast("সঠিক তথ্য দিন");
+            const wId = Date.now().toString();
+            const wData = { method: window.selectedMethod, number: num, amount: amt, uid: user.uid, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            const batch = db.batch();
+            batch.set(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc(wId), wData);
+            batch.set(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(wId), wData);
+            batch.update(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data'), { balance: firebase.firestore.FieldValue.increment(-amt) });
+            await batch.commit(); toast("সফল!");
         };
 
         function toast(m) { const t = document.getElementById('msg'); t.innerText = m; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2000); }
