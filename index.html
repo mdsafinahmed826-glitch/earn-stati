@@ -31,6 +31,14 @@
         .notice-container { background: rgba(14, 165, 233, 0.1); border-bottom: 1px solid rgba(14, 165, 233, 0.2); padding: 8px 0; overflow: hidden; }
         .marquee { white-space: nowrap; animation: marquee 20s linear infinite; display: inline-block; padding-left: 100%; font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
+
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #0ea5e9; }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -74,20 +82,30 @@
             </div>
 
             <div class="space-y-4">
-                <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Daily Missions</h3>
-                <div onclick="doWork('ad')" class="glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-sky-500 btn-press cursor-pointer">
+                <h3 id="mission-title" class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Daily Missions</h3>
+                
+                <!-- Work Cards -->
+                <div id="work-ad" class="hidden glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-sky-500 btn-press cursor-pointer" onclick="doWork('ad')">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-play-circle"></i></div>
                         <div><p class="font-bold text-sm">প্রিমিয়াম অ্যাড দেখুন</p><p class="text-[10px] text-slate-400">বোনাস: ৳ ০.০৫</p></div>
                     </div>
                     <i class="fas fa-chevron-right text-[10px] text-slate-700"></i>
                 </div>
-                <div onclick="doWork('link')" class="glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-indigo-500 btn-press cursor-pointer">
+
+                <div id="work-link" class="hidden glass p-5 rounded-3xl flex items-center justify-between border-l-4 border-indigo-500 btn-press cursor-pointer" onclick="doWork('link')">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-globe"></i></div>
                         <div><p class="font-bold text-sm">ডাইরেক্ট লিঙ্ক ভিজিট</p><p class="text-[10px] text-slate-400">বোনাস: ৳ ০.১০</p></div>
                     </div>
                     <i class="fas fa-chevron-right text-[10px] text-slate-700"></i>
+                </div>
+
+                <!-- Empty State -->
+                <div id="no-work" class="hidden glass p-10 rounded-3xl text-center">
+                    <i class="fas fa-clock text-3xl text-slate-700 mb-4"></i>
+                    <p class="text-sm font-bold text-slate-500">বর্তমানে কোনো কাজ নেই</p>
+                    <p class="text-[10px] text-slate-600 mt-1 uppercase">পরবর্তীতে আবার চেষ্টা করুন</p>
                 </div>
             </div>
         </section>
@@ -146,13 +164,35 @@
 
                 <!-- Admin User Management Content -->
                 <div id="admin-users-content" class="hidden space-y-4">
-                    <!-- NEW: Update Notice Box -->
+                    <!-- NEW: Work Control Center -->
+                    <div class="glass p-6 rounded-3xl border-l-4 border-emerald-500">
+                        <h4 class="text-xs font-bold mb-4 uppercase text-emerald-400 tracking-widest">মিশন কন্ট্রোল সেন্টার</h4>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl">
+                                <span class="text-xs font-bold">প্রিমিয়াম অ্যাড অপশন</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-ad" onchange="updateWorkToggle('adEnabled', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl">
+                                <span class="text-xs font-bold">ডাইরেক্ট লিঙ্ক অপশন</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-link" onchange="updateWorkToggle('linkEnabled', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Notice Box -->
                     <div class="glass p-6 rounded-3xl border-l-4 border-indigo-500">
                         <h4 class="text-xs font-bold mb-4 uppercase text-indigo-400 tracking-widest">লাইভ নোটিশ আপডেট</h4>
                         <input type="text" id="admin-notice-input" placeholder="নোটিশটি এখানে লিখুন..." class="w-full bg-black/30 p-4 rounded-2xl mb-4 border border-white/5 outline-none text-xs text-white">
                         <button onclick="updateLiveNotice()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest btn-press">সেট নোটিশ</button>
                     </div>
 
+                    <!-- Balance Update -->
                     <div class="glass p-6 rounded-3xl border-l-4 border-sky-500">
                         <h4 class="text-xs font-bold mb-4 uppercase text-sky-400 tracking-widest">ব্যালেন্স আপডেট করুন</h4>
                         <input type="text" id="manage-uid" placeholder="ইউজার আইডি (Full UID)" class="w-full bg-black/30 p-4 rounded-2xl mb-3 border border-white/5 outline-none text-xs text-white">
@@ -210,6 +250,7 @@
 
         const appId = "safin-station-v4";
         let db, auth, user, userData = { balance: 0 }, selectedMethod = "", secretCount = 0;
+        let configData = { notice: "", adEnabled: true, linkEnabled: true };
 
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
@@ -226,10 +267,38 @@
         });
 
         function startAppListeners(uid) {
-            // Live Notice Listener
+            // Live Config (Notice + Work Toggles) Listener
             db.collection('artifacts').doc(appId).collection('public').doc('config').onSnapshot(snap => {
                 if(snap.exists) {
-                    document.getElementById('live-notice').innerText = snap.data().notice || "EarnStation Pro-এ স্বাগতম!";
+                    configData = snap.data();
+                    document.getElementById('live-notice').innerText = configData.notice || "EarnStation Pro-এ স্বাগতম!";
+                    
+                    // Update Home Page Work Visibility
+                    const adWork = document.getElementById('work-ad');
+                    const linkWork = document.getElementById('work-link');
+                    const noWork = document.getElementById('no-work');
+                    
+                    configData.adEnabled ? adWork.classList.remove('hidden') : adWork.classList.add('hidden');
+                    configData.linkEnabled ? linkWork.classList.remove('hidden') : linkWork.classList.add('hidden');
+                    
+                    if (!configData.adEnabled && !configData.linkEnabled) {
+                        noWork.classList.remove('hidden');
+                        document.getElementById('mission-title').classList.add('opacity-0');
+                    } else {
+                        noWork.classList.add('hidden');
+                        document.getElementById('mission-title').classList.remove('opacity-0');
+                    }
+
+                    // Sync Admin Toggles
+                    document.getElementById('toggle-ad').checked = configData.adEnabled;
+                    document.getElementById('toggle-link').checked = configData.linkEnabled;
+                } else {
+                    // Initialize Config if not exists
+                    db.collection('artifacts').doc(appId).collection('public').doc('config').set({
+                        notice: "EarnStation Pro-এ স্বাগতম!",
+                        adEnabled: true,
+                        linkEnabled: true
+                    });
                 }
             });
 
@@ -287,14 +356,13 @@
             }
         }
 
-        // Job Handler (Monetag SDK Fixed)
+        // Job Handler
         window.doWork = async (type) => {
             if (type === 'ad') {
                 if (typeof show_10352096 === 'function') {
                     toast("অ্যাড লোড হচ্ছে...");
                     show_10352096().then(() => grantReward(0.05)).catch(() => {
-                        toast("পুনরায় চেষ্টা করুন...");
-                        setTimeout(() => grantReward(0.05), 3000);
+                        toast("অ্যাড লোড হয়নি, কিছুক্ষণ পর চেষ্টা করুন");
                     });
                 } else {
                     toast("সার্ভার কানেক্ট হচ্ছে...");
@@ -402,11 +470,18 @@
             }
         };
 
-        // NEW: Live Notice Update Function
+        // NEW: Toggle Work Logic
+        window.updateWorkToggle = async (field, value) => {
+            const updateObj = {};
+            updateObj[field] = value;
+            await db.collection('artifacts').doc(appId).collection('public').doc('config').update(updateObj);
+            toast(field.includes('ad') ? "প্রিমিয়াম অ্যাড " + (value ? "চালু" : "বন্ধ") : "ডাইরেক্ট লিঙ্ক " + (value ? "চালু" : "বন্ধ"));
+        }
+
         window.updateLiveNotice = async () => {
             const noticeTxt = document.getElementById('admin-notice-input').value;
             if(!noticeTxt) return toast("নোটিশ লিখুন");
-            await db.collection('artifacts').doc(appId).collection('public').doc('config').set({ notice: noticeTxt }, { merge: true });
+            await db.collection('artifacts').doc(appId).collection('public').doc('config').update({ notice: noticeTxt });
             toast("লাইভ নোটিশ আপডেট হয়েছে!");
             document.getElementById('admin-notice-input').value = "";
         }
