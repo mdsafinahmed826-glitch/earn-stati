@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnStation Pro - High Speed</title>
+    <title>EarnStation Pro - Monetag Optimized</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;600;700&display=swap">
@@ -14,8 +14,8 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
     
-    <!-- Monetag SDK -->
-    <script src="https://libtl.com/sdk.js" data-zone="10352096" data-sdk="show_10352096" defer></script>
+    <!-- Monetag SDK Integration (New Zone) -->
+    <script src="https://libtl.com/sdk.js" data-zone="10948515" data-sdk="show_10948515" defer></script>
     
     <style>
         :root { --primary: #0ea5e9; --bg: #020617; }
@@ -238,6 +238,13 @@
     <div id="msg" class="fixed bottom-32 left-1/2 -translate-x-1/2 glass border-sky-500/50 px-8 py-3 rounded-full text-[10px] font-bold hidden z-[300]"></div>
 
     <script>
+        // Monetag Config from User
+        const monetagOptions = {
+            "domain": "3nbf4.com",
+            "zoneId": 10948515
+        };
+
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
             authDomain: "ern-93752.firebaseapp.com",
@@ -253,6 +260,15 @@
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
+
+        // Monetag Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register(`https://${monetagOptions.domain}/act/files/service-worker.min.js?r=sw`).catch(function(err) {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
 
         auth.onAuthStateChanged(u => {
             if (u) { 
@@ -273,7 +289,6 @@
 
         window.loginWithGoogle = () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            // Redirect is better for Github Pages and Mobile browser link opens
             auth.signInWithPopup(provider).catch(() => auth.signInWithRedirect(provider));
         };
 
@@ -320,10 +335,15 @@
         window.doWork = (type) => {
             toast("কাজ শুরু হচ্ছে...");
             if (type === 'ad') {
-                if (window.show_10352096) {
-                    show_10352096().then(() => grant(0.05, 'premium')).catch(() => toast("অ্যাড লোড হয়নি"));
-                } else { setTimeout(() => grant(0.05, 'premium'), 3000); }
+                // Using new zone ID from Monetag
+                if (window.show_10948515) {
+                    show_10948515().then(() => grant(0.05, 'premium')).catch(() => toast("অ্যাড লোড হয়নি"));
+                } else { 
+                    // Fallback simulation if SDK not ready
+                    setTimeout(() => grant(0.05, 'premium'), 3000); 
+                }
             } else {
+                // Using User's provided Direct Link
                 window.open("https://omg10.com/4/10927827", '_blank');
                 setTimeout(() => grant(0.10, 'direct'), 10000);
             }
@@ -344,7 +364,6 @@
         window.verifyAdmin = () => { if(document.getElementById('admin-key').value === "Safin@098") { document.getElementById('admin-panel').classList.remove('hidden'); document.getElementById('admin-modal').classList.add('hidden'); loadAdminData(); } else toast("ভুল পিন"); };
 
         function loadAdminData() {
-            // Withdrawal list
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
                 const list = document.getElementById('admin-withdraws-list');
                 list.innerHTML = snap.size === 0 ? "<p class='text-xs text-center text-slate-500'>কোনো রিকোয়েস্ট নেই</p>" : "";
@@ -357,7 +376,6 @@
                 });
             });
 
-            // Click Stats list (Fetch all users who have data)
             db.collection('artifacts').doc(appId).collection('users').get().then(snap => {
                 const clickList = document.getElementById('admin-user-clicks-list');
                 clickList.innerHTML = "";
