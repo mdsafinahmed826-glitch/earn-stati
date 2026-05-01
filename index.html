@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="monetag" content="f90c6c9f62d8c74524efe2c66a14a784">
     <title>EarnStation Pro - Monetag Optimized</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +15,7 @@
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
     
-    <!-- Monetag SDK Integration (New Zone) -->
+    <!-- Monetag SDK Integration -->
     <script src="https://libtl.com/sdk.js" data-zone="10948515" data-sdk="show_10948515" defer></script>
     
     <style>
@@ -238,7 +239,7 @@
     <div id="msg" class="fixed bottom-32 left-1/2 -translate-x-1/2 glass border-sky-500/50 px-8 py-3 rounded-full text-[10px] font-bold hidden z-[300]"></div>
 
     <script>
-        // Monetag Config from User
+        // Monetag Config
         const monetagOptions = {
             "domain": "3nbf4.com",
             "zoneId": 10948515
@@ -256,6 +257,7 @@
 
         const appId = "safin-station-v4";
         let db, auth, user, userData = { balance: 0 }, secretCount = 0;
+        window.selectedMethod = null;
 
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
@@ -293,6 +295,7 @@
         };
 
         function startListeners(uid) {
+            // Config Listener
             db.collection('artifacts').doc(appId).collection('public').doc('config').onSnapshot(snap => {
                 if (snap.exists) {
                     const d = snap.data();
@@ -300,12 +303,13 @@
                     document.getElementById('work-ad').style.display = d.adEnabled ? 'flex' : 'none';
                     document.getElementById('work-link').style.display = d.linkEnabled ? 'flex' : 'none';
                     document.getElementById('no-work').style.display = (!d.adEnabled && !d.linkEnabled) ? 'block' : 'none';
-                    document.getElementById('toggle-ad').checked = d.adEnabled;
-                    document.getElementById('toggle-link').checked = d.linkEnabled;
+                    document.getElementById('toggle-ad').checked = !!d.adEnabled;
+                    document.getElementById('toggle-link').checked = !!d.linkEnabled;
                 }
                 document.getElementById('loader').style.display = 'none';
             });
 
+            // User Profile Listener
             db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('profile').doc('data').onSnapshot(snap => {
                 if (snap.exists) { 
                     userData = snap.data(); 
@@ -319,6 +323,7 @@
                 }
             });
 
+            // User Withdraw History Listener
             db.collection('artifacts').doc(appId).collection('users').doc(uid).collection('withdraws').orderBy('timestamp', 'desc').onSnapshot(snap => {
                 const list = document.getElementById('user-history');
                 list.innerHTML = `<h4 class="text-[10px] font-bold text-slate-600 uppercase px-1">হিস্ট্রি</h4>`;
@@ -329,21 +334,18 @@
                     div.innerHTML = `<div><p class="text-[10px] font-black text-sky-400 uppercase">${d.method}</p><p class="text-xs font-bold">${d.number}</p></div><div class="text-right"><p class="text-xs font-black">৳${d.amount}</p><p class="text-[8px] font-bold uppercase ${d.status === 'Paid' ? 'text-green-500' : 'text-yellow-500'}">${d.status}</p></div>`;
                     list.appendChild(div);
                 });
-            });
+            }, err => console.error(err));
         }
 
         window.doWork = (type) => {
             toast("কাজ শুরু হচ্ছে...");
             if (type === 'ad') {
-                // Using new zone ID from Monetag
                 if (window.show_10948515) {
                     show_10948515().then(() => grant(0.05, 'premium')).catch(() => toast("অ্যাড লোড হয়নি"));
                 } else { 
-                    // Fallback simulation if SDK not ready
                     setTimeout(() => grant(0.05, 'premium'), 3000); 
                 }
             } else {
-                // Using User's provided Direct Link
                 window.open("https://omg10.com/4/10927827", '_blank');
                 setTimeout(() => grant(0.10, 'direct'), 10000);
             }
@@ -361,9 +363,17 @@
         }
 
         window.handleSecret = () => { secretCount++; if(secretCount >= 5) { secretCount=0; document.getElementById('admin-modal').classList.remove('hidden'); } };
-        window.verifyAdmin = () => { if(document.getElementById('admin-key').value === "Safin@098") { document.getElementById('admin-panel').classList.remove('hidden'); document.getElementById('admin-modal').classList.add('hidden'); loadAdminData(); } else toast("ভুল পিন"); };
+        
+        window.verifyAdmin = () => { 
+            if(document.getElementById('admin-key').value === "Safin@098") { 
+                document.getElementById('admin-panel').classList.remove('hidden'); 
+                document.getElementById('admin-modal').classList.add('hidden'); 
+                loadAdminData(); 
+            } else toast("ভুল পিন"); 
+        };
 
         function loadAdminData() {
+            // Withdrawal Queue
             db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').onSnapshot(snap => {
                 const list = document.getElementById('admin-withdraws-list');
                 list.innerHTML = snap.size === 0 ? "<p class='text-xs text-center text-slate-500'>কোনো রিকোয়েস্ট নেই</p>" : "";
@@ -376,6 +386,7 @@
                 });
             });
 
+            // User Click Stats
             db.collection('artifacts').doc(appId).collection('users').get().then(snap => {
                 const clickList = document.getElementById('admin-user-clicks-list');
                 clickList.innerHTML = "";
@@ -447,27 +458,48 @@
         };
 
         window.logout = () => { if(confirm("লগআউট?")) auth.signOut(); };
+        
         window.selMethod = (m) => {
+            window.selectedMethod = m;
             const isBkash = m === 'Bkash';
             document.getElementById('btn-bkash').className = isBkash ? "flex-1 py-4 rounded-2xl bg-pink-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-pink-500/20 text-pink-500 text-[10px] font-bold uppercase";
             document.getElementById('btn-nagad').className = !isBkash ? "flex-1 py-4 rounded-2xl bg-orange-600 text-white text-[10px] font-bold uppercase" : "flex-1 py-4 rounded-2xl border border-orange-500/20 text-orange-500 text-[10px] font-bold uppercase";
-            window.selectedMethod = m;
         };
 
         window.requestWithdraw = async () => {
             const num = document.getElementById('w-num').value;
             const amt = parseFloat(document.getElementById('w-amt').value);
             if (!window.selectedMethod || isNaN(amt) || amt < 10 || amt > userData.balance) return toast("সঠিক তথ্য দিন");
+            
             const wId = Date.now().toString();
-            const wData = { method: window.selectedMethod, number: num, amount: amt, uid: user.uid, status: 'Pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            const wData = { 
+                method: window.selectedMethod, 
+                number: num, 
+                amount: amt, 
+                uid: user.uid, 
+                status: 'Pending', 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            };
+            
             const batch = db.batch();
             batch.set(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('withdraws').doc(wId), wData);
             batch.set(db.collection('artifacts').doc(appId).collection('public').doc('data').collection('queue').doc(wId), wData);
-            batch.update(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data'), { balance: firebase.firestore.FieldValue.increment(-amt) });
-            await batch.commit(); toast("সফল!");
+            batch.update(db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data'), { 
+                balance: firebase.firestore.FieldValue.increment(-amt) 
+            });
+            
+            await batch.commit(); 
+            toast("সফল!");
+            document.getElementById('w-num').value = "";
+            document.getElementById('w-amt').value = "";
         };
 
-        function toast(m) { const t = document.getElementById('msg'); t.innerText = m; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2000); }
+        function toast(m) { 
+            const t = document.getElementById('msg'); 
+            t.innerText = m; 
+            t.classList.remove('hidden'); 
+            setTimeout(() => t.classList.add('hidden'), 2000); 
+        }
     </script>
 </body>
 </html>
