@@ -1,1858 +1,941 @@
 <!DOCTYPE html>
-<html lang="bn" class="h-full">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Facebook - ConnectPulse by SAFIN</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-          colors: {
-            fbBlue: '#1877f2',
-            fbBg: '#f0f2f5',
-            fbDarkBg: '#18191a',
-            fbDarkCard: '#242526',
-            fbDarkHover: '#3a3b3c',
-            fbTextDark: '#e4e6eb'
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafinBook - Social Media App by SAFIN</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        fbBlue: '#1877f2',
+                        fbBg: '#f0f2f5',
+                        fbDarkBg: '#18191a',
+                        fbCardDark: '#242526',
+                        fbHoverDark: '#3a3b3c'
+                    }
+                }
+            }
         }
-      }
-    }
-  </script>
-  <style>
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #4e4f50; }
-    
-    .reaction-box {
-      display: none;
-      animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .group:hover .reaction-box {
-      display: flex;
-    }
-    @keyframes popUp {
-      0% { opacity: 0; transform: translateY(10px) scale(0.8); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-  </style>
+    </script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase Compat SDKs (App, Auth, Realtime Database) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="h-full text-slate-900 dark:text-fbTextDark bg-fbBg dark:bg-fbDarkBg flex flex-col font-sans select-none transition-colors duration-200">
-
-  <!-- TOP FACEBOOK HEADER BAR -->
-  <header class="sticky top-0 z-40 bg-white dark:bg-fbDarkCard border-b border-slate-200 dark:border-slate-800 shadow-sm">
-    <!-- Top Row: Logo & Quick Actions -->
-    <div class="max-w-4xl mx-auto px-3 pt-2.5 pb-1 flex items-center justify-between gap-2">
-      <!-- Facebook Brand Logo -->
-      <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('feed')">
-        <h1 class="text-2xl sm:text-3xl font-black text-fbBlue tracking-tight flex items-center gap-1.5">
-          facebook
-        </h1>
-        <span class="bg-blue-100 dark:bg-blue-900/40 text-fbBlue text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">v4.0 Pro</span>
-      </div>
-
-      <!-- Action Icons (Create, Search, Menu) -->
-      <div class="flex items-center gap-2">
-        <!-- User Logged Status Badge -->
-        <div id="auth-user-badge" class="hidden sm:flex items-center gap-1.5 bg-slate-100 dark:bg-fbDarkHover px-2.5 py-1 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer" onclick="openProfileModal()">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span id="badge-username">SAFIN</span>
-        </div>
-        <button onclick="openAuthModal()" id="header-login-btn" class="bg-fbBlue text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-blue-600 transition flex items-center gap-1">
-          <i class="fa-solid fa-right-to-bracket"></i> Login
-        </button>
-        <button onclick="triggerPostUpload('text')" class="w-9 h-9 bg-slate-100 dark:bg-fbDarkHover hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-800 dark:text-slate-200 transition" title="Create Post">
-          <i class="fa-solid fa-plus text-base"></i>
-        </button>
-        <button onclick="toggleSearchModal()" class="w-9 h-9 bg-slate-100 dark:bg-fbDarkHover hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-800 dark:text-slate-200 transition" title="Search Facebook">
-          <i class="fa-solid fa-magnifying-glass text-base"></i>
-        </button>
-        <button onclick="switchTab('menu')" class="w-9 h-9 bg-slate-100 dark:bg-fbDarkHover hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-800 dark:text-slate-200 transition relative" title="Menu">
-          <i class="fa-solid fa-bars text-lg"></i>
-          <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Main Facebook Tab Navigation Bar -->
-    <nav class="max-w-4xl mx-auto px-1 flex items-center justify-around border-t border-slate-100 dark:border-slate-800 mt-1">
-      <!-- Home / Feed Tab -->
-      <button id="tab-btn-feed" onclick="switchTab('feed')" class="flex-1 py-2.5 text-center text-fbBlue border-b-2 border-fbBlue transition relative flex justify-center">
-        <i class="fa-solid fa-house text-xl"></i>
-        <span class="absolute top-1.5 right-1/4 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full">15+</span>
-      </button>
-
-      <!-- Friends Tab -->
-      <button id="tab-btn-friends" onclick="switchTab('friends')" class="flex-1 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-fbDarkHover transition relative flex justify-center">
-        <i class="fa-solid fa-user-group text-xl"></i>
-        <span id="friends-badge-count" class="absolute top-1.5 right-1/4 bg-fbBlue text-white text-[9px] font-bold px-1 rounded-full">2</span>
-      </button>
-
-      <!-- Messenger Chat Tab -->
-      <button id="tab-btn-chat" onclick="switchTab('chat')" class="flex-1 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-fbDarkHover transition relative flex justify-center">
-        <i class="fa-solid fa-comment-dots text-xl"></i>
-        <span class="absolute top-1.5 right-1/4 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full">3</span>
-      </button>
-
-      <!-- Watch / Video Tab -->
-      <button id="tab-btn-watch" onclick="switchTab('watch')" class="flex-1 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-fbDarkHover transition relative flex justify-center">
-        <i class="fa-solid fa-circle-play text-xl"></i>
-        <span class="absolute top-1.5 right-1/4 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full">15+</span>
-      </button>
-
-      <!-- Notifications Tab -->
-      <button id="tab-btn-notifs" onclick="switchTab('notifications')" class="flex-1 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-fbDarkHover transition relative flex justify-center">
-        <i class="fa-solid fa-bell text-xl"></i>
-        <span class="absolute top-1.5 right-1/4 bg-rose-500 text-white text-[9px] font-bold px-1 rounded-full">9+</span>
-      </button>
-
-      <!-- Facebook Menu Tab -->
-      <button id="tab-btn-menu" onclick="switchTab('menu')" class="flex-1 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-fbDarkHover transition relative flex justify-center">
-        <i class="fa-solid fa-bars text-xl"></i>
-      </button>
-    </nav>
-  </header>
-
-  <!-- MAIN CONTAINER -->
-  <main class="flex-1 max-w-2xl w-full mx-auto p-2 sm:p-4 overflow-y-auto custom-scrollbar">
-
-    <!-- ==================== 1. FEED TAB ==================== -->
-    <div id="view-feed" class="space-y-3">
-      
-      <!-- "What's on your mind?" Create Post Bar -->
-      <div class="bg-white dark:bg-fbDarkCard p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <img id="feed-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces" class="w-10 h-10 rounded-full object-cover border cursor-pointer" onclick="openProfileModal()" alt="SAFIN Profile">
-          <button onclick="openCreatePostModal()" class="flex-1 text-left bg-slate-100 dark:bg-fbDarkHover text-slate-500 dark:text-slate-300 rounded-full px-4 py-2 text-xs sm:text-sm hover:bg-slate-200 transition">
-            <span id="whats-on-mind-text">What's on your mind, SAFIN?</span>
-          </button>
-          <div onclick="triggerPostUpload('image')" class="flex flex-col items-center cursor-pointer text-emerald-500 px-1">
-            <i class="fa-solid fa-images text-xl"></i>
-            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Photo</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- FACEBOOK STORY CAROUSEL -->
-      <div id="story-carousel" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
-        <!-- SAFIN Create Story Card -->
-        <div onclick="openStoryModal('add')" class="min-w-[105px] h-40 bg-white dark:bg-fbDarkCard border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden relative cursor-pointer group shadow-sm flex-shrink-0">
-          <img id="story-my-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=faces" class="w-full h-28 object-cover group-hover:scale-105 transition duration-300">
-          <div class="absolute top-24 left-1/2 -translate-x-1/2 w-8 h-8 bg-fbBlue rounded-full border-2 border-white dark:border-fbDarkCard flex items-center justify-center text-white text-xs font-bold shadow-md">
-            <i class="fa-solid fa-plus"></i>
-          </div>
-          <p class="text-[10px] font-bold text-center mt-3 dark:text-slate-200" id="txt-create-story">Create story</p>
-        </div>
-
-        <!-- Friend Stories List (Populated via JS) -->
-        <div id="stories-list-wrapper" class="flex gap-2"></div>
-      </div>
-
-      <!-- MAIN POSTS FEED -->
-      <div id="feed-posts-stream" class="space-y-3">
-        <!-- Rendered dynamically -->
-      </div>
-    </div>
-
-    <!-- ==================== 2. MENU TAB (FACEBOOK SCREENSHOTS REPLICA) ==================== -->
-    <div id="view-menu" class="hidden space-y-3">
-      
-      <!-- Menu Title & Quick Actions -->
-      <div class="flex items-center justify-between px-1">
-        <h2 class="text-2xl font-black text-slate-900 dark:text-white">Menu</h2>
-        <div class="flex items-center gap-2">
-          <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-full bg-slate-200 dark:bg-fbDarkHover flex items-center justify-center text-slate-700 dark:text-slate-200" title="Toggle Dark/Light Mode">
-            <i class="fa-solid fa-moon text-sm"></i>
-          </button>
-          <button onclick="toggleSearchModal()" class="w-9 h-9 rounded-full bg-slate-200 dark:bg-fbDarkHover flex items-center justify-center text-slate-700 dark:text-slate-200">
-            <i class="fa-solid fa-magnifying-glass text-sm"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- User Profile Header Card (Screenshot 4) -->
-      <div class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition" onclick="openProfileModal()">
-        <div class="flex items-center gap-3">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces" class="w-12 h-12 rounded-full object-cover border-2 border-fbBlue">
-          <div>
-            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-1">
-              Md Safin Ahmed (SAFIN)
-              <i class="fa-solid fa-circle-check text-fbBlue text-xs"></i>
-            </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">View your profile</p>
-          </div>
-        </div>
-        <i class="fa-solid fa-chevron-down text-slate-400"></i>
-      </div>
-
-      <!-- Switch Account & Invite Friends Bar -->
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="showToast('Switch Account list loaded!')" class="bg-white dark:bg-fbDarkCard p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-users-arrows text-fbBlue"></i>
-            <span>Switch account</span>
-          </div>
-          <i class="fa-solid fa-chevron-down text-slate-400"></i>
-        </button>
-
-        <button onclick="showToast('Invite link copied to clipboard!')" class="bg-white dark:bg-fbDarkCard p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-          <i class="fa-solid fa-heart text-rose-500"></i>
-          <span>Invite friends</span>
-        </button>
-      </div>
-
-      <!-- Facebook Grid Shortcuts (Exact Match with Screenshot 4 & 5) -->
-      <div class="grid grid-cols-2 gap-2.5 pt-1">
-        
-        <div onclick="showToast('Opening Professional Dashboard')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-chart-line text-blue-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Dashboard</span>
-          <span class="text-[10px] text-emerald-600 font-semibold">25.8K Active Members</span>
-        </div>
-
-        <div onclick="switchTab('chat')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-comment-dots text-purple-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Messages</span>
-          <span class="text-[10px] text-slate-400">Chat with Added Friends</span>
-        </div>
-
-        <div onclick="openGroupsModal()" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-users text-fbBlue text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Groups</span>
-        </div>
-
-        <div onclick="openMarketplaceModal()" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-store text-emerald-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Marketplace</span>
-        </div>
-
-        <div onclick="switchTab('friends')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-user-group text-sky-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Friends</span>
-        </div>
-
-        <div onclick="switchTab('watch')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-clapperboard text-rose-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Reels</span>
-        </div>
-
-        <div onclick="toggleMetaAiModal()" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-dharmachakra text-purple-600 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Meta AI</span>
-        </div>
-
-        <div onclick="showToast('Pages created by SAFIN')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-flag text-amber-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Pages</span>
-        </div>
-
-        <div onclick="showToast('Saved items list')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-bookmark text-pink-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Saved</span>
-        </div>
-
-        <div onclick="showToast('Memories loaded!')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-clock-rotate-left text-cyan-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Memories</span>
-        </div>
-
-        <div onclick="showToast('Upcoming birthdays: 3 today')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-gift text-indigo-500 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Birthdays</span>
-        </div>
-
-        <div onclick="showToast('Upcoming Events')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-calendar-days text-rose-400 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Events</span>
-        </div>
-
-        <div onclick="showToast('Meta Verified Badge active for SAFIN')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-circle-check text-fbBlue text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Meta Verified</span>
-        </div>
-
-        <div onclick="showToast('Opening Ad Center')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-bullhorn text-sky-600 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Ad Center</span>
-        </div>
-
-        <div onclick="switchTab('feed')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-solid fa-newspaper text-amber-600 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Feeds</span>
-        </div>
-
-        <div onclick="showToast('Opening Instagram Lite')" class="bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-fbDarkHover transition flex flex-col gap-1">
-          <i class="fa-brands fa-instagram text-pink-600 text-xl"></i>
-          <span class="text-xs font-extrabold text-slate-800 dark:text-white">Instagram Lite</span>
-        </div>
-
-      </div>
-
-      <!-- COLLAPSIBLE SETTINGS & PRIVACY SECTION (Exact from Screenshot 1, 2, 3) -->
-      <div class="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
-        
-        <!-- Settings & Privacy Main Accordion -->
-        <div class="bg-white dark:bg-fbDarkCard rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-          <button onclick="toggleAccordion('settings-acc')" class="w-full p-3 flex items-center justify-between text-slate-800 dark:text-white font-bold text-sm">
-            <div class="flex items-center gap-3">
-              <i class="fa-solid fa-gear text-slate-500 text-lg"></i>
-              <span>Settings & privacy</span>
-            </div>
-            <i id="settings-acc-arrow" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
-          </button>
-
-          <!-- Settings Submenu List -->
-          <div id="settings-acc" class="hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-fbDarkHover/30 p-2 space-y-1 text-xs">
-            
-            <!-- Dark Mode Toggle Row -->
-            <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover">
-              <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-moon text-indigo-500 text-sm"></i>
-                <span class="font-bold">Dark mode</span>
-              </div>
-              <input type="checkbox" id="dark-toggle-input" onchange="toggleDarkMode()" class="w-4 h-4 cursor-pointer accent-fbBlue">
-            </div>
-
-            <!-- Meta Account (Screenshot 2) -->
-            <div onclick="showToast('Meta Account Center Opened')" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer">
-              <div class="flex items-center gap-2.5 font-bold text-fbBlue">
-                <i class="fa-brands fa-meta text-sm"></i>
-                <span>Meta Account</span>
-              </div>
-              <p class="text-[10px] text-slate-400 pl-6">Password, security, personal details, ad preferences</p>
-            </div>
-
-            <div onclick="showToast('Profile Locking Enabled')" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-shield-halved text-emerald-500 text-sm"></i>
-              <span>Profile locking</span>
-            </div>
-
-            <div onclick="showToast('Profile Details Opened')" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-id-card text-sky-500 text-sm"></i>
-              <span>Profile details</span>
-            </div>
-
-            <div onclick="showToast('Professional Mode Active for SAFIN')" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-rocket text-purple-500 text-sm"></i>
-              <span>Pro mode</span>
-            </div>
-
-            <div onclick="toggleLanguage()" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-globe text-blue-500 text-sm"></i>
-              <span id="lang-toggle-label">Language: English (Switch to বাংলা)</span>
-            </div>
-
-            <div onclick="showToast('Data Saver Activated')" class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover">
-              <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-sliders text-amber-500 text-sm"></i>
-                <span class="font-bold">Data saver</span>
-              </div>
-              <input type="checkbox" onchange="showToast('Data saver preference updated')" class="w-4 h-4 cursor-pointer accent-fbBlue">
-            </div>
-
-            <div onclick="clearAppData()" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-broom text-rose-500 text-sm"></i>
-              <span>Clear space & Reset app</span>
-            </div>
-
-            <div onclick="showToast('Data Saver Activated')" class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover">
-              <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-sliders text-amber-500 text-sm"></i>
-                <span class="font-bold">Data saver</span>
-              </div>
-              <input type="checkbox" onchange="showToast('Data saver preference updated')" class="w-4 h-4 cursor-pointer accent-fbBlue">
-            </div>
-
-            <div onclick="showToast('Cache memory cleared! App space freed.')" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-broom text-rose-500 text-sm"></i>
-              <span>Clear space</span>
-            </div>
-
-            <div onclick="showToast('Time Management: You spent 25 mins today')" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-fbDarkHover cursor-pointer font-bold">
-              <i class="fa-solid fa-hourglass-half text-teal-500 text-sm"></i>
-              <span>Time management</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Help & Support Section -->
-        <div class="bg-white dark:bg-fbDarkCard rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-          <button onclick="toggleAccordion('help-acc')" class="w-full p-3 flex items-center justify-between text-slate-800 dark:text-white font-bold text-sm">
-            <div class="flex items-center gap-3">
-              <i class="fa-solid fa-circle-question text-slate-500 text-lg"></i>
-              <span>Help & support</span>
-            </div>
-            <i id="help-acc-arrow" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
-          </button>
-          <div id="help-acc" class="hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-fbDarkHover/30 p-2 space-y-1 text-xs font-semibold">
-            <p onclick="showToast('Help Center')" class="p-2 hover:bg-slate-100 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">Help Center</p>
-            <p onclick="showToast('Support Inbox')" class="p-2 hover:bg-slate-100 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">Support Inbox</p>
-            <p onclick="showToast('Report a problem')" class="p-2 hover:bg-slate-100 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">Report a problem</p>
-          </div>
-        </div>
-
-        <!-- Add Account & Logout -->
-        <button onclick="openAuthModal()" class="w-full bg-white dark:bg-fbDarkCard p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3 text-sm font-bold text-slate-800 dark:text-white">
-          <i class="fa-solid fa-user-plus text-slate-500"></i>
-          <span>Switch or Add account</span>
-        </button>
-
-        <button onclick="performLogout()" class="w-full bg-rose-50 dark:bg-rose-950/30 p-3 rounded-2xl border border-rose-200 dark:border-rose-900 shadow-sm flex items-center gap-3 text-sm font-bold text-rose-600 dark:text-rose-400">
-          <i class="fa-solid fa-right-from-bracket"></i>
-          <span>Log out</span>
-        </button>
-
-      </div>
-
-    </div>
-
-    <!-- ==================== 3. MESSENGER TAB ==================== -->
-    <div id="view-chat" class="hidden space-y-3">
-      <div class="bg-white dark:bg-fbDarkCard rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 flex flex-col h-[78vh]">
-        
-        <!-- Messenger Top Bar -->
-        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-fbBlue text-white flex items-center justify-center font-black">
-              <i class="fa-solid fa-bolt text-sm"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-sm text-slate-900 dark:text-white">Chats</h3>
-              <p class="text-[10px] text-slate-400">Connected Friends Only</p>
-            </div>
-          </div>
-          <span class="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Live Firebase
-          </span>
-        </div>
-
-        <!-- Connected Friends Bar -->
-        <div class="py-2 border-b border-slate-100 dark:border-slate-800">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Active Friends</p>
-          <div id="messenger-friends-bubbles" class="flex items-center gap-2 overflow-x-auto custom-scrollbar py-1">
-            <!-- Dynamically populated added friends -->
-          </div>
-        </div>
-
-        <!-- Active Chat Window -->
-        <div class="flex-1 flex flex-col justify-between pt-2 overflow-hidden">
-          
-          <!-- Chat Header with Voice/Video Call Icons -->
-          <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-            <div class="flex items-center gap-2">
-              <img id="chat-active-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces" class="w-8 h-8 rounded-full object-cover">
-              <div>
-                <h4 id="chat-active-name" class="text-xs font-bold text-slate-800 dark:text-white">Sarah Jenkins</h4>
-                <span class="text-[9px] text-emerald-500 font-semibold flex items-center gap-1">Active Now</span>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button onclick="startCall('Voice')" class="w-7 h-7 bg-slate-100 dark:bg-fbDarkHover text-fbBlue rounded-full flex items-center justify-center">
-                <i class="fa-solid fa-phone text-xs"></i>
-              </button>
-              <button onclick="startCall('Video')" class="w-7 h-7 bg-slate-100 dark:bg-fbDarkHover text-fbBlue rounded-full flex items-center justify-center">
-                <i class="fa-solid fa-video text-xs"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Chat Stream -->
-          <div id="chat-stream-box" class="flex-1 my-2 overflow-y-auto custom-scrollbar space-y-2 p-1 text-xs">
-            <!-- Messages stream -->
-          </div>
-
-          <!-- Typing Indicator -->
-          <div id="chat-typing-status" class="hidden text-[10px] text-slate-400 italic px-1 pb-1">
-            <span id="chat-typing-name">Friend</span> is typing...
-          </div>
-
-          <!-- Chat Input -->
-          <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-            <button onclick="showToast('Send Photo in Messenger')" class="text-slate-400 hover:text-fbBlue p-1">
-              <i class="fa-solid fa-image text-sm"></i>
-            </button>
-            <input id="chat-msg-input" type="text" placeholder="Type a message..." class="flex-1 bg-slate-100 dark:bg-fbDarkHover text-slate-800 dark:text-white rounded-full px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-fbBlue" onkeypress="if(event.key==='Enter') sendChatMessage()">
-            <button onclick="sendChatMessage()" class="w-8 h-8 bg-fbBlue text-white rounded-full flex items-center justify-center shadow">
-              <i class="fa-solid fa-paper-plane text-xs"></i>
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== 4. FRIENDS TAB ==================== -->
-    <div id="view-friends" class="hidden space-y-3">
-      <div id="friends-tab-render-target"></div>
-    </div>
-
-    <!-- ==================== 5. WATCH / REELS TAB ==================== -->
-    <div id="view-watch" class="hidden space-y-3">
-      <div id="watch-tab-render-target"></div>
-    </div>
-
-    <!-- ==================== 6. NOTIFICATIONS TAB ==================== -->
-    <div id="view-notifications" class="hidden space-y-2">
-      <div class="bg-white dark:bg-fbDarkCard p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-        <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center justify-between">
-          <span>Notifications</span>
-          <span class="text-xs text-fbBlue cursor-pointer" onclick="showToast('All marked as read')">Mark all read</span>
-        </h3>
-        <div class="space-y-2 text-xs">
-          <div class="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">
-            <div class="w-9 h-9 rounded-full bg-blue-100 text-fbBlue flex items-center justify-center font-bold">👍</div>
-            <div>
-              <p class="text-slate-800 dark:text-slate-200"><span class="font-bold">Sarah Jenkins</span> loved your post.</p>
-              <span class="text-[10px] text-slate-400">2 mins ago</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">
-            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">💬</div>
-            <div>
-              <p class="text-slate-800 dark:text-slate-200"><span class="font-bold">Alex Rivera</span> commented on SAFIN's post.</p>
-              <span class="text-[10px] text-slate-400">12 mins ago</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">
-            <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">👤</div>
-            <div>
-              <p class="text-slate-800 dark:text-slate-200"><span class="font-bold">Emma Watson</span> accepted your friend request.</p>
-              <span class="text-[10px] text-slate-400">1 hour ago</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- MODALS & OVERLAYS -->
-
-  <!-- FACEBOOK LOGIN & REGISTRATION MODAL -->
-  <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 transition-all">
-      <button onclick="closeAuthModal()" class="absolute top-4 right-4 bg-slate-100 dark:bg-fbDarkHover w-8 h-8 rounded-full flex items-center justify-center font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition">✕</button>
-      
-      <!-- Brand Logo in Modal -->
-      <div class="text-center mb-5">
-        <h2 class="text-3xl font-black text-fbBlue tracking-tight">facebook</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Connect with friends and the world around you.</p>
-      </div>
-
-      <!-- Auth Mode Switcher (Email vs Phone) -->
-      <div class="flex bg-slate-100 dark:bg-fbDarkHover p-1 rounded-2xl mb-4 text-xs font-bold">
-        <button id="auth-tab-email" onclick="switchAuthMethod('email')" class="flex-1 py-2 rounded-xl bg-white dark:bg-fbDarkCard text-fbBlue shadow-sm transition flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-envelope"></i> Email / Password
-        </button>
-        <button id="auth-tab-phone" onclick="switchAuthMethod('phone')" class="flex-1 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-phone"></i> Phone Number
-        </button>
-      </div>
-
-      <!-- Form 1: Email & Password Auth -->
-      <form id="auth-form-email" onsubmit="handleEmailAuth(event)" class="space-y-3">
-        <div>
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Email Address</label>
-          <input type="email" id="auth-email" placeholder="name@example.com" required class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-fbBlue outline-none">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
-          <input type="password" id="auth-password" placeholder="••••••••" required minlength="6" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-fbBlue outline-none">
-        </div>
-        
-        <div id="auth-signup-fields" class="hidden space-y-3 pt-1">
-          <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Full Name</label>
-            <input type="text" id="auth-fullname" placeholder="Md Safin Ahmed" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-fbBlue outline-none">
-          </div>
-        </div>
-
-        <button type="submit" id="auth-submit-btn" class="w-full bg-fbBlue hover:bg-blue-600 text-white font-extrabold text-sm py-2.5 rounded-xl shadow-lg transition duration-200">
-          Log In
-        </button>
-      </form>
-
-      <!-- Form 2: Phone Number Auth -->
-      <form id="auth-form-phone" onsubmit="handlePhoneAuth(event)" class="hidden space-y-3">
-        <div>
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Mobile Phone Number</label>
-          <div class="flex gap-2">
-            <span class="bg-slate-100 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center">+880</span>
-            <input type="tel" id="auth-phone-num" placeholder="1700000000" required pattern="[0-9]{10}" class="flex-1 bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs focus:ring-2 focus:ring-fbBlue outline-none">
-          </div>
-        </div>
-
-        <div id="otp-verification-section" class="hidden space-y-2">
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500">6-Digit OTP Code</label>
-          <input type="text" id="auth-otp-code" placeholder="123456" maxlength="6" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-center tracking-widest text-lg focus:ring-2 focus:ring-fbBlue outline-none">
-        </div>
-
-        <button type="submit" id="phone-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-2.5 rounded-xl shadow-lg transition duration-200">
-          Send Verification Code
-        </button>
-      </form>
-
-      <!-- Toggle Login/Register -->
-      <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center text-xs">
-        <span id="toggle-mode-text" class="text-slate-500 dark:text-slate-400">Don't have an account?</span>
-        <button type="button" onclick="toggleAuthMode()" id="toggle-mode-btn" class="text-fbBlue font-extrabold hover:underline ml-1">Create new account</button>
-      </div>
-
-      <!-- Recaptcha Container for Firebase Phone Auth -->
-      <div id="recaptcha-container" class="mt-2 flex justify-center"></div>
-    </div>
-  </div>
-
-  <!-- SAFIN USER PROFILE MODAL -->
-  <div id="profile-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto custom-scrollbar border border-slate-200 dark:border-slate-800 shadow-2xl relative">
-      <button onclick="closeProfileModal()" class="absolute top-3 right-3 bg-slate-100 dark:bg-fbDarkHover w-8 h-8 rounded-full flex items-center justify-center font-bold z-10">✕</button>
-      
-      <!-- Cover Photo -->
-      <div class="h-32 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
-        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800" class="w-full h-full object-cover opacity-80">
-      </div>
-
-      <!-- Avatar & Profile Details -->
-      <div class="px-4 pb-4 relative">
-        <div class="relative -mt-12 mb-3 inline-block">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&crop=faces" class="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-fbDarkCard shadow-lg">
-          <span class="absolute bottom-1 right-1 bg-fbBlue text-white p-1 rounded-full text-xs" title="Verified Creator">
-            <i class="fa-solid fa-shield-halved"></i>
-          </span>
-        </div>
-
-        <h2 class="text-xl font-black flex items-center gap-1.5">
-          Md Safin Ahmed (SAFIN)
-          <i class="fa-solid fa-circle-check text-fbBlue text-sm"></i>
-        </h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">Founder, Creator & Chief Architect</p>
-        <p class="text-xs mt-2 text-slate-700 dark:text-slate-300">Welcome to Facebook ConnectPulse! Building future-ready social experiences. 🚀</p>
-
-        <div class="flex items-center gap-4 mt-3 text-xs font-bold text-slate-600 dark:text-slate-300 border-y border-slate-100 dark:border-slate-800 py-2">
-          <div><span class="text-slate-900 dark:text-white font-extrabold text-sm">25.8K</span> Followers</div>
-          <div><span class="text-slate-900 dark:text-white font-extrabold text-sm">12</span> Friends</div>
-          <div><span class="text-emerald-500 font-extrabold">Active</span> Status</div>
-        </div>
-
-        <!-- Action buttons -->
-        <div class="flex gap-2 mt-4">
-          <button onclick="showToast('Profile updated')" class="flex-1 bg-fbBlue text-white py-2 rounded-xl font-bold text-xs">Edit Profile</button>
-          <button onclick="showToast('Activity log opened')" class="bg-slate-100 dark:bg-fbDarkHover px-4 py-2 rounded-xl font-bold text-xs"><i class="fa-solid fa-ellipsis"></i></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- META AI OVERLAY MODAL -->
-  <div id="meta-ai-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard rounded-3xl w-full max-w-sm h-[500px] flex flex-col justify-between p-4 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-      <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-dharmachakra text-purple-600 text-2xl animate-spin"></i>
-          <div>
-            <h3 class="font-extrabold text-sm">Meta AI</h3>
-            <p class="text-[10px] text-slate-400">Ask anything to Facebook AI</p>
-          </div>
-        </div>
-        <button onclick="toggleMetaAiModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-      </div>
-
-      <div id="meta-ai-messages" class="flex-1 my-2 overflow-y-auto custom-scrollbar space-y-2 text-xs">
-        <div class="bg-purple-50 dark:bg-purple-950/40 p-2.5 rounded-2xl text-purple-900 dark:text-purple-200">
-          Hello SAFIN! I am Meta AI inside Facebook. How can I help you today?
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-        <input id="meta-ai-input" type="text" placeholder="Ask Meta AI..." class="flex-1 bg-slate-100 dark:bg-fbDarkHover rounded-full px-3 py-1.5 text-xs outline-none" onkeypress="if(event.key==='Enter') sendMetaAiQuery()">
-        <button onclick="sendMetaAiQuery()" class="bg-purple-600 text-white px-3 py-1.5 rounded-full text-xs font-bold">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- VOICE & VIDEO CALL MODAL -->
-  <div id="call-modal" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="bg-slate-800 text-white rounded-3xl w-full max-w-xs p-6 text-center space-y-5 shadow-2xl">
-      <img id="call-avatar-img" src="" class="w-20 h-20 rounded-full object-cover border-4 border-fbBlue mx-auto shadow-lg animate-pulse">
-      <div>
-        <h3 id="call-title-name" class="text-base font-bold">Calling...</h3>
-        <p id="call-subtitle-type" class="text-xs text-slate-400">Facebook Encrypted Call</p>
-      </div>
-      <div class="flex justify-center gap-4 pt-2">
-        <button onclick="endCall()" class="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center text-white text-lg shadow-lg">
-          <i class="fa-solid fa-phone-slash"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CREATE POST MODAL -->
-  <div id="create-post-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md p-4 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
-      <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-extrabold text-sm">Create post</h3>
-        <button onclick="closeCreatePostModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-      </div>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <img id="create-post-user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces" class="w-9 h-9 rounded-full object-cover">
-          <div>
-            <h4 id="create-post-user-name" class="text-xs font-bold">Md Safin Ahmed</h4>
-            <select id="post-privacy-select" class="bg-slate-100 dark:bg-fbDarkHover text-slate-700 dark:text-slate-300 text-[10px] px-2 py-0.5 rounded-md font-semibold outline-none">
-              <option value="🌐 Public">🌐 Public</option>
-              <option value="👥 Friends">👥 Friends</option>
-              <option value="🔒 Only me">🔒 Only me</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <textarea id="modal-post-textarea" rows="3" placeholder="What's on your mind?" class="w-full bg-transparent text-xs sm:text-sm outline-none resize-none"></textarea>
-      
-      <!-- Optional Image URL Input -->
-      <div id="post-media-input-box" class="space-y-1">
-        <label class="text-[10px] font-bold text-slate-400 uppercase">Image URL (Optional):</label>
-        <input type="text" id="post-image-url-input" placeholder="Paste image web link (e.g. https://...)" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs outline-none">
-      </div>
-
-      <!-- Color Background options -->
-      <div class="flex items-center gap-2 pt-1">
-        <span class="text-[10px] text-slate-400 font-bold">Theme:</span>
-        <button onclick="setPostTheme('default')" class="w-6 h-6 rounded-full border-2 border-fbBlue bg-white dark:bg-slate-800"></button>
-        <button onclick="setPostTheme('bg-gradient-to-r from-blue-600 to-indigo-600 text-white')" class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600"></button>
-        <button onclick="setPostTheme('bg-gradient-to-r from-rose-500 to-amber-500 text-white')" class="w-6 h-6 rounded-full bg-gradient-to-r from-rose-500 to-amber-500"></button>
-        <button onclick="setPostTheme('bg-gradient-to-r from-emerald-500 to-teal-700 text-white')" class="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-teal-700"></button>
-      </div>
-      
-      <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-        <div class="flex gap-3 text-lg text-slate-500">
-          <i class="fa-solid fa-images text-emerald-500 cursor-pointer" onclick="document.getElementById('post-image-url-input').focus()"></i>
-          <i class="fa-solid fa-face-smile text-amber-500 cursor-pointer" onclick="document.getElementById('modal-post-textarea').value += ' 😊'"></i>
-        </div>
-        <button onclick="publishNewPostFromModal()" class="bg-fbBlue text-white px-5 py-1.5 rounded-xl font-bold text-xs shadow hover:bg-blue-600 transition">Post</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CREATE STORY MODAL -->
-  <div id="create-story-modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md p-5 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
-      <button onclick="closeStoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold">✕</button>
-      <h3 class="font-extrabold text-base border-b pb-2 border-slate-100 dark:border-slate-800">Create Facebook Story</h3>
-      
-      <div class="space-y-3">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 mb-1">Story Image Link / Photo URL</label>
-          <input type="text" id="story-img-url" placeholder="https://images.unsplash.com/photo-..." class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:ring-2 focus:ring-fbBlue">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 mb-1">Or Story Caption Text</label>
-          <input type="text" id="story-caption" placeholder="Write something on your story..." class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:ring-2 focus:ring-fbBlue">
-        </div>
-      </div>
-
-      <button onclick="publishStory()" class="w-full bg-fbBlue hover:bg-blue-600 text-white font-extrabold text-xs py-2.5 rounded-xl shadow transition">Share to Story</button>
-    </div>
-  </div>
-
-  <!-- VIEW STORY MODAL OVERLAY -->
-  <div id="view-story-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3">
-    <div class="bg-slate-900 text-white rounded-3xl w-full max-w-sm h-[520px] relative overflow-hidden flex flex-col justify-between shadow-2xl border border-slate-800">
-      
-      <!-- Progress Bar -->
-      <div class="absolute top-2 left-3 right-3 z-10 flex gap-1">
-        <div class="h-1 bg-white/40 flex-1 rounded-full overflow-hidden">
-          <div id="story-progress-bar" class="h-full bg-white w-0 transition-all duration-300"></div>
-        </div>
-      </div>
-
-      <!-- Story Header -->
-      <div class="pt-5 px-3 z-10 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <img id="viewer-story-avatar" src="" class="w-8 h-8 rounded-full border-2 border-fbBlue object-cover">
-          <div>
-            <h4 id="viewer-story-name" class="text-xs font-bold text-white">Friend Name</h4>
-            <span class="text-[9px] text-slate-300">Facebook Story • Just now</span>
-          </div>
-        </div>
-        <button onclick="closeStoryViewer()" class="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white font-bold">✕</button>
-      </div>
-
-      <!-- Story Media Content -->
-      <div class="absolute inset-0 flex items-center justify-center bg-slate-950">
-        <img id="viewer-story-img" src="" class="w-full h-full object-cover">
-      </div>
-
-      <!-- Story Bottom Reply Bar -->
-      <div class="p-3 z-10 flex items-center gap-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-6">
-        <input id="story-reply-input" type="text" placeholder="Send message..." class="flex-1 bg-white/20 border border-white/30 text-white rounded-full px-3 py-1.5 text-xs outline-none placeholder-white/60">
-        <button onclick="sendStoryReply()" class="w-8 h-8 rounded-full bg-fbBlue text-white flex items-center justify-center">
-          <i class="fa-solid fa-paper-plane text-xs"></i>
-        </button>
-        <button onclick="showToast('❤️ Loved Story')" class="text-rose-500 text-xl hover:scale-125 transition">❤️</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SEARCH MODAL -->
-  <div id="search-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-16 px-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md p-4 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl">
-      <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-        <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
-        <input type="text" id="global-search-input" onkeyup="filterGlobalSearch()" placeholder="Search Facebook friends or posts..." class="flex-1 bg-transparent text-xs sm:text-sm outline-none">
-        <button onclick="toggleSearchModal()" class="text-xs font-bold text-slate-400 hover:text-slate-600">Cancel</button>
-      </div>
-
-      <div id="search-results-list" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 text-xs">
-        <p class="text-slate-400 text-center py-4">Type to search people and posts...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT PROFILE MODAL -->
-  <div id="edit-profile-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md p-5 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
-      <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold">✕</button>
-      <h3 class="font-extrabold text-sm border-b pb-2 border-slate-100 dark:border-slate-800">Edit Profile Details</h3>
-      
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-slate-500 mb-1">Display Name</label>
-          <input type="text" id="edit-name-input" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-500 mb-1">Profile Photo URL</label>
-          <input type="text" id="edit-avatar-input" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-500 mb-1">Bio Text</label>
-          <input type="text" id="edit-bio-input" class="w-full bg-slate-50 dark:bg-fbDarkHover border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 outline-none">
-        </div>
-      </div>
-
-      <button onclick="saveProfileChanges()" class="w-full bg-fbBlue text-white font-bold text-xs py-2 rounded-xl shadow">Save Changes</button>
-    </div>
-  </div>
-
-  <!-- MARKETPLACE MODAL -->
-  <div id="marketplace-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-4 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl relative custom-scrollbar">
-      <button onclick="closeMarketplaceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold">✕</button>
-      <h3 class="font-extrabold text-base flex items-center gap-2 border-b pb-2 border-slate-100 dark:border-slate-800">
-        <i class="fa-solid fa-store text-emerald-500"></i> Facebook Marketplace
-      </h3>
-
-      <div class="grid grid-cols-2 gap-3 pt-1">
-        <div class="bg-slate-50 dark:bg-fbDarkHover p-2 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1.5">
-          <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400" class="w-full h-28 object-cover rounded-xl">
-          <h4 class="font-bold text-xs">iPhone 14 Pro Max</h4>
-          <p class="text-xs text-emerald-600 font-black">৳ 95,000</p>
-          <button onclick="showToast('Seller messaged in Messenger!')" class="w-full bg-fbBlue text-white py-1 rounded-lg text-[10px] font-bold">Message Seller</button>
-        </div>
-
-        <div class="bg-slate-50 dark:bg-fbDarkHover p-2 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1.5">
-          <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400" class="w-full h-28 object-cover rounded-xl">
-          <h4 class="font-bold text-xs">Vintage Camera Setup</h4>
-          <p class="text-xs text-emerald-600 font-black">৳ 18,500</p>
-          <button onclick="showToast('Seller messaged in Messenger!')" class="w-full bg-fbBlue text-white py-1 rounded-lg text-[10px] font-bold">Message Seller</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- GROUPS MODAL -->
-  <div id="groups-modal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-    <div class="bg-white dark:bg-fbDarkCard text-slate-900 dark:text-white rounded-3xl w-full max-w-md p-4 space-y-3 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
-      <button onclick="closeGroupsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold">✕</button>
-      <h3 class="font-extrabold text-base flex items-center gap-2 border-b pb-2 border-slate-100 dark:border-slate-800">
-        <i class="fa-solid fa-users text-fbBlue"></i> Joined Groups
-      </h3>
-
-      <div class="space-y-2 text-xs">
-        <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-fbDarkHover rounded-2xl">
-          <div class="flex items-center gap-2">
-            <span class="w-9 h-9 rounded-full bg-blue-100 text-fbBlue flex items-center justify-center font-black">💻</span>
-            <div>
-              <h4 class="font-bold">Web Developers Bangladesh</h4>
-              <p class="text-[10px] text-slate-400">120K Members • 15 posts/day</p>
-            </div>
-          </div>
-          <button onclick="showToast('Group feed opened')" class="bg-fbBlue text-white px-3 py-1 rounded-xl text-[10px] font-bold">Visit</button>
-        </div>
-
-        <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-fbDarkHover rounded-2xl">
-          <div class="flex items-center gap-2">
-            <span class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-black">🚀</span>
-            <div>
-              <h4 class="font-bold">Tech Startups Community</h4>
-              <p class="text-[10px] text-slate-400">45K Members • 8 posts/day</p>
-            </div>
-          </div>
-          <button onclick="showToast('Group feed opened')" class="bg-fbBlue text-white px-3 py-1 rounded-xl text-[10px] font-bold">Visit</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-full shadow-2xl opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
-    <i class="fa-solid fa-circle-check text-emerald-400"></i>
-    <span id="toast-msg">Action completed</span>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      createUserWithEmailAndPassword, 
-      signInWithPhoneNumber, 
-      RecaptchaVerifier, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
-      authDomain: "ern-93752.firebaseapp.com",
-      databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
-      projectId: "ern-93752",
-      storageBucket: "ern-93752.firebasestorage.app",
-      messagingSenderId: "159583001756",
-      appId: "1:159583001756:web:c7c8380f88da94ba97e159",
-      measurementId: "G-S8FXSQMLR3"
-    };
-
-    let app, db, auth;
-    let currentUser = null;
-    let isRegisterMode = false;
-    let activeAuthType = 'email'; // 'email' or 'phone'
-    let confirmationResult = null;
-    let selectedPostTheme = 'default';
-    let currentLanguage = 'EN';
-
-    try {
-      app = initializeApp(firebaseConfig);
-      db = getDatabase(app);
-      auth = getAuth(app);
-
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          currentUser = {
-            uid: user.uid,
-            email: user.email || null,
-            phoneNumber: user.phoneNumber || null,
-            displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'Facebook User')
-          };
-          updateUserSessionUI(currentUser);
-        } else {
-          currentUser = null;
-          updateUserSessionUI(null);
+<body class="bg-fbBg dark:bg-fbDarkBg text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Firebase Config (Provided by user)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
+            authDomain: "ern-93752.firebaseapp.com",
+            databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
+            projectId: "ern-93752",
+            storageBucket: "ern-93752.firebasestorage.app",
+            messagingSenderId: "159583001756",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159",
+            measurementId: "G-S8FXSQMLR3"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
-      });
-    } catch(err) {
-      console.warn("Local fallback active:", err);
-    }
+        const db = firebase.database();
+        const auth = firebase.auth();
 
-    let currentTab = 'feed';
-    let isDarkMode = false;
+        // Initial Seed Data
+        const initialUsersCount = 14528;
+        const initialActiveCount = 184;
 
-    const myProfile = {
-      name: 'Md Safin Ahmed (SAFIN)',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
-      bio: 'Founder, Creator & Chief Architect'
-    };
+        const initialStories = [
+            { id: 1, name: "Create story", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400", isCreate: true },
+            { id: 2, name: "Tusar Suvro", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400", badge: "1" },
+            { id: 3, name: "Abu Shovo", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400", badge: "1" },
+            { id: 4, name: "Md Safin", image: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400", badge: "1" },
+            { id: 5, name: "Tanisha Islam", image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400", badge: "2" }
+        ];
 
-    // Users Database
-    const allUsers = [
-      { id: 'u1', name: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces', role: 'UI/UX Designer', isFriend: true, story: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=500' },
-      { id: 'u2', name: 'Alex Rivera', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces', role: 'Software Engineer', isFriend: true, story: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500' },
-      { id: 'u3', name: 'Tusar Suvro', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces', role: 'Digital Creator', isFriend: true, story: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500' },
-      { id: 'u4', name: 'Arif Ahmed Munna', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces', role: 'Tech Influencer', isFriend: false, story: null },
-      { id: 'u5', name: 'Emma Watson', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces', role: 'Photographer', isFriend: false, story: null }
-    ];
+        const initialFriendRequests = [
+            { id: 101, name: "Tanisha Islam", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150", mutual: 2, time: "12h" },
+            { id: 102, name: "Ariyan Rakid", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150", mutual: 8, time: "6d" },
+            { id: 103, name: "Md Abdul Khalak", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150", mutual: 16, time: "4w" },
+            { id: 104, name: "Aizen Zarox", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150", mutual: 15, time: "3w" }
+        ];
 
-    let pendingRequests = [
-      { id: 'u4', name: 'Arif Ahmed Munna', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces' },
-      { id: 'u5', name: 'Emma Watson', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=faces' }
-    ];
-
-    let activeMessengerUser = allUsers[0];
-
-    let chatHistories = {
-      'u1': [
-        { sender: 'Sarah', text: 'Hey SAFIN! Loving the new Facebook ConnectPulse update!', time: '10:12 AM' },
-        { sender: 'me', text: 'Thanks Sarah! Everything is powered by real-time sync.', time: '10:14 AM' }
-      ],
-      'u2': [
-        { sender: 'Alex', text: 'Hey SAFIN, is the video feed running smoothly?', time: '09:30 AM' }
-      ]
-    };
-
-    // Post Feed Items
-    let feedPosts = [
-      {
-        id: "post-1",
-        author: "Arif Ahmed Munna",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces",
-        verified: true,
-        time: "20h • 🌐",
-        text: "আলহামদুলিল্লাহ আমার ভাগিনার জন্য সকলে দোয়া করবেন ❤️🥰",
-        mediaType: "image",
-        mediaUrl: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&auto=format&fit=crop&q=80",
-        theme: "default",
-        reaction: 'Love',
-        reactionsCount: 1420,
-        comments: [
-          { name: "SAFIN", text: "মাশাআল্লাহ, অনেক শুভকামনা রইল!" },
-          { name: "Tusar Suvro", text: "সুপ্রিয় ভাগিনার জন্য দোয়া রইলো।" }
-        ]
-      },
-      {
-        id: "post-2",
-        author: "Md Safin Ahmed (SAFIN)",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces",
-        verified: true,
-        time: "Just now • 🌐",
-        text: "Welcome to Facebook ConnectPulse v4.0! 🚀 Built with complete Messenger integration, Facebook Menu shortcuts, Meta AI, dark mode and real-time syncing.",
-        mediaType: "image",
-        mediaUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-        theme: "default",
-        reaction: 'Like',
-        reactionsCount: 3890,
-        comments: [
-          { name: "Alex Rivera", text: "Outstanding design SAFIN bro! Super fast!" }
-        ]
-      }
-    ];
-
-    window.renderStories = function() {
-      const container = document.getElementById('stories-list-wrapper');
-      if (!container) return;
-      container.innerHTML = '';
-
-      allUsers.filter(u => u.story).forEach(u => {
-        const item = document.createElement('div');
-        item.className = 'min-w-[105px] h-40 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden relative cursor-pointer group shadow-sm flex-shrink-0';
-        item.onclick = () => openStoryViewer(u);
-        item.innerHTML = `
-          <img src="${u.story}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
-          <span class="absolute top-2 right-2 bg-fbBlue text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">1</span>
-          <img src="${u.avatar}" class="absolute top-2 left-2 w-7 h-7 rounded-full border-2 border-fbBlue object-cover">
-          <p class="absolute bottom-2 left-2 right-2 text-[10px] font-bold text-white truncate">${u.name}</p>
-        `;
-        container.appendChild(item);
-      });
-    };
-
-    window.renderFeedPosts = function() {
-      const container = document.getElementById('feed-posts-stream');
-      if (!container) return;
-      container.innerHTML = '';
-
-      feedPosts.forEach((post, index) => {
-        const postCard = document.createElement('div');
-        const isThemed = post.theme && post.theme !== 'default';
-        postCard.className = `p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5 ${isThemed ? post.theme : 'bg-white dark:bg-fbDarkCard'}`;
-        
-        let commentsHTML = post.comments.map(c => `
-          <div class="bg-slate-100 dark:bg-fbDarkHover p-2 rounded-xl text-xs space-y-0.5 text-slate-800 dark:text-white">
-            <span class="font-bold text-slate-900 dark:text-white">${c.name}</span>
-            <p>${c.text}</p>
-          </div>
-        `).join('');
-
-        postCard.innerHTML = `
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <img src="${post.avatar}" class="w-9 h-9 rounded-full object-cover">
-              <div>
-                <h4 class="text-xs font-bold flex items-center gap-1 ${isThemed ? 'text-white' : 'text-slate-900 dark:text-white'}">
-                  ${post.author}
-                  ${post.verified ? '<i class="fa-solid fa-circle-check text-fbBlue text-[11px]"></i>' : ''}
-                </h4>
-                <p class="text-[10px] ${isThemed ? 'text-white/70' : 'text-slate-400'}">${post.time}</p>
-              </div>
-            </div>
-            <i class="fa-solid fa-ellipsis ${isThemed ? 'text-white/80' : 'text-slate-400'} cursor-pointer px-2" onclick="showToast('Post Options')"></i>
-          </div>
-
-          <p class="text-xs sm:text-sm ${isThemed ? 'text-white font-medium text-base text-center py-4' : 'text-slate-800 dark:text-slate-200'} leading-relaxed">${post.text}</p>
-
-          ${post.mediaUrl ? `<img src="${post.mediaUrl}" class="w-full max-h-96 object-cover rounded-xl border border-slate-100 dark:border-slate-800">` : ''}
-
-          <div class="flex items-center justify-between text-[11px] ${isThemed ? 'text-white/80' : 'text-slate-500'} pt-1">
-            <span class="flex items-center gap-1">
-              <span class="w-4 h-4 bg-fbBlue text-white rounded-full flex items-center justify-center text-[9px]">👍</span>
-              <span class="w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center text-[9px]">❤️</span>
-              <span class="font-bold">${post.reactionsCount}</span>
-            </span>
-            <span>${post.comments.length} comments</span>
-          </div>
-
-          <!-- Actions Bar with Hover Reactions -->
-          <div class="relative grid grid-cols-3 gap-1 pt-2 border-t ${isThemed ? 'border-white/20' : 'border-slate-100 dark:border-slate-800'} text-center">
+        function App() {
+            const [user, setUser] = React.useState(null);
+            const [activeTab, setActiveTab] = React.useState('feed'); // feed, friends, messenger, reels, notifications, menu
+            const [darkMode, setDarkMode] = React.useState(false);
+            const [posts, setPosts] = React.useState([]);
+            const [friendRequests, setFriendRequests] = React.useState(initialFriendRequests);
+            const [newPostText, setNewPostText] = React.useState('');
+            const [selectedMedia, setSelectedMedia] = React.useState(null);
+            const [feeling, setFeeling] = React.useState('');
+            const [showCreatePostModal, setShowCreatePostModal] = React.useState(false);
+            const [showAuthModal, setShowAuthModal] = React.useState(false);
             
-            <div class="reaction-box absolute -top-10 left-2 bg-white dark:bg-fbDarkCard px-3 py-1.5 rounded-full shadow-2xl border border-slate-200 dark:border-slate-800 gap-2.5 text-lg z-20">
-              <button onclick="setReaction(${index}, 'Like')" class="hover:scale-125 transition">👍</button>
-              <button onclick="setReaction(${index}, 'Love')" class="hover:scale-125 transition">❤️</button>
-              <button onclick="setReaction(${index}, 'Care')" class="hover:scale-125 transition">🥰</button>
-              <button onclick="setReaction(${index}, 'Haha')" class="hover:scale-125 transition">😆</button>
-              <button onclick="setReaction(${index}, 'Wow')" class="hover:scale-125 transition">😮</button>
-              <button onclick="setReaction(${index}, 'Sad')" class="hover:scale-125 transition">😢</button>
-              <button onclick="setReaction(${index}, 'Angry')" class="hover:scale-125 transition">😡</button>
-            </div>
+            // Auth Form States
+            const [authMode, setAuthMode] = React.useState('email'); // 'email' or 'phone'
+            const [isSignUp, setIsSignUp] = React.useState(false);
+            const [email, setEmail] = React.useState('');
+            const [password, setPassword] = React.useState('');
+            const [displayName, setDisplayName] = React.useState('');
+            const [phoneNumber, setPhoneNumber] = React.useState('');
+            const [verificationCode, setVerificationCode] = React.useState('');
+            const [confirmationResult, setConfirmationResult] = React.useState(null);
+            const [authError, setAuthError] = React.useState('');
+            const [authMsg, setAuthMsg] = React.useState('');
 
-            <button onclick="setReaction(${index}, '${post.reaction ? null : 'Like'}')" class="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold ${post.reaction ? 'text-fbBlue font-bold' : (isThemed ? 'text-white' : 'text-slate-600 dark:text-slate-300')}">
-              <i class="fa-solid fa-thumbs-up"></i> ${post.reaction || 'Like'}
-            </button>
+            // Per post comment input states
+            const [commentInputs, setCommentInputs] = React.useState({});
 
-            <button onclick="focusCommentInput(${index})" class="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold ${isThemed ? 'text-white' : 'text-slate-600 dark:text-slate-300'}">
-              <i class="fa-solid fa-comment"></i> Comment
-            </button>
-            
-            <button onclick="showToast('Post shared to your timeline!')" class="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold ${isThemed ? 'text-white' : 'text-slate-600 dark:text-slate-300'}">
-              <i class="fa-solid fa-share"></i> Share
-            </button>
-          </div>
+            // Reaction bar toggle per post
+            const [activeReactionPicker, setActiveReactionPicker] = React.useState(null);
 
-          <!-- Comments Section -->
-          <div class="space-y-1.5 pt-2 border-t ${isThemed ? 'border-white/20' : 'border-slate-100 dark:border-slate-800'}">
-            ${commentsHTML}
-            <div class="flex gap-2 pt-1">
-              <input id="post-comment-input-${index}" type="text" placeholder="Write a comment..." class="flex-1 bg-slate-100 dark:bg-fbDarkHover text-slate-800 dark:text-white rounded-full px-3 py-1 text-xs outline-none" onkeypress="if(event.key==='Enter') addCommentToPost(${index})">
-              <button onclick="addCommentToPost(${index})" class="text-fbBlue font-bold text-xs">Post</button>
-            </div>
-          </div>
-        `;
-        container.appendChild(postCard);
-      });
-    };
+            const [messages, setMessages] = React.useState([
+                { id: 1, sender: 'Tanisha Islam', text: 'Hi Safin! How are you?', time: '10:30 AM' },
+                { id: 2, sender: 'SAFIN', text: 'Hey Tanisha! I am doing great, working on SafinBook app.', time: '10:32 AM' }
+            ]);
+            const [currentChatMessage, setCurrentChatMessage] = React.useState('');
+            const [activeChatUser, setActiveChatUser] = React.useState('Tanisha Islam');
 
-    window.openStoryModal = function(action) {
-      document.getElementById('create-story-modal').classList.remove('hidden');
-    };
+            const fileInputRef = React.useRef(null);
 
-    window.closeStoryModal = function() {
-      document.getElementById('create-story-modal').classList.add('hidden');
-    };
+            // Listen to Auth State Changes
+            React.useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+                    setUser(currentUser);
+                    if (!currentUser) {
+                        setShowAuthModal(true);
+                    } else {
+                        setShowAuthModal(false);
+                    }
+                });
+                return () => unsubscribe();
+            }, []);
 
-    window.publishStory = function() {
-      const imgUrl = document.getElementById('story-img-url').value.trim();
-      const caption = document.getElementById('story-caption').value.trim();
+            // Firebase Realtime Listener for Posts & Messages
+            React.useEffect(() => {
+                const postsRef = db.ref('posts');
+                postsRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const loadedPosts = Object.keys(data).map(key => ({
+                            id: key,
+                            ...data[key]
+                        })).reverse();
+                        setPosts(loadedPosts);
+                    } else {
+                        setPosts([]);
+                    }
+                });
 
-      if (!imgUrl && !caption) {
-        showToast('Please enter an image link or caption for story');
-        return;
-      }
+                const msgRef = db.ref('messages');
+                msgRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const loadedMsgs = Object.keys(data).map(key => data[key]);
+                        setMessages(loadedMsgs);
+                    }
+                });
 
-      const myStoryObj = allUsers.find(u => u.name.includes('SAFIN'));
-      if (myStoryObj) {
-        myStoryObj.story = imgUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500';
-      }
+                return () => {
+                    postsRef.off();
+                    msgRef.off();
+                };
+            }, []);
 
-      document.getElementById('story-img-url').value = '';
-      document.getElementById('story-caption').value = '';
-      closeStoryModal();
-      renderStories();
-      showToast('Story published successfully!');
-    };
-
-    let storyTimer = null;
-    window.openStoryViewer = function(user) {
-      const modal = document.getElementById('view-story-modal');
-      document.getElementById('viewer-story-avatar').src = user.avatar;
-      document.getElementById('viewer-story-name').innerText = user.name;
-      document.getElementById('viewer-story-img').src = user.story;
-      modal.classList.remove('hidden');
-
-      const bar = document.getElementById('story-progress-bar');
-      bar.style.width = '0%';
-      setTimeout(() => { bar.style.width = '100%'; }, 50);
-
-      clearTimeout(storyTimer);
-      storyTimer = setTimeout(() => {
-        closeStoryViewer();
-      }, 5000);
-    };
-
-    window.closeStoryViewer = function() {
-      document.getElementById('view-story-modal').classList.add('hidden');
-      clearTimeout(storyTimer);
-    };
-
-    window.sendStoryReply = function() {
-      const txt = document.getElementById('story-reply-input').value.trim();
-      if (!txt) return;
-      document.getElementById('story-reply-input').value = '';
-      showToast('Reply sent in Messenger!');
-      closeStoryViewer();
-    };
-
-    window.toggleSearchModal = function() {
-      const modal = document.getElementById('search-modal');
-      modal.classList.toggle('hidden');
-      if (!modal.classList.contains('hidden')) {
-        document.getElementById('global-search-input').focus();
-      }
-    };
-
-    window.filterGlobalSearch = function() {
-      const q = document.getElementById('global-search-input').value.toLowerCase().trim();
-      const resContainer = document.getElementById('search-results-list');
-
-      if (!q) {
-        resContainer.innerHTML = '<p class="text-slate-400 text-center py-4">Type to search people and posts...</p>';
-        return;
-      }
-
-      const matchedUsers = allUsers.filter(u => u.name.toLowerCase().includes(q));
-      const matchedPosts = feedPosts.filter(p => p.text.toLowerCase().includes(q) || p.author.toLowerCase().includes(q));
-
-      let html = '';
-
-      if (matchedUsers.length > 0) {
-        html += '<p class="font-bold text-slate-400 uppercase text-[10px]">People</p>';
-        matchedUsers.forEach(u => {
-          html += `
-            <div onclick="selectMessengerUser('${u.id}'); toggleSearchModal(); switchTab('chat');" class="flex items-center gap-2 p-2 hover:bg-slate-100 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer">
-              <img src="${u.avatar}" class="w-8 h-8 rounded-full object-cover">
-              <div>
-                <h4 class="font-bold">${u.name}</h4>
-                <p class="text-[10px] text-slate-400">${u.role}</p>
-              </div>
-            </div>
-          `;
-        });
-      }
-
-      if (matchedPosts.length > 0) {
-        html += '<p class="font-bold text-slate-400 uppercase text-[10px] mt-2">Posts</p>';
-        matchedPosts.forEach(p => {
-          html += `
-            <div onclick="toggleSearchModal(); switchTab('feed');" class="p-2 hover:bg-slate-100 dark:hover:bg-fbDarkHover rounded-xl cursor-pointer space-y-0.5">
-              <h4 class="font-bold text-fbBlue">${p.author}</h4>
-              <p class="text-slate-600 dark:text-slate-300 truncate">${p.text}</p>
-            </div>
-          `;
-        });
-      }
-
-      if (matchedUsers.length === 0 && matchedPosts.length === 0) {
-        html = '<p class="text-slate-400 text-center py-4">No matching results found.</p>';
-      }
-
-      resContainer.innerHTML = html;
-    };
-
-    window.setPostTheme = function(themeClass) {
-      selectedPostTheme = themeClass;
-      showToast('Post theme selected');
-    };
-
-    window.publishNewPostFromModal = function() {
-      const txt = document.getElementById('modal-post-textarea').value.trim();
-      const imageUrl = document.getElementById('post-image-url-input').value.trim();
-      const privacy = document.getElementById('post-privacy-select').value;
-
-      if (!txt && !imageUrl) {
-        showToast('Please enter text or image URL to publish');
-        return;
-      }
-
-      feedPosts.unshift({
-        id: `post-${Date.now()}`,
-        author: myProfile.name,
-        avatar: myProfile.avatar,
-        verified: true,
-        time: `Just now • ${privacy.split(' ')[0]}`,
-        text: txt || 'Updated photo',
-        mediaType: imageUrl ? "image" : null,
-        mediaUrl: imageUrl || null,
-        theme: selectedPostTheme,
-        reaction: 'Like',
-        reactionsCount: 1,
-        comments: []
-      });
-
-      document.getElementById('modal-post-textarea').value = '';
-      document.getElementById('post-image-url-input').value = '';
-      selectedPostTheme = 'default';
-      closeCreatePostModal();
-      renderFeedPosts();
-      showToast('Post published to Facebook Feed!');
-    };
-
-    window.focusCommentInput = function(idx) {
-      const el = document.getElementById(`post-comment-input-${idx}`);
-      if (el) el.focus();
-    };
-
-    window.openEditProfileModal = function() {
-      document.getElementById('edit-name-input').value = myProfile.name;
-      document.getElementById('edit-avatar-input').value = myProfile.avatar;
-      document.getElementById('edit-bio-input').value = myProfile.bio;
-      document.getElementById('edit-profile-modal').classList.remove('hidden');
-    };
-
-    window.closeEditProfileModal = function() {
-      document.getElementById('edit-profile-modal').classList.add('hidden');
-    };
-
-    window.saveProfileChanges = function() {
-      const name = document.getElementById('edit-name-input').value.trim();
-      const avatar = document.getElementById('edit-avatar-input').value.trim();
-      const bio = document.getElementById('edit-bio-input').value.trim();
-
-      if (name) myProfile.name = name;
-      if (avatar) myProfile.avatar = avatar;
-      if (bio) myProfile.bio = bio;
-
-      // Update UI references
-      document.getElementById('badge-username').innerText = name.split(' ')[0];
-      document.getElementById('feed-user-avatar').src = myProfile.avatar;
-      document.getElementById('story-my-avatar').src = myProfile.avatar;
-      document.getElementById('whats-on-mind-text').innerText = `What's on your mind, ${name.split(' ')[0]}?`;
-
-      closeEditProfileModal();
-      closeProfileModal();
-      showToast('Profile updated successfully!');
-    };
-
-    window.openMarketplaceModal = function() {
-      document.getElementById('marketplace-modal').classList.remove('hidden');
-    };
-    window.closeMarketplaceModal = function() {
-      document.getElementById('marketplace-modal').classList.add('hidden');
-    };
-
-    window.openGroupsModal = function() {
-      document.getElementById('groups-modal').classList.remove('hidden');
-    };
-    window.closeGroupsModal = function() {
-      document.getElementById('groups-modal').classList.add('hidden');
-    };
-
-    window.toggleLanguage = function() {
-      currentLanguage = currentLanguage === 'EN' ? 'BN' : 'EN';
-      const label = document.getElementById('lang-toggle-label');
-      const createStoryTxt = document.getElementById('txt-create-story');
-
-      if (currentLanguage === 'BN') {
-        label.innerText = 'Language: বাংলা (Switch to English)';
-        createStoryTxt.innerText = 'স্টোরি বানান';
-        document.getElementById('whats-on-mind-text').innerText = `আপনার মনে কি আছে, ${myProfile.name.split(' ')[0]}?`;
-        showToast('ভাষা বাংলায় পরিবর্তিত হয়েছে');
-      } else {
-        label.innerText = 'Language: English (Switch to বাংলা)';
-        createStoryTxt.innerText = 'Create story';
-        document.getElementById('whats-on-mind-text').innerText = `What's on your mind, ${myProfile.name.split(' ')[0]}?`;
-        showToast('Language changed to English');
-      }
-    };
-
-    window.clearAppData = function() {
-      feedPosts = feedPosts.slice(0, 2);
-      renderFeedPosts();
-      showToast('Cache memory cleared & App state reset!');
-    };
-
-    // Update edit profile button in profile modal
-    window.openProfileModal = function() {
-      const modal = document.getElementById('profile-modal');
-      modal.querySelector('h2').innerHTML = `${myProfile.name} <i class="fa-solid fa-circle-check text-fbBlue text-sm"></i>`;
-      modal.querySelector('img').src = myProfile.avatar;
-      modal.querySelector('.text-slate-500.dark\\:text-slate-400.font-semibold').innerText = myProfile.bio;
-      modal.querySelector('button.bg-fbBlue').onclick = openEditProfileModal;
-      modal.classList.remove('hidden');
-    };
-
-    window.renderMessengerBubbles = function() {
-      const container = document.getElementById('messenger-friends-bubbles');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const friendsList = allUsers.filter(u => u.isFriend);
-      friendsList.forEach(u => {
-        const bubble = document.createElement('div');
-        bubble.className = `flex flex-col items-center cursor-pointer min-w-[48px] ${u.id === activeMessengerUser.id ? 'opacity-100 scale-105' : 'opacity-70'}`;
-        bubble.onclick = () => selectMessengerUser(u);
-        bubble.innerHTML = `
-          <div class="relative">
-            <img src="${u.avatar}" class="w-9 h-9 rounded-full object-cover border-2 ${u.id === activeMessengerUser.id ? 'border-fbBlue' : 'border-transparent'}">
-            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white"></span>
-          </div>
-          <span class="text-[9px] font-bold text-slate-700 dark:text-slate-300 truncate w-12 text-center mt-1">${u.name.split(' ')[0]}</span>
-        `;
-        container.appendChild(bubble);
-      });
-    };
-
-    window.renderChatMessages = function() {
-      const box = document.getElementById('chat-stream-box');
-      if (!box) return;
-      box.innerHTML = '';
-
-      const msgs = chatHistories[activeMessengerUser.id] || [
-        { sender: activeMessengerUser.name, text: 'Hi SAFIN! Real-time Messenger active!', time: 'Just now' }
-      ];
-
-      msgs.forEach(m => {
-        const isMe = m.sender === 'me';
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} my-1`;
-        msgDiv.innerHTML = `
-          <div class="${isMe ? 'bg-fbBlue text-white' : 'bg-slate-100 dark:bg-fbDarkHover text-slate-800 dark:text-white'} px-3 py-1.5 rounded-2xl max-w-[85%] leading-snug">
-            ${m.text}
-          </div>
-          <span class="text-[8px] text-slate-400 px-1 mt-0.5">${m.time}</span>
-        `;
-        box.appendChild(msgDiv);
-      });
-
-      box.scrollTop = box.scrollHeight;
-    };
-
-    window.renderFriendsTab = function() {
-      const container = document.getElementById('friends-tab-render-target');
-      if (!container) return;
-
-      container.innerHTML = `
-        <div class="bg-white dark:bg-fbDarkCard p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-          <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center justify-between">
-            <span>Friend Requests (${pendingRequests.length})</span>
-            <span class="text-xs text-fbBlue">See All</span>
-          </h3>
-          <div class="space-y-2">
-            ${pendingRequests.length === 0 ? '<p class="text-xs text-slate-400">No pending requests.</p>' : ''}
-            ${pendingRequests.map(r => `
-              <div class="flex items-center justify-between p-2 border border-slate-100 dark:border-slate-800 rounded-xl">
-                <div class="flex items-center gap-2">
-                  <img src="${r.avatar}" class="w-10 h-10 rounded-full object-cover">
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-800 dark:text-white">${r.name}</h4>
-                    <p class="text-[10px] text-slate-400">Wants to add you</p>
-                  </div>
-                </div>
-                <div class="flex gap-1">
-                  <button onclick="acceptRequest('${r.id}')" class="bg-fbBlue text-white text-xs font-bold px-3 py-1 rounded-lg">Confirm</button>
-                  <button onclick="declineRequest('${r.id}')" class="bg-slate-200 dark:bg-fbDarkHover text-slate-700 dark:text-slate-300 text-xs font-bold px-3 py-1 rounded-lg">Delete</button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-fbDarkCard p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-          <h3 class="font-bold text-sm text-slate-900 dark:text-white">People You May Know</h3>
-          <div class="space-y-2">
-            ${allUsers.filter(u => !u.isFriend && !pendingRequests.some(r => r.id === u.id)).map(u => `
-              <div class="flex items-center justify-between p-2 border border-slate-100 dark:border-slate-800 rounded-xl">
-                <div class="flex items-center gap-2">
-                  <img src="${u.avatar}" class="w-10 h-10 rounded-full object-cover">
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-800 dark:text-white">${u.name}</h4>
-                    <p class="text-[10px] text-slate-400">${u.role}</p>
-                  </div>
-                </div>
-                <button onclick="addFriend('${u.id}')" class="bg-blue-50 dark:bg-blue-950/40 text-fbBlue border border-blue-200 dark:border-blue-800 text-xs font-bold px-3 py-1 rounded-xl">Add Friend</button>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    };
-
-    window.renderWatchTab = function() {
-      const container = document.getElementById('watch-tab-render-target');
-      if (!container) return;
-
-      container.innerHTML = `
-        <div class="bg-white dark:bg-fbDarkCard p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-            <i class="fa-solid fa-clapperboard text-rose-500"></i> Facebook Watch & Reels
-          </h3>
-          <div class="space-y-3">
-            <div class="space-y-2 border-b pb-3 border-slate-100 dark:border-slate-800">
-              <h4 class="text-xs font-bold">Cinematic HD Teaser Video</h4>
-              <video src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" controls class="w-full rounded-xl bg-black max-h-80"></video>
-            </div>
-            <div class="space-y-2">
-              <h4 class="text-xs font-bold">Sintel Animated Video Teaser</h4>
-              <video src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" controls class="w-full rounded-xl bg-black max-h-80"></video>
-            </div>
-          </div>
-        </div>
-      `;
-    };
-
-    // INTERACTION LOGIC
-    window.openAuthModal = function() {
-      document.getElementById('auth-modal').classList.remove('hidden');
-    };
-
-    window.closeAuthModal = function() {
-      document.getElementById('auth-modal').classList.add('hidden');
-    };
-
-    window.switchAuthMethod = function(method) {
-      activeAuthType = method;
-      const emailForm = document.getElementById('auth-form-email');
-      const phoneForm = document.getElementById('auth-form-phone');
-      const emailBtn = document.getElementById('auth-tab-email');
-      const phoneBtn = document.getElementById('auth-tab-phone');
-
-      if (method === 'email') {
-        emailForm.classList.remove('hidden');
-        phoneForm.classList.add('hidden');
-        emailBtn.className = 'flex-1 py-2 rounded-xl bg-white dark:bg-fbDarkCard text-fbBlue shadow-sm transition flex items-center justify-center gap-1.5';
-        phoneBtn.className = 'flex-1 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 transition flex items-center justify-center gap-1.5';
-      } else {
-        emailForm.classList.add('hidden');
-        phoneForm.classList.remove('hidden');
-        phoneBtn.className = 'flex-1 py-2 rounded-xl bg-white dark:bg-fbDarkCard text-emerald-600 shadow-sm transition flex items-center justify-center gap-1.5';
-        emailBtn.className = 'flex-1 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 transition flex items-center justify-center gap-1.5';
-      }
-    };
-
-    window.toggleAuthMode = function() {
-      isRegisterMode = !isRegisterMode;
-      const extraFields = document.getElementById('auth-signup-fields');
-      const submitBtn = document.getElementById('auth-submit-btn');
-      const modeText = document.getElementById('toggle-mode-text');
-      const modeBtn = document.getElementById('toggle-mode-btn');
-
-      if (isRegisterMode) {
-        extraFields.classList.remove('hidden');
-        submitBtn.innerText = 'Create Account';
-        modeText.innerText = 'Already have an account?';
-        modeBtn.innerText = 'Log In instead';
-      } else {
-        extraFields.classList.add('hidden');
-        submitBtn.innerText = 'Log In';
-        modeText.innerText = "Don't have an account?";
-        modeBtn.innerText = 'Create new account';
-      }
-    };
-
-    window.handleEmailAuth = async function(event) {
-      event.preventDefault();
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value;
-      const fullName = document.getElementById('auth-fullname').value.trim() || email.split('@')[0];
-
-      if (!email || !password) return;
-
-      try {
-        if (isRegisterMode) {
-          if (auth) {
-            const userCred = await createUserWithEmailAndPassword(auth, email, password);
-            currentUser = {
-              uid: userCred.user.uid,
-              email: email,
-              displayName: fullName
+            // Handle Email Sign In / Sign Up
+            const handleEmailAuth = async (e) => {
+                e.preventDefault();
+                setAuthError('');
+                setAuthMsg('');
+                try {
+                    if (isSignUp) {
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        await userCredential.user.updateProfile({
+                            displayName: displayName || email.split('@')[0],
+                            photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                        });
+                        setAuthMsg('Account created successfully!');
+                    } else {
+                        await auth.signInWithEmailAndPassword(email, password);
+                        setAuthMsg('Signed in successfully!');
+                    }
+                    setShowAuthModal(false);
+                } catch (err) {
+                    setAuthError(err.message);
+                }
             };
-            if (db) set(ref(db, 'users/' + userCred.user.uid), currentUser);
-          } else {
-            currentUser = { uid: 'u_' + Date.now(), email: email, displayName: fullName };
-          }
-          showToast(`Account created successfully! Welcome ${fullName}`);
-        } else {
-          if (auth) {
-            const userCred = await signInWithEmailAndPassword(auth, email, password);
-            currentUser = {
-              uid: userCred.user.uid,
-              email: email,
-              displayName: userCred.user.displayName || fullName
+
+            // Setup Recaptcha for Phone Auth
+            const setupRecaptcha = () => {
+                if (!window.recaptchaVerifier) {
+                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                        'size': 'invisible',
+                        'callback': () => {}
+                    });
+                }
             };
-          } else {
-            currentUser = { uid: 'u_logged', email: email, displayName: fullName };
-          }
-          showToast(`Logged in as ${currentUser.displayName}`);
+
+            // Handle Send Phone Verification Code
+            const handleSendPhoneCode = async (e) => {
+                e.preventDefault();
+                setAuthError('');
+                setAuthMsg('');
+                try {
+                    setupRecaptcha();
+                    const appVerifier = window.recaptchaVerifier;
+                    const confirmation = await auth.signInWithPhoneNumber(phoneNumber, appVerifier);
+                    setConfirmationResult(confirmation);
+                    setAuthMsg('Verification code sent to your phone number!');
+                } catch (err) {
+                    setAuthError(err.message || 'Error sending SMS code. Make sure format is +8801xxxxxxxxx');
+                }
+            };
+
+            // Handle Verify OTP Code
+            const handleVerifyPhoneCode = async (e) => {
+                e.preventDefault();
+                setAuthError('');
+                try {
+                    if (confirmationResult) {
+                        await confirmationResult.confirm(verificationCode);
+                        setAuthMsg('Phone number verified successfully!');
+                        setShowAuthModal(false);
+                    }
+                } catch (err) {
+                    setAuthError('Invalid OTP code. Please try again.');
+                }
+            };
+
+            // Sign Out
+            const handleSignOut = () => {
+                auth.signOut();
+                setShowAuthModal(true);
+            };
+
+            // Handle Local File Upload
+            const handleFileSelect = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    const isVideo = file.type.startsWith('video');
+                    reader.onloadend = () => {
+                        setSelectedMedia({
+                            url: reader.result,
+                            type: isVideo ? 'video' : 'image',
+                            fileName: file.name
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            // Toggle Dark Mode
+            const toggleDarkMode = () => {
+                setDarkMode(!darkMode);
+                document.documentElement.classList.toggle('dark');
+            };
+
+            // Create Post
+            const handleCreatePost = () => {
+                if (!newPostText.trim() && !selectedMedia) return;
+
+                const authorName = user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || "Md Safin Ahmed";
+                const authorImg = user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
+
+                const newPost = {
+                    author: authorName,
+                    authorAvatar: authorImg,
+                    feeling: feeling || null,
+                    time: "Just now",
+                    text: newPostText,
+                    mediaUrl: selectedMedia ? selectedMedia.url : null,
+                    mediaType: selectedMedia ? selectedMedia.type : null,
+                    likes: 0,
+                    userReactions: {},
+                    commentsCount: 0,
+                    shares: 0,
+                    comments: []
+                };
+
+                db.ref('posts').push(newPost);
+
+                setNewPostText('');
+                setSelectedMedia(null);
+                setFeeling('');
+                setShowCreatePostModal(false);
+            };
+
+            // Reaction Handler (Like, Love, Haha, Wow, Sad, Angry)
+            const handleReaction = (postId, reactionType = 'like') => {
+                const postRef = db.ref(`posts/${postId}`);
+                postRef.once('value', (snapshot) => {
+                    const postData = snapshot.val();
+                    if (!postData) return;
+
+                    const userId = user?.uid || 'guest_user';
+                    let currentReactions = postData.userReactions || {};
+                    let currentLikes = postData.likes || 0;
+
+                    if (currentReactions[userId] === reactionType) {
+                        delete currentReactions[userId];
+                        currentLikes = Math.max(0, currentLikes - 1);
+                    } else {
+                        if (!currentReactions[userId]) {
+                            currentLikes += 1;
+                        }
+                        currentReactions[userId] = reactionType;
+                    }
+
+                    postRef.update({
+                        likes: currentLikes,
+                        userReactions: currentReactions
+                    });
+                });
+                setActiveReactionPicker(null);
+            };
+
+            // Comment Add Handler
+            const handleAddComment = (postId) => {
+                const commentText = commentInputs[postId];
+                if (!commentText || !commentText.trim()) return;
+
+                const commenterName = user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || "User";
+                
+                const newComment = {
+                    id: Date.now().toString(),
+                    user: commenterName,
+                    text: commentText.trim(),
+                    time: "Just now"
+                };
+
+                const postRef = db.ref(`posts/${postId}`);
+                postRef.once('value', (snapshot) => {
+                    const postData = snapshot.val();
+                    let existingComments = [];
+                    if (postData && postData.comments) {
+                        existingComments = Array.isArray(postData.comments) 
+                            ? postData.comments 
+                            : Object.values(postData.comments);
+                    }
+
+                    const updatedComments = [...existingComments, newComment];
+                    postRef.update({
+                        comments: updatedComments,
+                        commentsCount: updatedComments.length
+                    });
+                });
+
+                setCommentInputs({ ...commentInputs, [postId]: '' });
+            };
+
+            // Send Chat Message
+            const handleSendMessage = () => {
+                if (!currentChatMessage.trim()) return;
+                const senderName = user?.displayName || user?.email?.split('@')[0] || 'SAFIN';
+                const newMsg = {
+                    id: Date.now(),
+                    sender: senderName,
+                    receiver: activeChatUser,
+                    text: currentChatMessage,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+
+                db.ref('messages').push(newMsg);
+                setCurrentChatMessage('');
+            };
+
+            // Friend Request Action
+            const handleFriendRequest = (id) => {
+                setFriendRequests(friendRequests.filter(req => req.id !== id));
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col bg-fbBg dark:bg-fbDarkBg pb-16 md:pb-0">
+                    <div id="recaptcha-container"></div>
+                    
+                    {/* TOP HEADER */}
+                    <header className="sticky top-0 z-40 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-gray-800 px-4 py-2 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center space-x-2">
+                            <h1 className="text-fbBlue font-black text-2xl tracking-tighter cursor-pointer" onClick={() => setActiveTab('feed')}>
+                                SafinBook
+                            </h1>
+                            <span className="bg-blue-100 dark:bg-blue-900 text-fbBlue dark:text-blue-200 text-xs font-bold px-2 py-0.5 rounded-full">
+                                {user ? `Logged in: ${user.displayName || user.email || 'User'}` : 'Guest Mode'}
+                            </span>
+                        </div>
+
+                        {/* Top Navigation Tabs for Desktop */}
+                        <div className="hidden md:flex items-center space-x-1 lg:space-x-8">
+                            <button onClick={() => setActiveTab('feed')} className={`p-3 rounded-lg text-xl ${activeTab === 'feed' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
+                                <i className="fa-solid fa-house"></i>
+                            </button>
+                            <button onClick={() => setActiveTab('friends')} className={`p-3 rounded-lg text-xl relative ${activeTab === 'friends' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
+                                <i className="fa-solid fa-user-group"></i>
+                                {friendRequests.length > 0 && (
+                                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.2 font-bold">
+                                        {friendRequests.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button onClick={() => setActiveTab('messenger')} className={`p-3 rounded-lg text-xl ${activeTab === 'messenger' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
+                                <i className="fa-brands fa-facebook-messenger"></i>
+                            </button>
+                            <button onClick={() => setActiveTab('reels')} className={`p-3 rounded-lg text-xl relative ${activeTab === 'reels' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
+                                <i className="fa-solid fa-tv"></i>
+                            </button>
+                            <button onClick={() => setActiveTab('notifications')} className={`p-3 rounded-lg text-xl relative ${activeTab === 'notifications' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
+                                <i className="fa-solid fa-bell"></i>
+                            </button>
+                            <button onClick={() => setActiveTab('menu')} className={`p-3 rounded-lg text-xl ${activeTab === 'menu' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
+                                <i className="fa-solid fa-bars"></i>
+                            </button>
+                        </div>
+
+                        {/* Top Right Actions */}
+                        <div className="flex items-center space-x-2">
+                            <button onClick={() => setShowCreatePostModal(true)} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-fbHoverDark flex items-center justify-center hover:bg-gray-300 transition" title="Create Post">
+                                <i className="fa-solid fa-plus text-lg"></i>
+                            </button>
+                            {user ? (
+                                <button onClick={handleSignOut} className="bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-600 transition">
+                                    Log Out
+                                </button>
+                            ) : (
+                                <button onClick={() => setShowAuthModal(true)} className="bg-fbBlue text-white text-xs font-bold px-3 py-2 rounded-lg hover:opacity-90 transition">
+                                    Log In
+                                </button>
+                            )}
+                        </div>
+                    </header>
+
+                    {/* MOBILE TOP TAB NAVIGATION BAR */}
+                    <div className="md:hidden sticky top-[57px] z-30 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-gray-800 flex justify-around py-1 shadow-sm">
+                        <button onClick={() => setActiveTab('feed')} className={`p-2 relative ${activeTab === 'feed' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
+                            <i className="fa-solid fa-house text-xl"></i>
+                        </button>
+                        <button onClick={() => setActiveTab('friends')} className={`p-2 relative ${activeTab === 'friends' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
+                            <i className="fa-solid fa-user-group text-xl"></i>
+                        </button>
+                        <button onClick={() => setActiveTab('messenger')} className={`p-2 ${activeTab === 'messenger' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
+                            <i className="fa-brands fa-facebook-messenger text-xl"></i>
+                        </button>
+                        <button onClick={() => setActiveTab('reels')} className={`p-2 relative ${activeTab === 'reels' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
+                            <i className="fa-solid fa-tv text-xl"></i>
+                        </button>
+                        <button onClick={() => setActiveTab('menu')} className={`p-2 ${activeTab === 'menu' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
+                            <i className="fa-solid fa-bars text-xl"></i>
+                        </button>
+                    </div>
+
+                    {/* MAIN CONTENT AREA */}
+                    {}
+                    <main className="flex-1 max-w-4xl mx-auto w-full p-2 md:p-4">
+
+                        {/* TAB 1: FEED */}
+                        {activeTab === 'feed' && (
+                            <div className="space-y-4">
+
+                                {/* Banner */}
+                                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-xl shadow flex justify-between items-center text-xs md:text-sm">
+                                    <div className="flex items-center space-x-2">
+                                        <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-ping"></span>
+                                        <span className="font-semibold">{initialUsersCount.toLocaleString()} Total Community Members</span>
+                                    </div>
+                                    <div className="bg-white/20 px-2.5 py-1 rounded-full font-bold">
+                                        🟢 {initialActiveCount} Active Now
+                                    </div>
+                                </div>
+
+                                {/* Create Post Prompt Box */}
+                                <div className="bg-white dark:bg-fbCardDark rounded-xl p-3 shadow border border-gray-200 dark:border-gray-800">
+                                    <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                                        <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-10 h-10 rounded-full object-cover" />
+                                        <button 
+                                            onClick={() => setShowCreatePostModal(true)}
+                                            className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-left px-4 py-2.5 rounded-full text-gray-500 dark:text-gray-400 text-sm hover:bg-gray-200 transition"
+                                        >
+                                            {user ? `What's on your mind, ${user.displayName || 'friend'}?` : "What's on your mind? (Login to post)"}
+                                        </button>
+                                        <button 
+                                            onClick={() => { setShowCreatePostModal(true); setTimeout(() => fileInputRef.current?.click(), 100); }} 
+                                            className="flex flex-col items-center text-green-500 hover:opacity-80 p-1"
+                                        >
+                                            <i className="fa-solid fa-images text-xl"></i>
+                                            <span className="text-[10px] text-gray-600 dark:text-gray-300 font-medium">Photo</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Stories */}
+                                <div className="flex space-x-2 overflow-x-auto no-scrollbar py-1">
+                                    {initialStories.map((story) => (
+                                        <div key={story.id} className="relative min-w-[105px] h-[170px] rounded-xl overflow-hidden shadow-md group cursor-pointer flex-shrink-0 border border-gray-200 dark:border-gray-800 bg-gray-900">
+                                            <img src={story.image} className="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-90" />
+                                            {story.isCreate ? (
+                                                <div className="absolute inset-0 bg-black/30 flex flex-col justify-end items-center p-2 text-center" onClick={() => setShowCreatePostModal(true)}>
+                                                    <div className="w-9 h-9 rounded-full bg-fbBlue text-white flex items-center justify-center border-2 border-white mb-1">
+                                                        <i className="fa-solid fa-plus text-lg"></i>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-white drop-shadow">Create story</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <span className="absolute top-2 left-2 bg-fbBlue text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">
+                                                        {story.badge}
+                                                    </span>
+                                                    <span className="absolute bottom-2 left-2 right-2 text-xs font-bold text-white drop-shadow truncate">
+                                                        {story.name}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Posts Feed */}
+                                {posts.length === 0 ? (
+                                    <div className="bg-white dark:bg-fbCardDark rounded-xl p-8 text-center text-gray-500">
+                                        No posts available yet. Create the first post above!
+                                    </div>
+                                ) : (
+                                    posts.map((post) => {
+                                        const myReaction = user ? (post.userReactions && post.userReactions[user.uid]) : null;
+                                        const commentsList = post.comments 
+                                            ? (Array.isArray(post.comments) ? post.comments : Object.values(post.comments)) 
+                                            : [];
+
+                                        return (
+                                            <div key={post.id} className="bg-white dark:bg-fbCardDark rounded-xl shadow border border-gray-200 dark:border-gray-800 p-3 md:p-4 space-y-3 relative">
+                                                {/* Author Info */}
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex items-center space-x-3">
+                                                        <img src={post.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-10 h-10 rounded-full object-cover border border-fbBlue" />
+                                                        <div>
+                                                            <div className="flex items-center space-x-1">
+                                                                <h4 className="font-bold text-sm hover:underline cursor-pointer">{post.author}</h4>
+                                                                {post.feeling && (
+                                                                    <span className="text-xs text-gray-500 font-normal">
+                                                                        is feeling <b>{post.feeling}</b>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-gray-400 flex items-center space-x-1">
+                                                                <span>{post.time || 'Recently'}</span>
+                                                                <span>•</span>
+                                                                <i className="fa-solid fa-earth-americas text-[10px]"></i>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Text Content */}
+                                                <p className="text-sm md:text-base leading-relaxed whitespace-pre-line">
+                                                    {post.text}
+                                                </p>
+
+                                                {/* Media Attachment */}
+                                                {post.mediaUrl && (
+                                                    <div className="rounded-lg overflow-hidden max-h-[450px] bg-black border border-gray-100 dark:border-gray-800">
+                                                        {post.mediaType === 'video' ? (
+                                                            <video src={post.mediaUrl} controls className="w-full max-h-[450px] object-contain" />
+                                                        ) : (
+                                                            <img src={post.mediaUrl} className="w-full max-h-[450px] object-contain" />
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Reaction Counters */}
+                                                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 pt-2 border-b border-gray-100 dark:border-gray-800 pb-2">
+                                                    <div className="flex items-center space-x-1">
+                                                        <span className="bg-fbBlue text-white p-1 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👍</span>
+                                                        <span className="bg-red-500 text-white p-1 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">❤️</span>
+                                                        <span>{post.likes || 0}</span>
+                                                    </div>
+                                                    <div className="space-x-3">
+                                                        <span>{commentsList.length} comments</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Reaction Popover & Action Buttons */}
+                                                <div className="relative grid grid-cols-3 gap-1 pt-1 text-xs md:text-sm font-semibold text-gray-600 dark:text-gray-300">
+                                                    {activeReactionPicker === post.id && (
+                                                        <div className="absolute -top-10 left-0 bg-white dark:bg-fbCardDark shadow-xl rounded-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 flex space-x-3 z-30 animate-bounce">
+                                                            <button onClick={() => handleReaction(post.id, 'like')} className="hover:scale-125 transition text-lg">👍</button>
+                                                            <button onClick={() => handleReaction(post.id, 'love')} className="hover:scale-125 transition text-lg">❤️</button>
+                                                            <button onClick={() => handleReaction(post.id, 'haha')} className="hover:scale-125 transition text-lg">😂</button>
+                                                            <button onClick={() => handleReaction(post.id, 'wow')} className="hover:scale-125 transition text-lg">😮</button>
+                                                            <button onClick={() => handleReaction(post.id, 'sad')} className="hover:scale-125 transition text-lg">😢</button>
+                                                            <button onClick={() => handleReaction(post.id, 'angry')} className="hover:scale-125 transition text-lg">😡</button>
+                                                        </div>
+                                                    )}
+
+                                                    <button 
+                                                        onClick={() => handleReaction(post.id, myReaction ? myReaction : 'like')}
+                                                        onMouseEnter={() => setActiveReactionPicker(post.id)}
+                                                        className={`flex items-center justify-center space-x-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-fbHoverDark transition ${myReaction ? 'text-fbBlue font-bold' : ''}`}
+                                                    >
+                                                        <span>{myReaction === 'love' ? '❤️ Love' : myReaction === 'haha' ? '😂 Haha' : myReaction === 'sad' ? '😢 Sad' : myReaction === 'angry' ? '😡 Angry' : '👍 Like'}</span>
+                                                    </button>
+                                                    
+                                                    <button className="flex items-center justify-center space-x-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-fbHoverDark transition">
+                                                        <i className="fa-regular fa-message"></i>
+                                                        <span>Comment</span>
+                                                    </button>
+                                                    <button className="flex items-center justify-center space-x-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-fbHoverDark transition">
+                                                        <i className="fa-solid fa-share"></i>
+                                                        <span>Share</span>
+                                                    </button>
+                                                </div>
+
+                                                {/* Comments List */}
+                                                {commentsList.length > 0 && (
+                                                    <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                                                        {commentsList.map((c, idx) => (
+                                                            <div key={idx} className="flex items-start space-x-2">
+                                                                <div className="bg-gray-100 dark:bg-fbHoverDark p-2 rounded-2xl text-xs max-w-[85%]">
+                                                                    <span className="font-bold block">{c.user}</span>
+                                                                    <span>{c.text}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Interactive Comment Input Box */}
+                                                <div className="flex items-center space-x-2 pt-2">
+                                                    <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-7 h-7 rounded-full object-cover" />
+                                                    <input 
+                                                        type="text" 
+                                                        value={commentInputs[post.id] || ''}
+                                                        onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
+                                                        placeholder="Write a comment..." 
+                                                        className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-xs px-3 py-2 rounded-full focus:outline-none"
+                                                    />
+                                                    <button 
+                                                        onClick={() => handleAddComment(post.id)}
+                                                        className="text-fbBlue hover:bg-blue-50 dark:hover:bg-fbHoverDark p-1.5 rounded-full"
+                                                    >
+                                                        <i className="fa-solid fa-paper-plane text-sm"></i>
+                                                    </button>
+                                                </div>
+
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+
+                        {/* TAB 2: FRIENDS */}
+                        {activeTab === 'friends' && (
+                            <div className="bg-white dark:bg-fbCardDark rounded-xl p-4 shadow border border-gray-200 dark:border-gray-800 space-y-4">
+                                <h2 className="text-xl font-bold">Friend Requests</h2>
+                                {friendRequests.map(req => (
+                                    <div key={req.id} className="flex items-center space-x-3 p-2 border-b border-gray-100 dark:border-gray-800">
+                                        <img src={req.avatar} className="w-14 h-14 rounded-full object-cover" />
+                                        <div className="flex-1">
+                                            <h4 className="font-bold text-sm">{req.name}</h4>
+                                            <p className="text-xs text-gray-500 mb-2">{req.mutual} mutual friends</p>
+                                            <div className="flex space-x-2">
+                                                <button onClick={() => handleFriendRequest(req.id)} className="bg-fbBlue text-white text-xs font-bold px-4 py-1.5 rounded-lg">Confirm</button>
+                                                <button onClick={() => handleFriendRequest(req.id)} className="bg-gray-200 dark:bg-fbHoverDark text-xs font-bold px-4 py-1.5 rounded-lg">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* TAB 3: MESSENGER */}
+                        {activeTab === 'messenger' && (
+                            <div className="bg-white dark:bg-fbCardDark rounded-xl shadow border border-gray-200 dark:border-gray-800 h-[70vh] flex flex-col md:flex-row overflow-hidden">
+                                <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-800 p-3 space-y-3">
+                                    <h2 className="text-xl font-bold">Chats</h2>
+                                    {['Tanisha Islam', 'Ariyan Rakid', 'Abu Shovo', 'Md Abdul Khalak'].map((u, idx) => (
+                                        <div 
+                                            key={idx}
+                                            onClick={() => setActiveChatUser(u)}
+                                            className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer ${activeChatUser === u ? 'bg-blue-50 dark:bg-fbHoverDark' : 'hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}
+                                        >
+                                            <img src={`https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100`} className="w-10 h-10 rounded-full object-cover" />
+                                            <div>
+                                                <h4 className="font-bold text-sm">{u}</h4>
+                                                <p className="text-xs text-gray-500">Active now</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex-1 flex flex-col justify-between bg-gray-50 dark:bg-fbDarkBg">
+                                    <div className="p-3 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-gray-800 font-bold">
+                                        Chatting with {activeChatUser}
+                                    </div>
+                                    <div className="p-3 flex-1 overflow-y-auto space-y-2">
+                                        {messages.map((m) => (
+                                            <div key={m.id} className={`flex ${m.sender === (user?.displayName || 'SAFIN') ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`p-2.5 rounded-2xl text-xs max-w-[70%] ${m.sender === (user?.displayName || 'SAFIN') ? 'bg-fbBlue text-white' : 'bg-white dark:bg-fbCardDark border'}`}>
+                                                    <p>{m.text}</p>
+                                                    <span className="text-[9px] opacity-70 block text-right mt-1">{m.time}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="p-2 bg-white dark:bg-fbCardDark border-t border-gray-200 dark:border-gray-800 flex items-center space-x-2">
+                                        <input 
+                                            type="text" 
+                                            value={currentChatMessage}
+                                            onChange={(e) => setCurrentChatMessage(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                            placeholder="Write a message..."
+                                            className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-xs px-3 py-2 rounded-full focus:outline-none"
+                                        />
+                                        <button onClick={handleSendMessage} className="bg-fbBlue text-white p-2 rounded-full w-8 h-8 flex items-center justify-center">
+                                            <i className="fa-solid fa-paper-plane text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 4: REELS */}
+                        {activeTab === 'reels' && (
+                            <div className="flex justify-center items-center py-4">
+                                <div className="w-full max-w-sm h-[70vh] bg-black rounded-2xl relative overflow-hidden flex items-center justify-center shadow-2xl">
+                                    <video src="https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4" autoPlay loop muted className="w-full h-full object-cover"></video>
+                                    <div className="absolute bottom-4 left-4 text-white">
+                                        <h4 className="font-bold text-sm">@safin_official</h4>
+                                        <p className="text-xs">Enjoying the vibes! 🌿 #safinbook</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB 5: MENU */}
+                        {activeTab === 'menu' && (
+                            <div className="bg-white dark:bg-fbCardDark rounded-xl p-4 shadow border border-gray-200 dark:border-gray-800 space-y-4">
+                                <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 dark:border-gray-800">
+                                    <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-14 h-14 rounded-full object-cover" />
+                                    <div>
+                                        <h3 className="font-bold text-base">{user?.displayName || user?.email || user?.phoneNumber || "Guest User"}</h3>
+                                        <p className="text-xs text-gray-500">SafinBook Member</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div onClick={toggleDarkMode} className="flex justify-between items-center p-3 bg-gray-100 dark:bg-fbHoverDark rounded-xl cursor-pointer">
+                                        <span className="text-xs font-bold">Dark Mode</span>
+                                        <input type="checkbox" checked={darkMode} readOnly />
+                                    </div>
+                                    {user && (
+                                        <button onClick={handleSignOut} className="w-full bg-red-500 text-white font-bold text-xs py-3 rounded-xl">
+                                            Log Out
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                    </main>
+
+                    {}
+                    {/* MODAL: AUTHENTICATION (LOGIN / SIGNUP / PHONE) */}
+                    {showAuthModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800 space-y-4">
+                                <div className="flex justify-between items-center border-b pb-3 border-gray-200 dark:border-gray-700">
+                                    <h3 className="text-xl font-extrabold text-fbBlue">SafinBook Auth</h3>
+                                    <button onClick={() => setShowAuthModal(false)} className="text-gray-400 hover:text-gray-600">
+                                        <i className="fa-solid fa-xmark text-xl"></i>
+                                    </button>
+                                </div>
+
+                                {/* Auth Type Tabs */}
+                                <div className="flex border-b border-gray-200 dark:border-gray-700">
+                                    <button 
+                                        onClick={() => setAuthMode('email')} 
+                                        className={`flex-1 py-2 font-bold text-xs ${authMode === 'email' ? 'border-b-2 border-fbBlue text-fbBlue' : 'text-gray-400'}`}
+                                    >
+                                        Email & Password
+                                    </button>
+                                    <button 
+                                        onClick={() => setAuthMode('phone')} 
+                                        className={`flex-1 py-2 font-bold text-xs ${authMode === 'phone' ? 'border-b-2 border-fbBlue text-fbBlue' : 'text-gray-400'}`}
+                                    >
+                                        Phone Number
+                                    </button>
+                                </div>
+
+                                {authError && <div className="p-2 bg-red-100 text-red-600 text-xs rounded">{authError}</div>}
+                                {authMsg && <div className="p-2 bg-green-100 text-green-700 text-xs rounded">{authMsg}</div>}
+
+                                {/* EMAIL AUTH FORM */}
+                                {authMode === 'email' && (
+                                    <form onSubmit={handleEmailAuth} className="space-y-3">
+                                        {isSignUp && (
+                                            <div>
+                                                <label className="text-xs font-bold block mb-1">Full Name</label>
+                                                <input 
+                                                    type="text" 
+                                                    required 
+                                                    value={displayName}
+                                                    onChange={(e) => setDisplayName(e.target.value)}
+                                                    placeholder="Md. Safin"
+                                                    className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
+                                                />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <label className="text-xs font-bold block mb-1">Email Address</label>
+                                            <input 
+                                                type="email" 
+                                                required 
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="example@gmail.com"
+                                                className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold block mb-1">Password</label>
+                                            <input 
+                                                type="password" 
+                                                required 
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
+                                            />
+                                        </div>
+
+                                        <button type="submit" className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-lg text-xs hover:opacity-90">
+                                            {isSignUp ? 'Create Account' : 'Log In'}
+                                        </button>
+
+                                        <div className="text-center pt-2">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIsSignUp(!isSignUp)}
+                                                className="text-fbBlue text-xs font-semibold hover:underline"
+                                            >
+                                                {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+
+                                {/* PHONE AUTH FORM */}
+                                {authMode === 'phone' && (
+                                    <div className="space-y-3">
+                                        {!confirmationResult ? (
+                                            <form onSubmit={handleSendPhoneCode} className="space-y-3">
+                                                <div>
+                                                    <label className="text-xs font-bold block mb-1">Phone Number (with country code)</label>
+                                                    <input 
+                                                        type="tel" 
+                                                        required 
+                                                        value={phoneNumber}
+                                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                                        placeholder="+8801700000000"
+                                                        className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
+                                                    />
+                                                </div>
+                                                <button type="submit" className="w-full bg-green-600 text-white font-bold py-2.5 rounded-lg text-xs hover:opacity-90">
+                                                    Send OTP Code
+                                                </button>
+                                            </form>
+                                        ) : (
+                                            <form onSubmit={handleVerifyPhoneCode} className="space-y-3">
+                                                <div>
+                                                    <label className="text-xs font-bold block mb-1">Enter OTP Verification Code</label>
+                                                    <input 
+                                                        type="text" 
+                                                        required 
+                                                        value={verificationCode}
+                                                        onChange={(e) => setVerificationCode(e.target.value)}
+                                                        placeholder="123456"
+                                                        className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none text-center letter-spacing-2 font-bold"
+                                                    />
+                                                </div>
+                                                <button type="submit" className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-lg text-xs hover:opacity-90">
+                                                    Verify & Sign In
+                                                </button>
+                                            </form>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL: CREATE POST */}
+                    {showCreatePostModal && (
+                        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-lg rounded-xl shadow-2xl p-4 space-y-3 border border-gray-200 dark:border-gray-800">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-bold text-center flex-1">Create Post</h3>
+                                    <button onClick={() => setShowCreatePostModal(false)}>
+                                        <i className="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+
+                                <textarea 
+                                    rows="3"
+                                    value={newPostText}
+                                    onChange={(e) => setNewPostText(e.target.value)}
+                                    placeholder="What's on your mind?"
+                                    className="w-full bg-transparent border-none text-sm focus:outline-none resize-none"
+                                ></textarea>
+
+                                {selectedMedia && (
+                                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-black">
+                                        <button onClick={() => setSelectedMedia(null)} className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                                            <i className="fa-solid fa-xmark"></i>
+                                        </button>
+                                        <img src={selectedMedia.url} className="w-full h-40 object-contain" />
+                                    </div>
+                                )}
+
+                                <input type="file" ref={fileInputRef} accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
+
+                                <div className="border rounded-lg p-2 flex justify-between items-center">
+                                    <span className="text-xs font-semibold">Add to your post</span>
+                                    <button onClick={() => fileInputRef.current?.click()} className="text-green-500 text-lg">
+                                        <i className="fa-solid fa-images"></i>
+                                    </button>
+                                </div>
+
+                                <button onClick={handleCreatePost} className="w-full bg-fbBlue text-white font-bold py-2 rounded-lg text-xs">
+                                    POST
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
         }
 
-        updateUserSessionUI(currentUser);
-        closeAuthModal();
-      } catch (err) {
-        console.error(err);
-        showToast(err.message || "Authentication error occurred");
-      }
-    };
-
-    window.handlePhoneAuth = async function(event) {
-      event.preventDefault();
-      const phoneInput = document.getElementById('auth-phone-num').value.trim();
-      const fullPhone = '+880' + phoneInput;
-      const otpSec = document.getElementById('otp-verification-section');
-      const submitBtn = document.getElementById('phone-submit-btn');
-
-      if (!confirmationResult) {
-        try {
-          if (auth) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible' });
-            confirmationResult = await signInWithPhoneNumber(auth, fullPhone, window.recaptchaVerifier);
-          }
-          otpSec.classList.remove('hidden');
-          submitBtn.innerText = 'Verify OTP & Log In';
-          showToast(`OTP Code sent to ${fullPhone} (Demo OTP: 123456)`);
-        } catch (err) {
-          console.warn("Phone OTP Fallback:", err);
-          otpSec.classList.remove('hidden');
-          submitBtn.innerText = 'Verify OTP & Log In';
-          showToast(`Demo OTP Code sent to ${fullPhone}. Type 123456 to login.`);
-        }
-      } else {
-        const otpCode = document.getElementById('auth-otp-code').value.trim();
-        try {
-          if (confirmationResult && confirmationResult.confirm) {
-            const result = await confirmationResult.confirm(otpCode);
-            currentUser = { uid: result.user.uid, phoneNumber: fullPhone, displayName: 'User (' + fullPhone.slice(-4) + ')' };
-          } else {
-            currentUser = { uid: 'u_phone_' + Date.now(), phoneNumber: fullPhone, displayName: 'Phone User (' + phoneInput.slice(-4) + ')' };
-          }
-          showToast(`Phone number verified! Logged in as ${currentUser.displayName}`);
-          updateUserSessionUI(currentUser);
-          closeAuthModal();
-          confirmationResult = null;
-        } catch (err) {
-          showToast("Invalid OTP code!");
-        }
-      }
-    };
-
-    window.performLogout = function() {
-      if (auth) {
-        signOut(auth).then(() => {
-          showToast('Successfully logged out!');
-          updateUserSessionUI(null);
-        });
-      } else {
-        currentUser = null;
-        updateUserSessionUI(null);
-        showToast('Logged out of session');
-      }
-    };
-
-    function updateUserSessionUI(user) {
-      const badge = document.getElementById('auth-user-badge');
-      const usernameSpan = document.getElementById('badge-username');
-      const loginBtn = document.getElementById('header-login-btn');
-
-      if (user) {
-        if (badge) badge.classList.remove('hidden');
-        if (usernameSpan) usernameSpan.innerText = user.displayName || 'Connected User';
-        if (loginBtn) loginBtn.classList.add('hidden');
-
-        if (feedPosts[1]) {
-          feedPosts[1].author = user.displayName || 'Connected User';
-        }
-      } else {
-        if (badge) badge.classList.add('hidden');
-        if (loginBtn) loginBtn.classList.remove('hidden');
-      }
-    }
-
-    window.switchTab = function(tabName) {
-      currentTab = tabName;
-      ['feed', 'friends', 'chat', 'watch', 'notifications', 'menu'].forEach(t => {
-        const viewEl = document.getElementById(`view-${t}`);
-        const btnEl = document.getElementById(`tab-btn-${t}`);
-        
-        if (viewEl) {
-          if (t === tabName) viewEl.classList.remove('hidden');
-          else viewEl.classList.add('hidden');
-        }
-
-        if (btnEl) {
-          if (t === tabName) {
-            btnEl.className = 'flex-1 py-2.5 text-center text-fbBlue border-b-2 border-fbBlue transition relative flex justify-center';
-          } else {
-            btnEl.className = 'flex-1 py-2.5 text-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-fbDarkHover transition relative flex justify-center';
-          }
-        }
-      });
-
-      if (tabName === 'feed') renderFeedPosts();
-      if (tabName === 'friends') renderFriendsTab();
-      if (tabName === 'watch') renderWatchTab();
-      if (tabName === 'chat') {
-        renderMessengerBubbles();
-        renderChatMessages();
-      }
-    };
-
-    window.toggleAccordion = function(id) {
-      const el = document.getElementById(id);
-      const arrow = document.getElementById(`${id}-arrow`);
-      if (el) el.classList.toggle('hidden');
-      if (arrow) arrow.classList.toggle('rotate-180');
-    };
-
-    window.toggleDarkMode = function() {
-      isDarkMode = !isDarkMode;
-      document.documentElement.classList.toggle('dark', isDarkMode);
-      const input = document.getElementById('dark-toggle-input');
-      if (input) input.checked = isDarkMode;
-      showToast(isDarkMode ? 'Facebook Dark mode active' : 'Light mode active');
-    };
-
-    window.selectMessengerUser = function(userOrId) {
-      const user = typeof userOrId === 'string' ? allUsers.find(u => u.id === userOrId) : userOrId;
-      if (!user) return;
-      activeMessengerUser = user;
-      document.getElementById('chat-active-avatar').src = user.avatar;
-      document.getElementById('chat-active-name').innerText = user.name;
-      renderChatMessages();
-      renderMessengerBubbles();
-    };
-
-    window.sendChatMessage = function() {
-      const input = document.getElementById('chat-msg-input');
-      const text = input.value.trim();
-      if (!text) return;
-
-      if (!chatHistories[activeMessengerUser.id]) chatHistories[activeMessengerUser.id] = [];
-      chatHistories[activeMessengerUser.id].push({
-        sender: 'me',
-        text: text,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-
-      input.value = '';
-      renderChatMessages();
-
-      const typingEl = document.getElementById('chat-typing-status');
-      document.getElementById('chat-typing-name').innerText = activeMessengerUser.name;
-      typingEl.classList.remove('hidden');
-
-      setTimeout(() => {
-        typingEl.classList.add('hidden');
-        chatHistories[activeMessengerUser.id].push({
-          sender: activeMessengerUser.name,
-          text: `Hey SAFIN, received your message! Real-time chat is working! 👍`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        renderChatMessages();
-      }, 1500);
-    };
-
-    window.setReaction = function(idx, rxType) {
-      feedPosts[idx].reaction = rxType;
-      feedPosts[idx].reactionsCount += rxType ? 1 : -1;
-      renderFeedPosts();
-    };
-
-    window.addCommentToPost = function(idx) {
-      const input = document.getElementById(`post-comment-input-${idx}`);
-      if (!input.value.trim()) return;
-      feedPosts[idx].comments.push({ name: myProfile.name.split(' ')[0], text: input.value.trim() });
-      input.value = '';
-      renderFeedPosts();
-    };
-
-    window.addFriend = function(userId) {
-      const u = allUsers.find(user => user.id === userId);
-      if (u) {
-        u.isFriend = true;
-        showToast(`${u.name} is now your friend! Added to Messenger.`);
-        renderFriendsTab();
-      }
-    };
-
-    window.acceptRequest = function(reqId) {
-      pendingRequests = pendingRequests.filter(r => r.id !== reqId);
-      const u = allUsers.find(user => user.id === reqId);
-      if (u) {
-        u.isFriend = true;
-        showToast(`Friend request accepted from ${u.name}!`);
-        renderFriendsTab();
-      }
-    };
-
-    window.declineRequest = function(reqId) {
-      pendingRequests = pendingRequests.filter(r => r.id !== reqId);
-      showToast('Friend request declined');
-      renderFriendsTab();
-    };
-
-    window.closeProfileModal = function() {
-      document.getElementById('profile-modal').classList.add('hidden');
-    };
-
-    window.toggleMetaAiModal = function() {
-      document.getElementById('meta-ai-modal').classList.toggle('hidden');
-    };
-
-    window.sendMetaAiQuery = function() {
-      const input = document.getElementById('meta-ai-input');
-      const text = input.value.trim();
-      if (!text) return;
-
-      const box = document.getElementById('meta-ai-messages');
-      box.innerHTML += `<div class="bg-slate-100 dark:bg-fbDarkHover p-2 rounded-xl text-right">${text}</div>`;
-      input.value = '';
-
-      setTimeout(() => {
-        box.innerHTML += `<div class="bg-purple-50 dark:bg-purple-950/40 p-2 rounded-xl text-purple-900 dark:text-purple-200">Meta AI response for "${text}" generated successfully.</div>`;
-        box.scrollTop = box.scrollHeight;
-      }, 800);
-    };
-
-    window.openCreatePostModal = function() {
-      document.getElementById('create-post-user-name').innerText = myProfile.name;
-      document.getElementById('create-post-user-avatar').src = myProfile.avatar;
-      document.getElementById('create-post-modal').classList.remove('hidden');
-    };
-    window.closeCreatePostModal = function() {
-      document.getElementById('create-post-modal').classList.add('hidden');
-    };
-
-    window.startCall = function(type) {
-      document.getElementById('call-avatar-img').src = activeMessengerUser.avatar;
-      document.getElementById('call-title-name').innerText = `Calling ${activeMessengerUser.name}...`;
-      document.getElementById('call-subtitle-type').innerText = `Facebook ${type} Call`;
-      document.getElementById('call-modal').classList.remove('hidden');
-    };
-
-    window.endCall = function() {
-      document.getElementById('call-modal').classList.add('hidden');
-      showToast('Call ended.');
-    };
-
-    window.showToast = function(msg) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toast-msg').innerText = msg;
-      toast.classList.remove('opacity-0', 'pointer-events-none');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'pointer-events-none');
-      }, 2500);
-    };
-
-    window.triggerPostUpload = function(type) {
-      openCreatePostModal();
-      showToast(`${type.toUpperCase()} upload window triggered`);
-    };
-
-    // Initialize
-    window.addEventListener('DOMContentLoaded', () => {
-      renderStories();
-      renderFeedPosts();
-      renderMessengerBubbles();
-      renderChatMessages();
-    });
-  </script>
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
 </body>
 </html>
