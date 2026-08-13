@@ -1209,7 +1209,11 @@
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        )} <button 
+                                        onClick={() => { auth.signOut(); showToast("লগআউট করা হয়েছে"); setShowAuthModal(true); }} 
+                                        className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition"
+                                    >
+                                        Log Out of SafinBook
 
                         {/* SETTINGS TAB */}
                         {activeTab === 'settings' && (
@@ -1271,13 +1275,7 @@
                                 <div className="pt-4 border-t border-gray-200 dark:border-fbBorderDark flex justify-between items-center">
                                     <button onClick={() => showToast("Cache and temporary data cleared!")} className="text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 font-bold">
                                         🧹 Clear App Cache
-                                    </button>
-                                    
-                                    <button 
-                                        onClick={() => { auth.signOut(); showToast("লগআউট করা হয়েছে"); setShowAuthModal(true); }} 
-                                        className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition"
-                                    >
-                                        Log Out of SafinBook
+                                    </button>                                                                
                                     </button>
                                 </div>
                             </div>
