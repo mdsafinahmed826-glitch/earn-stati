@@ -527,7 +527,7 @@
                                 { id: 'marketplace', icon: 'fa-store', label: 'Marketplace' },
                                 { id: 'groups', icon: 'fa-users', label: 'Groups' },
                                 { id: 'gaming', icon: 'fa-gamepad', label: 'Gaming Hub' }
-                                { id: 'gaming', icon: 'fa-gamepad', label: 'Gaming Hub' }
+                                { id: 'gaming', icon: 'fa-gamepad', label: 'Reels' }
                 ].map(tab => (
                                 <button 
                                     key={tab.id}
@@ -1210,7 +1210,7 @@
                                     </div>
                                 </div>
                             </div>
-                        )} <button 
+                         <button 
                                         onClick={() => { auth.signOut(); showToast("লগআউট করা হয়েছে"); setShowAuthModal(true); }} 
                                         className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition"
                                     >
