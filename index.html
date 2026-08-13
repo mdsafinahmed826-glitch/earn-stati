@@ -527,7 +527,8 @@
                                 { id: 'marketplace', icon: 'fa-store', label: 'Marketplace' },
                                 { id: 'groups', icon: 'fa-users', label: 'Groups' },
                                 { id: 'gaming', icon: 'fa-gamepad', label: 'Gaming Hub' }
-                            ].map(tab => (
+                                { id: 'gaming', icon: 'fa-gamepad', label: 'Gaming Hub' }
+                ].map(tab => (
                                 <button 
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)} 
