@@ -2,9 +2,10 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafinBook - Social Media App by SAFIN</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SafinBook - Ultra Social Experience by SAFIN</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -13,35 +14,60 @@
                 extend: {
                     colors: {
                         fbBlue: '#1877f2',
+                        fbHoverBlue: '#166fe5',
                         fbBg: '#f0f2f5',
                         fbDarkBg: '#18191a',
                         fbCardDark: '#242526',
-                        fbHoverDark: '#3a3b3c'
+                        fbHoverDark: '#3a3b3c',
+                        fbBorderDark: '#393a3b'
+                    },
+                    animation: {
+                        'float-up': 'floatUp 1.5s ease-out forwards',
+                        'pulse-slow': 'pulse 3s infinite',
+                        'bounce-short': 'bounce 0.5s ease infinite'
+                    },
+                    keyframes: {
+                        floatUp: {
+                            '0%': { transform: 'translateY(0) scale(0.8)', opacity: '1' },
+                            '100%': { transform: 'translateY(-120px) scale(1.4)', opacity: '0' }
+                        }
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome CDN -->
+    
+    <!-- FontAwesome Icons & Google Font -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- React & Babel CDNs -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- React & Firebase Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase Compat SDKs (App, Auth, Realtime Database) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <style>
+        body { font-family: 'Inter', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .bg-gradient-post-1 { background: linear-gradient(135deg, #ff007f, #7928ca); }
+        .bg-gradient-post-2 { background: linear-gradient(135deg, #4286f4, #373b44); }
+        .bg-gradient-post-3 { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .bg-gradient-post-4 { background: linear-gradient(135deg, #ff9966, #ff5e62); }
+        .bg-gradient-post-5 { background: linear-gradient(135deg, #8A2387, #E94057, #F27121); }
+        
+        .reaction-popover {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
     </style>
 </head>
 <body class="bg-fbBg dark:bg-fbDarkBg text-gray-900 dark:text-gray-100 font-sans transition-colors duration-200">
     <div id="root"></div>
 
     <script type="text/babel">
-        // Firebase Config (Provided by user)
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
             authDomain: "ern-93752.firebaseapp.com",
@@ -49,244 +75,316 @@
             projectId: "ern-93752",
             storageBucket: "ern-93752.firebasestorage.app",
             messagingSenderId: "159583001756",
-            appId: "1:159583001756:web:c7c8380f88da94ba97e159",
-            measurementId: "G-S8FXSQMLR3"
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
         };
 
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.database();
         const auth = firebase.auth();
 
-        // Initial Seed Data
-        const initialUsersCount = 14528;
-        const initialActiveCount = 184;
-
-        const initialStories = [
-            { id: 1, name: "Create story", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400", isCreate: true },
-            { id: 2, name: "Tusar Suvro", image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400", badge: "1" },
-            { id: 3, name: "Abu Shovo", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400", badge: "1" },
-            { id: 4, name: "Md Safin", image: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400", badge: "1" },
-            { id: 5, name: "Tanisha Islam", image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400", badge: "2" }
+        // Sample Data Collections
+        const initialStoriesData = [
+            { id: 's1', user: 'SAFIN (You)', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500', isOwner: true, time: '2h ago' },
+            { id: 's2', user: 'Tusar Suvro', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500', isOwner: false, time: '5h ago' },
+            { id: 's3', user: 'Abu Shovo', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', image: 'https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?w=500', isOwner: false, time: '8h ago' },
+            { id: 's4', user: 'Tanisha Islam', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', image: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?w=500', isOwner: false, time: '12h ago' },
+            { id: 's5', user: 'Ariyan Rakid', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150', image: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500', isOwner: false, time: '1d ago' }
         ];
 
-        const initialFriendRequests = [
-            { id: 101, name: "Tanisha Islam", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150", mutual: 2, time: "12h" },
-            { id: 102, name: "Ariyan Rakid", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150", mutual: 8, time: "6d" },
-            { id: 103, name: "Md Abdul Khalak", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150", mutual: 16, time: "4w" },
-            { id: 104, name: "Aizen Zarox", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150", mutual: 15, time: "3w" }
+        const initialMarketplaceItems = [
+            { id: 'm1', title: 'iPhone 15 Pro Max 256GB Natural Titanium', price: '৳ 1,18,000', location: 'Dhaka, Bangladesh', image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500', seller: 'Siam Ahmed', category: 'Electronics' },
+            { id: 'm2', title: 'Yamaha R15 V4 Racing Blue 2023', price: '৳ 4,10,000', location: 'Rajshahi, Bangladesh', image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=500', seller: 'Tanvir Hossain', category: 'Vehicles' },
+            { id: 'm3', title: 'MacBook Pro M3 Max Studio Edition', price: '৳ 2,45,000', location: 'Sirajganj, Bangladesh', image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500', seller: 'Md Safin', category: 'Electronics' },
+            { id: 'm4', title: 'Secretlab Titan Gaming Chair', price: '৳ 28,500', location: 'Chittagong, Bangladesh', image: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500', seller: 'Joy Barua', category: 'Furniture' }
+        ];
+
+        const initialGroupsData = [
+            { id: 'g1', name: 'Bangladesh Developers Community 🚀', members: '54.2K', cover: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600', isJoined: true, description: 'Official community for Bangladeshi coders & tech enthusiasts.' },
+            { id: 'g2', name: 'Tech & Gadgets Buying-Selling BD', members: '128K', cover: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600', isJoined: false, description: 'Best deals on laptops, smartphones and accessories in BD.' },
+            { id: 'g3', name: 'AI & Web3 Innovations World 🤖', members: '32.1K', cover: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600', isJoined: true, description: 'Discuss Machine Learning, LLMs and Web3 Future.' }
+        ];
+
+        const initialPagesData = [
+            { id: 'p1', name: 'SAFIN Tech Labs', category: 'Software & Technology', followers: '142K', cover: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', isLiked: true },
+            { id: 'p2', name: 'Pro Coding Academy', category: 'Education Page', followers: '89K', cover: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', isLiked: false },
+            { id: 'p3', name: 'Bangladesh Travel Stories 🇧🇩', category: 'Travel & Tourism', followers: '210K', cover: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', isLiked: true }
+        ];
+
+        const initialEventsData = [
+            { id: 'e1', title: 'National AI & React Summit 2026', date: 'AUG 28, 2026', location: 'Dhaka Convention Center', attendees: '1.4K Going', cover: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600', status: 'Interested' },
+            { id: 'e2', title: 'Sirajganj Tech Fest & Career Expo', date: 'SEP 15, 2026', location: 'Sirajganj Stadium Hall', attendees: '850 Going', cover: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600', status: 'Going' }
+        ];
+
+        const initialWatchVideos = [
+            { id: 'v1', title: 'Building a Fullstack Social Network with React & Firebase 🚀', channel: 'SAFIN Tech Labs', views: '120K views', time: '2 days ago', duration: '14:20', videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-typing-on-a-laptop-keyboard-43122-large.mp4', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
+            { id: 'v2', title: 'Exploring Beautiful Nature Trails in Bandarban Bangladesh 🌿', channel: 'Travel BD', views: '45K views', time: '1 week ago', duration: '08:45', videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' }
         ];
 
         function App() {
+            // Navigation & Language
             const [user, setUser] = React.useState(null);
-            const [activeTab, setActiveTab] = React.useState('feed'); // feed, friends, messenger, reels, notifications, menu
+            const [activeTab, setActiveTab] = React.useState('feed'); 
             const [darkMode, setDarkMode] = React.useState(false);
+            const [lang, setLang] = React.useState('BN'); // 'BN' or 'EN'
+            const [searchQuery, setSearchQuery] = React.useState('');
+
+            // Data Stores
             const [posts, setPosts] = React.useState([]);
-            const [friendRequests, setFriendRequests] = React.useState(initialFriendRequests);
-            const [newPostText, setNewPostText] = React.useState('');
-            const [selectedMedia, setSelectedMedia] = React.useState(null);
-            const [feeling, setFeeling] = React.useState('');
-            const [showCreatePostModal, setShowCreatePostModal] = React.useState(false);
-            const [showAuthModal, setShowAuthModal] = React.useState(false);
-            
-            // Auth Form States
-            const [authMode, setAuthMode] = React.useState('email'); // 'email' or 'phone'
-            const [isSignUp, setIsSignUp] = React.useState(false);
-            const [email, setEmail] = React.useState('');
-            const [password, setPassword] = React.useState('');
-            const [displayName, setDisplayName] = React.useState('');
-            const [phoneNumber, setPhoneNumber] = React.useState('');
-            const [verificationCode, setVerificationCode] = React.useState('');
-            const [confirmationResult, setConfirmationResult] = React.useState(null);
-            const [authError, setAuthError] = React.useState('');
-            const [authMsg, setAuthMsg] = React.useState('');
+            const [stories, setStories] = React.useState(initialStoriesData);
+            const [marketplace, setMarketplace] = React.useState(initialMarketplaceItems);
+            const [groups, setGroups] = React.useState(initialGroupsData);
+            const [pages, setPages] = React.useState(initialPagesData);
+            const [events, setEvents] = React.useState(initialEventsData);
+            const [watchVideos, setWatchVideos] = React.useState(initialWatchVideos);
+            const [savedPostIds, setSavedPostIds] = React.useState([]);
 
-            // Per post comment input states
-            const [commentInputs, setCommentInputs] = React.useState({});
-
-            // Reaction bar toggle per post
-            const [activeReactionPicker, setActiveReactionPicker] = React.useState(null);
+            // Notifications & Messaging
+            const [notifications, setNotifications] = React.useState([
+                { id: 'n1', text: 'Tanisha Islam reacted ❤️ to your post.', time: '5m ago', read: false, icon: '❤️', iconBg: 'bg-red-500' },
+                { id: 'n2', text: 'Abu Shovo accepted your friend request.', time: '1h ago', read: false, icon: '👤', iconBg: 'bg-blue-500' },
+                { id: 'n3', text: 'SAFIN Tech Labs posted a new video in Watch.', time: '3h ago', read: true, icon: '📹', iconBg: 'bg-purple-500' }
+            ]);
 
             const [messages, setMessages] = React.useState([
-                { id: 1, sender: 'Tanisha Islam', text: 'Hi Safin! How are you?', time: '10:30 AM' },
-                { id: 2, sender: 'SAFIN', text: 'Hey Tanisha! I am doing great, working on SafinBook app.', time: '10:32 AM' }
+                { id: 1, sender: 'Tanisha Islam', text: 'Hi Safin! SafinBook looks amazing!', time: '10:30 AM' },
+                { id: 2, sender: 'SAFIN', text: 'Thanks Tanisha! Enjoy all the new features!', time: '10:32 AM' }
             ]);
-            const [currentChatMessage, setCurrentChatMessage] = React.useState('');
             const [activeChatUser, setActiveChatUser] = React.useState('Tanisha Islam');
+            const [currentChatMessage, setCurrentChatMessage] = React.useState('');
 
+            // Modals
+            const [showAuthModal, setShowAuthModal] = React.useState(false);
+            const [authTab, setAuthTab] = React.useState('login'); // 'login' or 'signup'
+            const [authEmail, setAuthEmail] = React.useState('');
+            const [authPassword, setAuthPassword] = React.useState('');
+            const [authName, setAuthName] = React.useState('');
+            const [authError, setAuthError] = React.useState('');
+
+            const [showCreatePostModal, setShowCreatePostModal] = React.useState(false);
+            const [showCreateStoryModal, setShowCreateStoryModal] = React.useState(false);
+            const [showCreateItemModal, setShowCreateItemModal] = React.useState(false);
+            const [showCreatePageModal, setShowCreatePageModal] = React.useState(false);
+            const [showGoLiveModal, setShowGoLiveModal] = React.useState(false);
+            const [showCallModal, setShowCallModal] = React.useState(false);
+            const [showEditProfileModal, setShowEditProfileModal] = React.useState(false);
+            const [activeStoryViewer, setActiveStoryViewer] = React.useState(null);
+            const [activeCommentPost, setActiveCommentPost] = React.useState(null);
+            const [commentInputText, setCommentInputText] = React.useState('');
+
+            // Modals Form States
+            const [newStoryImg, setNewStoryImg] = React.useState('');
+            const [newItemTitle, setNewItemTitle] = React.useState('');
+            const [newItemPrice, setNewItemPrice] = React.useState('');
+            const [newItemLoc, setNewItemLoc] = React.useState('');
+            const [newItemCategory, setNewItemCategory] = React.useState('Electronics');
+            const [newPageName, setNewPageName] = React.useState('');
+            const [newPageCategory, setNewPageCategory] = React.useState('Technology');
+
+            // Settings States
+            const [privacyProfile, setPrivacyProfile] = React.useState('Public');
+            const [notifPostLike, setNotifPostLike] = React.useState(true);
+            const [notifComments, setNotifComments] = React.useState(true);
+            const [twoFactorAuth, setTwoFactorAuth] = React.useState(false);
+
+            // Call Details
+            const [callType, setCallType] = React.useState('video');
+            const [callStatus, setCallStatus] = React.useState('Ringing...');
+
+            // Post Composer Complex Inputs
+            const [newPostText, setNewPostText] = React.useState('');
+            const [postBgGradient, setPostBgGradient] = React.useState('');
+            const [postFeeling, setPostFeeling] = React.useState('');
+            const [postLocation, setPostLocation] = React.useState('');
+            const [postPrivacy, setPostPrivacy] = React.useState('Public');
+            const [selectedMedia, setSelectedMedia] = React.useState(null);
+            const [pollOptions, setPollOptions] = React.useState(['', '']);
+            const [showPollInputs, setShowPollInputs] = React.useState(false);
+
+            // User Profile State
+            const [userBio, setUserBio] = React.useState('Software Craftsman & Founder of SafinBook 🚀');
+            const [userWork, setUserWork] = React.useState('Lead Architect at SAFIN Tech Labs');
+            const [userLives, setUserLives] = React.useState('Sirajganj, Bangladesh');
+
+            // Interactive Mini Game State (Tic-Tac-Toe vs AI inside SafinBook Gaming Hub)
+            const [board, setBoard] = React.useState(Array(9).fill(null));
+            const [gameWinner, setGameWinner] = React.useState(null);
+
+            // Toast Alert
+            const [toastMessage, setToastMessage] = React.useState('');
+
+            // Refs
             const fileInputRef = React.useRef(null);
 
-            // Listen to Auth State Changes
             React.useEffect(() => {
                 const unsubscribe = auth.onAuthStateChanged((currentUser) => {
                     setUser(currentUser);
-                    if (!currentUser) {
-                        setShowAuthModal(true);
-                    } else {
-                        setShowAuthModal(false);
-                    }
+                    if (!currentUser) setShowAuthModal(true);
+                    else setShowAuthModal(false);
                 });
                 return () => unsubscribe();
             }, []);
 
-            // Firebase Realtime Listener for Posts & Messages
             React.useEffect(() => {
                 const postsRef = db.ref('posts');
                 postsRef.on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        const loadedPosts = Object.keys(data).map(key => ({
+                        const loaded = Object.keys(data).map(key => ({
                             id: key,
                             ...data[key]
                         })).reverse();
-                        setPosts(loadedPosts);
+                        setPosts(loaded);
                     } else {
                         setPosts([]);
                     }
                 });
-
-                const msgRef = db.ref('messages');
-                msgRef.on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const loadedMsgs = Object.keys(data).map(key => data[key]);
-                        setMessages(loadedMsgs);
-                    }
-                });
-
-                return () => {
-                    postsRef.off();
-                    msgRef.off();
-                };
+                return () => postsRef.off();
             }, []);
 
-            // Handle Email Sign In / Sign Up
-            const handleEmailAuth = async (e) => {
+            const showToast = (msg) => {
+                setToastMessage(msg);
+                setTimeout(() => setToastMessage(''), 3000);
+            };
+
+            const handleAuth = (e) => {
                 e.preventDefault();
                 setAuthError('');
-                setAuthMsg('');
-                try {
-                    if (isSignUp) {
-                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                        await userCredential.user.updateProfile({
-                            displayName: displayName || email.split('@')[0],
-                            photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
-                        });
-                        setAuthMsg('Account created successfully!');
-                    } else {
-                        await auth.signInWithEmailAndPassword(email, password);
-                        setAuthMsg('Signed in successfully!');
-                    }
-                    setShowAuthModal(false);
-                } catch (err) {
-                    setAuthError(err.message);
+                if (authTab === 'login') {
+                    auth.signInWithEmailAndPassword(authEmail, authPassword)
+                        .then(() => {
+                            showToast("লগইন সফল হয়েছে!");
+                            setShowAuthModal(false);
+                        })
+                        .catch(err => setAuthError(err.message));
+                } else {
+                    auth.createUserWithEmailAndPassword(authEmail, authPassword)
+                        .then((res) => {
+                            res.user.updateProfile({ displayName: authName || 'SafinBook User' });
+                            showToast("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!");
+                            setShowAuthModal(false);
+                        })
+                        .catch(err => setAuthError(err.message));
                 }
             };
 
-            // Setup Recaptcha for Phone Auth
-            const setupRecaptcha = () => {
-                if (!window.recaptchaVerifier) {
-                    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                        'size': 'invisible',
-                        'callback': () => {}
+            const handleGuestLogin = () => {
+                auth.signInAnonymously()
+                    .then(() => {
+                        showToast("গেস্ট হিসেবে লগইন হয়েছে!");
+                        setShowAuthModal(false);
+                    })
+                    .catch(err => setAuthError(err.message));
+            };
+
+            const handleUpdateProfile = () => {
+                if (user) {
+                    user.updateProfile({
+                        displayName: user.displayName
                     });
                 }
+                showToast("প্রোফাইল আপডেট হয়েছে!");
+                setShowEditProfileModal(false);
             };
 
-            // Handle Send Phone Verification Code
-            const handleSendPhoneCode = async (e) => {
-                e.preventDefault();
-                setAuthError('');
-                setAuthMsg('');
-                try {
-                    setupRecaptcha();
-                    const appVerifier = window.recaptchaVerifier;
-                    const confirmation = await auth.signInWithPhoneNumber(phoneNumber, appVerifier);
-                    setConfirmationResult(confirmation);
-                    setAuthMsg('Verification code sent to your phone number!');
-                } catch (err) {
-                    setAuthError(err.message || 'Error sending SMS code. Make sure format is +8801xxxxxxxxx');
-                }
+            const handleCreateStory = () => {
+                if (!newStoryImg.trim()) return;
+                const newStory = {
+                    id: 's_' + Date.now(),
+                    user: user?.displayName || 'SAFIN (You)',
+                    avatar: user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                    image: newStoryImg,
+                    isOwner: true,
+                    time: 'Just now'
+                };
+                setStories([newStory, ...stories]);
+                setNewStoryImg('');
+                setShowCreateStoryModal(false);
+                showToast("স্টোরি যোগ করা হয়েছে!");
             };
 
-            // Handle Verify OTP Code
-            const handleVerifyPhoneCode = async (e) => {
-                e.preventDefault();
-                setAuthError('');
-                try {
-                    if (confirmationResult) {
-                        await confirmationResult.confirm(verificationCode);
-                        setAuthMsg('Phone number verified successfully!');
-                        setShowAuthModal(false);
-                    }
-                } catch (err) {
-                    setAuthError('Invalid OTP code. Please try again.');
-                }
+            const handleCreateMarketplaceItem = () => {
+                if (!newItemTitle || !newItemPrice) return;
+                const newItem = {
+                    id: 'm_' + Date.now(),
+                    title: newItemTitle,
+                    price: '৳ ' + newItemPrice,
+                    location: newItemLoc || 'Dhaka, Bangladesh',
+                    image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500',
+                    seller: user?.displayName || 'Md Safin',
+                    category: newItemCategory
+                };
+                setMarketplace([newItem, ...marketplace]);
+                setNewItemTitle(''); setNewItemPrice(''); setNewItemLoc('');
+                setShowCreateItemModal(false);
+                showToast("পণ্য মারকেটে যোগ হয়েছে!");
             };
 
-            // Sign Out
-            const handleSignOut = () => {
-                auth.signOut();
-                setShowAuthModal(true);
+            const handleCreatePage = () => {
+                if (!newPageName) return;
+                const newPage = {
+                    id: 'p_' + Date.now(),
+                    name: newPageName,
+                    category: newPageCategory,
+                    followers: '1 Follower',
+                    cover: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600',
+                    avatar: user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                    isLiked: true
+                };
+                setPages([newPage, ...pages]);
+                setNewPageName('');
+                setShowCreatePageModal(false);
+                showToast("নতুন পেজ তৈরি হয়েছে!");
             };
 
-            // Handle Local File Upload
-            const handleFileSelect = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    const isVideo = file.type.startsWith('video');
-                    reader.onloadend = () => {
-                        setSelectedMedia({
-                            url: reader.result,
-                            type: isVideo ? 'video' : 'image',
-                            fileName: file.name
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-
-            // Toggle Dark Mode
-            const toggleDarkMode = () => {
-                setDarkMode(!darkMode);
-                document.documentElement.classList.toggle('dark');
-            };
-
-            // Create Post
             const handleCreatePost = () => {
-                if (!newPostText.trim() && !selectedMedia) return;
+                if (!newPostText.trim() && !selectedMedia && (!pollOptions[0] || !pollOptions[1])) return;
 
-                const authorName = user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || "Md Safin Ahmed";
-                const authorImg = user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
+                const authorName = user?.displayName || user?.email?.split('@')[0] || "Md Safin";
+                const authorAvatar = user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
+
+                let pollData = null;
+                if (showPollInputs && pollOptions[0].trim() && pollOptions[1].trim()) {
+                    pollData = {
+                        question: newPostText || 'Cast your vote:',
+                        options: pollOptions.map(opt => ({ text: opt, votes: 0 })),
+                        voters: {}
+                    };
+                }
 
                 const newPost = {
                     author: authorName,
-                    authorAvatar: authorImg,
-                    feeling: feeling || null,
+                    authorAvatar: authorAvatar,
+                    feeling: postFeeling || null,
+                    location: postLocation || null,
+                    privacy: postPrivacy,
+                    bgGradient: postBgGradient || null,
                     time: "Just now",
                     text: newPostText,
                     mediaUrl: selectedMedia ? selectedMedia.url : null,
                     mediaType: selectedMedia ? selectedMedia.type : null,
+                    poll: pollData,
                     likes: 0,
                     userReactions: {},
                     commentsCount: 0,
-                    shares: 0,
                     comments: []
                 };
 
                 db.ref('posts').push(newPost);
+                showToast(lang === 'BN' ? "পোস্ট সফলভাবে প্রকাশিত হয়েছে!" : "Post published successfully!");
 
                 setNewPostText('');
                 setSelectedMedia(null);
-                setFeeling('');
+                setPostBgGradient('');
+                setPostFeeling('');
+                setPostLocation('');
+                setShowPollInputs(false);
+                setPollOptions(['', '']);
                 setShowCreatePostModal(false);
             };
 
-            // Reaction Handler (Like, Love, Haha, Wow, Sad, Angry)
-            const handleReaction = (postId, reactionType = 'like') => {
+            const handleReaction = (postId, reactionType) => {
                 const postRef = db.ref(`posts/${postId}`);
                 postRef.once('value', (snapshot) => {
                     const postData = snapshot.val();
@@ -300,632 +398,1240 @@
                         delete currentReactions[userId];
                         currentLikes = Math.max(0, currentLikes - 1);
                     } else {
-                        if (!currentReactions[userId]) {
-                            currentLikes += 1;
-                        }
+                        if (!currentReactions[userId]) currentLikes += 1;
                         currentReactions[userId] = reactionType;
                     }
 
-                    postRef.update({
-                        likes: currentLikes,
-                        userReactions: currentReactions
-                    });
+                    postRef.update({ likes: currentLikes, userReactions: currentReactions });
                 });
-                setActiveReactionPicker(null);
             };
 
-            // Comment Add Handler
-            const handleAddComment = (postId) => {
-                const commentText = commentInputs[postId];
-                if (!commentText || !commentText.trim()) return;
+            const handleAddComment = () => {
+                if (!commentInputText.trim() || !activeCommentPost) return;
 
-                const commenterName = user?.displayName || user?.email?.split('@')[0] || user?.phoneNumber || "User";
-                
-                const newComment = {
-                    id: Date.now().toString(),
-                    user: commenterName,
-                    text: commentText.trim(),
-                    time: "Just now"
-                };
-
-                const postRef = db.ref(`posts/${postId}`);
+                const postRef = db.ref(`posts/${activeCommentPost.id}`);
                 postRef.once('value', (snapshot) => {
                     const postData = snapshot.val();
-                    let existingComments = [];
-                    if (postData && postData.comments) {
-                        existingComments = Array.isArray(postData.comments) 
-                            ? postData.comments 
-                            : Object.values(postData.comments);
-                    }
+                    if (!postData) return;
+
+                    const existingComments = postData.comments || [];
+                    const newComment = {
+                        id: Date.now(),
+                        author: user?.displayName || 'SAFIN',
+                        avatar: user?.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+                        text: commentInputText,
+                        time: 'Just now'
+                    };
 
                     const updatedComments = [...existingComments, newComment];
                     postRef.update({
                         comments: updatedComments,
                         commentsCount: updatedComments.length
                     });
+
+                    setCommentInputText('');
+                    setActiveCommentPost({
+                        ...activeCommentPost,
+                        comments: updatedComments
+                    });
+                    showToast(lang === 'BN' ? "কমেন্ট যোগ হয়েছে!" : "Comment added!");
                 });
-
-                setCommentInputs({ ...commentInputs, [postId]: '' });
             };
 
-            // Send Chat Message
-            const handleSendMessage = () => {
-                if (!currentChatMessage.trim()) return;
-                const senderName = user?.displayName || user?.email?.split('@')[0] || 'SAFIN';
-                const newMsg = {
-                    id: Date.now(),
-                    sender: senderName,
-                    receiver: activeChatUser,
-                    text: currentChatMessage,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
+            // Tic Tac Toe AI Logic for Gaming Hub
+            const handleBoardClick = (idx) => {
+                if (board[idx] || gameWinner) return;
 
-                db.ref('messages').push(newMsg);
-                setCurrentChatMessage('');
+                const newBoard = [...board];
+                newBoard[idx] = 'X';
+                
+                let win = checkWinner(newBoard);
+                if (win) {
+                    setBoard(newBoard);
+                    setGameWinner(win);
+                    return;
+                }
+
+                // AI move
+                const emptyIndices = newBoard.map((val, i) => val === null ? i : null).filter(val => val !== null);
+                if (emptyIndices.length > 0) {
+                    const aiChoice = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                    newBoard[aiChoice] = 'O';
+                    win = checkWinner(newBoard);
+                    if (win) setGameWinner(win);
+                }
+                setBoard(newBoard);
             };
 
-            // Friend Request Action
-            const handleFriendRequest = (id) => {
-                setFriendRequests(friendRequests.filter(req => req.id !== id));
+            const checkWinner = (b) => {
+                const lines = [
+                    [0,1,2],[3,4,5],[6,7,8],
+                    [0,3,6],[1,4,7],[2,5,8],
+                    [0,4,8],[2,4,6]
+                ];
+                for (let [a,b1,c] of lines) {
+                    if (b[a] && b[a] === b[b1] && b[a] === b[c]) return b[a];
+                }
+                if (b.every(cell => cell !== null)) return 'Draw';
+                return null;
             };
+
+            const toggleDarkMode = () => {
+                setDarkMode(!darkMode);
+                document.documentElement.classList.toggle('dark');
+            };
+
+            const filteredPosts = posts.filter(p => 
+                (p.text && p.text.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (p.author && p.author.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
 
             return (
-                <div className="min-h-screen flex flex-col bg-fbBg dark:bg-fbDarkBg pb-16 md:pb-0">
-                    <div id="recaptcha-container"></div>
+                <div className="min-h-screen flex flex-col bg-fbBg dark:bg-fbDarkBg text-gray-900 dark:text-gray-100 pb-16 lg:pb-0">
                     
-                    {/* TOP HEADER */}
-                    <header className="sticky top-0 z-40 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-gray-800 px-4 py-2 flex items-center justify-between shadow-sm">
-                        <div className="flex items-center space-x-2">
-                            <h1 className="text-fbBlue font-black text-2xl tracking-tighter cursor-pointer" onClick={() => setActiveTab('feed')}>
+                    {/* Floating Toast Notification */}
+                    {toastMessage && (
+                        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-2.5 rounded-full shadow-2xl text-xs md:text-sm font-semibold flex items-center space-x-2 border border-gray-700 animate-bounce">
+                            <span>✨ {toastMessage}</span>
+                        </div>
+                    )}
+
+                    {/* TOP NAVBAR */}
+                    <header className="sticky top-0 z-40 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-fbBorderDark px-3 md:px-5 py-2 flex items-center justify-between shadow-sm">
+                        
+                        {/* Logo & Global Search */}
+                        <div className="flex items-center space-x-2 md:space-x-3">
+                            <h1 
+                                onClick={() => setActiveTab('feed')} 
+                                className="text-fbBlue font-black text-2xl md:text-3xl tracking-tighter cursor-pointer select-none flex items-center"
+                            >
                                 SafinBook
                             </h1>
-                            <span className="bg-blue-100 dark:bg-blue-900 text-fbBlue dark:text-blue-200 text-xs font-bold px-2 py-0.5 rounded-full">
-                                {user ? `Logged in: ${user.displayName || user.email || 'User'}` : 'Guest Mode'}
-                            </span>
+                            <div className="relative hidden sm:block">
+                                <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                                <input 
+                                    type="text" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder={lang === 'BN' ? "সাফিনবুকে খুঁজুন..." : "Search SafinBook..."} 
+                                    className="bg-gray-100 dark:bg-fbHoverDark text-xs pl-8 pr-4 py-2 rounded-full focus:outline-none w-40 md:w-56 transition-all"
+                                />
+                            </div>
                         </div>
 
-                        {/* Top Navigation Tabs for Desktop */}
-                        <div className="hidden md:flex items-center space-x-1 lg:space-x-8">
-                            <button onClick={() => setActiveTab('feed')} className={`p-3 rounded-lg text-xl ${activeTab === 'feed' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
-                                <i className="fa-solid fa-house"></i>
+                        {/* Middle Navigation Tabs (Desktop) */}
+                        <div className="hidden lg:flex items-center space-x-1 xl:space-x-3">
+                            {[
+                                { id: 'feed', icon: 'fa-house', label: 'Home' },
+                                { id: 'watch', icon: 'fa-tv', label: 'Watch' },
+                                { id: 'marketplace', icon: 'fa-store', label: 'Marketplace' },
+                                { id: 'groups', icon: 'fa-users', label: 'Groups' },
+                                { id: 'gaming', icon: 'fa-gamepad', label: 'Gaming Hub' }
+                            ].map(tab => (
+                                <button 
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)} 
+                                    className={`px-5 py-2.5 rounded-xl text-xl relative transition ${activeTab === tab.id ? 'text-fbBlue border-b-4 border-fbBlue font-bold' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}
+                                    title={tab.label}
+                                >
+                                    <i className={`fa-solid ${tab.icon}`}></i>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Top Right Quick Action Buttons */}
+                        <div className="flex items-center space-x-1.5 md:space-x-2">
+                            <button 
+                                onClick={() => setLang(lang === 'BN' ? 'EN' : 'BN')} 
+                                className="bg-blue-100 dark:bg-fbHoverDark text-fbBlue font-black text-xs px-2.5 py-1.5 rounded-full hover:opacity-80 transition"
+                            >
+                                🌐 {lang}
                             </button>
-                            <button onClick={() => setActiveTab('friends')} className={`p-3 rounded-lg text-xl relative ${activeTab === 'friends' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
-                                <i className="fa-solid fa-user-group"></i>
-                                {friendRequests.length > 0 && (
-                                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.2 font-bold">
-                                        {friendRequests.length}
+
+                            {!user ? (
+                                <button 
+                                    onClick={() => setShowAuthModal(true)} 
+                                    className="bg-fbBlue text-white text-xs font-bold px-3 py-1.5 rounded-full shadow hover:bg-fbHoverBlue transition"
+                                >
+                                    Login / Signup
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={() => setShowGoLiveModal(true)} 
+                                    className="hidden sm:flex items-center space-x-1 bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3 py-2 rounded-full shadow transition"
+                                >
+                                    <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                    <span>{lang === 'BN' ? 'লাইভ যান' : 'Go Live'}</span>
+                                </button>
+                            )}
+
+                            <button 
+                                onClick={() => setActiveTab('messenger')} 
+                                className={`w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-100 dark:bg-fbHoverDark flex items-center justify-center relative hover:opacity-80 transition ${activeTab === 'messenger' ? 'text-fbBlue font-bold' : 'text-gray-600 dark:text-gray-200'}`}
+                            >
+                                <i className="fa-brands fa-facebook-messenger text-base md:text-lg"></i>
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">2</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setActiveTab('notifications')} 
+                                className={`w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-100 dark:bg-fbHoverDark flex items-center justify-center relative hover:opacity-80 transition ${activeTab === 'notifications' ? 'text-fbBlue font-bold' : 'text-gray-600 dark:text-gray-200'}`}
+                            >
+                                <i className="fa-solid fa-bell text-base md:text-lg"></i>
+                                {notifications.filter(n => !n.read).length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">
+                                        {notifications.filter(n => !n.read).length}
                                     </span>
                                 )}
                             </button>
-                            <button onClick={() => setActiveTab('messenger')} className={`p-3 rounded-lg text-xl ${activeTab === 'messenger' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
-                                <i className="fa-brands fa-facebook-messenger"></i>
-                            </button>
-                            <button onClick={() => setActiveTab('reels')} className={`p-3 rounded-lg text-xl relative ${activeTab === 'reels' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
-                                <i className="fa-solid fa-tv"></i>
-                            </button>
-                            <button onClick={() => setActiveTab('notifications')} className={`p-3 rounded-lg text-xl relative ${activeTab === 'notifications' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
-                                <i className="fa-solid fa-bell"></i>
-                            </button>
-                            <button onClick={() => setActiveTab('menu')} className={`p-3 rounded-lg text-xl ${activeTab === 'menu' ? 'text-fbBlue border-b-4 border-fbBlue' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}>
-                                <i className="fa-solid fa-bars"></i>
-                            </button>
-                        </div>
 
-                        {/* Top Right Actions */}
-                        <div className="flex items-center space-x-2">
-                            <button onClick={() => setShowCreatePostModal(true)} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-fbHoverDark flex items-center justify-center hover:bg-gray-300 transition" title="Create Post">
-                                <i className="fa-solid fa-plus text-lg"></i>
+                            <button 
+                                onClick={() => setActiveTab('profile')} 
+                                className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-fbBlue p-0.5 cursor-pointer hover:opacity-90"
+                            >
+                                <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-full h-full object-cover rounded-full" />
                             </button>
-                            {user ? (
-                                <button onClick={handleSignOut} className="bg-red-500 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-600 transition">
-                                    Log Out
-                                </button>
-                            ) : (
-                                <button onClick={() => setShowAuthModal(true)} className="bg-fbBlue text-white text-xs font-bold px-3 py-2 rounded-lg hover:opacity-90 transition">
-                                    Log In
-                                </button>
-                            )}
                         </div>
                     </header>
 
-                    {/* MOBILE TOP TAB NAVIGATION BAR */}
-                    <div className="md:hidden sticky top-[57px] z-30 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-gray-800 flex justify-around py-1 shadow-sm">
-                        <button onClick={() => setActiveTab('feed')} className={`p-2 relative ${activeTab === 'feed' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
-                            <i className="fa-solid fa-house text-xl"></i>
-                        </button>
-                        <button onClick={() => setActiveTab('friends')} className={`p-2 relative ${activeTab === 'friends' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
-                            <i className="fa-solid fa-user-group text-xl"></i>
-                        </button>
-                        <button onClick={() => setActiveTab('messenger')} className={`p-2 ${activeTab === 'messenger' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
-                            <i className="fa-brands fa-facebook-messenger text-xl"></i>
-                        </button>
-                        <button onClick={() => setActiveTab('reels')} className={`p-2 relative ${activeTab === 'reels' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
-                            <i className="fa-solid fa-tv text-xl"></i>
-                        </button>
-                        <button onClick={() => setActiveTab('menu')} className={`p-2 ${activeTab === 'menu' ? 'text-fbBlue border-b-2 border-fbBlue' : 'text-gray-500'}`}>
-                            <i className="fa-solid fa-bars text-xl"></i>
-                        </button>
+                    {/* MOBILE BOTTOM NAVIGATION BAR */}
+                    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-fbCardDark border-t border-gray-200 dark:border-fbBorderDark flex justify-around py-2 shadow-lg">
+                        {[
+                            { id: 'feed', icon: 'fa-house' },
+                            { id: 'watch', icon: 'fa-tv' },
+                            { id: 'marketplace', icon: 'fa-store' },
+                            { id: 'groups', icon: 'fa-users' },
+                            { id: 'gaming', icon: 'fa-gamepad' },
+                            { id: 'messenger', icon: 'fa-comments' }
+                        ].map(tab => (
+                            <button 
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)} 
+                                className={`p-2 text-lg ${activeTab === tab.id ? 'text-fbBlue border-b-2 border-fbBlue font-bold' : 'text-gray-500'}`}
+                            >
+                                <i className={`fa-solid ${tab.icon}`}></i>
+                            </button>
+                        ))}
                     </div>
 
-                    {/* MAIN CONTENT AREA */}
-                    {}
-                    <main className="flex-1 max-w-4xl mx-auto w-full p-2 md:p-4">
+                    {/* MAIN CONTENT BODY GRID */}
+                    <main className="flex-1 max-w-6xl mx-auto w-full p-2 md:p-4 grid grid-cols-1 lg:grid-cols-4 gap-4">
 
-                        {/* TAB 1: FEED */}
+                        {}
                         {activeTab === 'feed' && (
-                            <div className="space-y-4">
-
-                                {/* Banner */}
-                                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-xl shadow flex justify-between items-center text-xs md:text-sm">
-                                    <div className="flex items-center space-x-2">
-                                        <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-ping"></span>
-                                        <span className="font-semibold">{initialUsersCount.toLocaleString()} Total Community Members</span>
+                            <>
+                                {/* Left Sidebar Navigation (Desktop) */}
+                                <div className="hidden lg:block lg:col-span-1 space-y-2 sticky top-20 h-fit">
+                                    <div onClick={() => setActiveTab('profile')} className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-fbHoverDark cursor-pointer transition">
+                                        <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-9 h-9 rounded-full object-cover" />
+                                        <span className="font-bold text-sm truncate">{user?.displayName || "Md Safin"}</span>
                                     </div>
-                                    <div className="bg-white/20 px-2.5 py-1 rounded-full font-bold">
-                                        🟢 {initialActiveCount} Active Now
-                                    </div>
-                                </div>
-
-                                {/* Create Post Prompt Box */}
-                                <div className="bg-white dark:bg-fbCardDark rounded-xl p-3 shadow border border-gray-200 dark:border-gray-800">
-                                    <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                                        <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-10 h-10 rounded-full object-cover" />
-                                        <button 
-                                            onClick={() => setShowCreatePostModal(true)}
-                                            className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-left px-4 py-2.5 rounded-full text-gray-500 dark:text-gray-400 text-sm hover:bg-gray-200 transition"
-                                        >
-                                            {user ? `What's on your mind, ${user.displayName || 'friend'}?` : "What's on your mind? (Login to post)"}
-                                        </button>
-                                        <button 
-                                            onClick={() => { setShowCreatePostModal(true); setTimeout(() => fileInputRef.current?.click(), 100); }} 
-                                            className="flex flex-col items-center text-green-500 hover:opacity-80 p-1"
-                                        >
-                                            <i className="fa-solid fa-images text-xl"></i>
-                                            <span className="text-[10px] text-gray-600 dark:text-gray-300 font-medium">Photo</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Stories */}
-                                <div className="flex space-x-2 overflow-x-auto no-scrollbar py-1">
-                                    {initialStories.map((story) => (
-                                        <div key={story.id} className="relative min-w-[105px] h-[170px] rounded-xl overflow-hidden shadow-md group cursor-pointer flex-shrink-0 border border-gray-200 dark:border-gray-800 bg-gray-900">
-                                            <img src={story.image} className="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-90" />
-                                            {story.isCreate ? (
-                                                <div className="absolute inset-0 bg-black/30 flex flex-col justify-end items-center p-2 text-center" onClick={() => setShowCreatePostModal(true)}>
-                                                    <div className="w-9 h-9 rounded-full bg-fbBlue text-white flex items-center justify-center border-2 border-white mb-1">
-                                                        <i className="fa-solid fa-plus text-lg"></i>
-                                                    </div>
-                                                    <span className="text-xs font-bold text-white drop-shadow">Create story</span>
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <span className="absolute top-2 left-2 bg-fbBlue text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold">
-                                                        {story.badge}
-                                                    </span>
-                                                    <span className="absolute bottom-2 left-2 right-2 text-xs font-bold text-white drop-shadow truncate">
-                                                        {story.name}
-                                                    </span>
-                                                </>
-                                            )}
+                                    {[
+                                        { id: 'feed', icon: 'fa-user-group', label: 'Feeds & Friends', color: 'text-blue-500' },
+                                        { id: 'watch', icon: 'fa-tv', label: 'SafinBook Watch', color: 'text-purple-500' },
+                                        { id: 'marketplace', icon: 'fa-shop', label: 'Marketplace', color: 'text-green-500' },
+                                        { id: 'groups', icon: 'fa-users-rectangle', label: 'Groups', color: 'text-cyan-500' },
+                                        { id: 'pages', icon: 'fa-flag', label: 'Pages', color: 'text-orange-500' },
+                                        { id: 'events', icon: 'fa-calendar-days', label: 'Events', color: 'text-red-500' },
+                                        { id: 'gaming', icon: 'fa-gamepad', label: 'Gaming Hub', color: 'text-indigo-500' },
+                                        { id: 'memories', icon: 'fa-clock-rotate-left', label: 'Memories', color: 'text-yellow-500' },
+                                        { id: 'bookmarks', icon: 'fa-bookmark', label: 'Saved Items', color: 'text-pink-500' },
+                                        { id: 'settings', icon: 'fa-gear', label: 'Settings & Privacy', color: 'text-gray-400' }
+                                    ].map(item => (
+                                        <div key={item.id} onClick={() => setActiveTab(item.id)} className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-fbHoverDark cursor-pointer transition">
+                                            <i className={`fa-solid ${item.icon} text-base w-6 ${item.color}`}></i>
+                                            <span className="font-semibold text-xs md:text-sm">{item.label}</span>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Posts Feed */}
-                                {posts.length === 0 ? (
-                                    <div className="bg-white dark:bg-fbCardDark rounded-xl p-8 text-center text-gray-500">
-                                        No posts available yet. Create the first post above!
+                                {/* Center Main Feed Column */}
+                                <div className="lg:col-span-2 space-y-4">
+                                    
+                                    {/* Online Live Status Card */}
+                                    <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-3 rounded-2xl shadow-lg flex justify-between items-center text-xs md:text-sm">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
+                                            <span className="font-bold">{lang === 'BN' ? 'সাফিনবুক গ্লোবাল অনলাইন' : 'SafinBook Community Online'}</span>
+                                        </div>
+                                        <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black">
+                                            🟢 18,420 Active
+                                        </span>
                                     </div>
-                                ) : (
-                                    posts.map((post) => {
-                                        const myReaction = user ? (post.userReactions && post.userReactions[user.uid]) : null;
-                                        const commentsList = post.comments 
-                                            ? (Array.isArray(post.comments) ? post.comments : Object.values(post.comments)) 
-                                            : [];
 
-                                        return (
-                                            <div key={post.id} className="bg-white dark:bg-fbCardDark rounded-xl shadow border border-gray-200 dark:border-gray-800 p-3 md:p-4 space-y-3 relative">
-                                                {/* Author Info */}
-                                                <div className="flex justify-between items-center">
-                                                    <div className="flex items-center space-x-3">
-                                                        <img src={post.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-10 h-10 rounded-full object-cover border border-fbBlue" />
-                                                        <div>
-                                                            <div className="flex items-center space-x-1">
-                                                                <h4 className="font-bold text-sm hover:underline cursor-pointer">{post.author}</h4>
-                                                                {post.feeling && (
-                                                                    <span className="text-xs text-gray-500 font-normal">
-                                                                        is feeling <b>{post.feeling}</b>
-                                                                    </span>
-                                                                )}
+                                    {/* Create Post Input Card */}
+                                    <div className="bg-white dark:bg-fbCardDark rounded-2xl p-4 shadow border border-gray-200 dark:border-fbBorderDark space-y-3">
+                                        <div className="flex items-center space-x-3">
+                                            <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-10 h-10 rounded-full object-cover" />
+                                            <button 
+                                                onClick={() => setShowCreatePostModal(true)}
+                                                className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-left px-4 py-2.5 rounded-full text-gray-500 dark:text-gray-400 text-xs md:text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                                            >
+                                                {lang === 'BN' ? `আপনার মনে কি আছে, ${user?.displayName || 'বন্ধু'}?` : `What's on your mind, ${user?.displayName || 'friend'}?`}
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1 pt-2 border-t border-gray-100 dark:border-fbBorderDark text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            <button onClick={() => setShowGoLiveModal(true)} className="flex items-center justify-center space-x-1.5 py-2 hover:bg-gray-100 dark:hover:bg-fbHoverDark rounded-xl transition text-red-500">
+                                                <i className="fa-solid fa-video text-base"></i>
+                                                <span className="hidden sm:inline">Live Video</span>
+                                            </button>
+                                            <button onClick={() => { setShowCreatePostModal(true); setTimeout(() => fileInputRef.current?.click(), 100); }} className="flex items-center justify-center space-x-1.5 py-2 hover:bg-gray-100 dark:hover:bg-fbHoverDark rounded-xl transition text-green-500">
+                                                <i className="fa-solid fa-images text-base"></i>
+                                                <span className="hidden sm:inline">Photo/Video</span>
+                                            </button>
+                                            <button onClick={() => { setShowCreatePostModal(true); setShowPollInputs(true); }} className="flex items-center justify-center space-x-1.5 py-2 hover:bg-gray-100 dark:hover:bg-fbHoverDark rounded-xl transition text-amber-500">
+                                                <i className="fa-solid fa-square-poll-vertical text-base"></i>
+                                                <span className="hidden sm:inline">Create Poll</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Stories Carousel */}
+                                    <div className="flex space-x-2.5 overflow-x-auto no-scrollbar py-1">
+                                        {/* Add Story Card */}
+                                        <div 
+                                            onClick={() => setShowCreateStoryModal(true)}
+                                            className="relative min-w-[105px] h-[170px] rounded-2xl overflow-hidden shadow-md group cursor-pointer flex-shrink-0 border border-gray-200 dark:border-fbBorderDark bg-gray-900"
+                                        >
+                                            <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300"} className="w-full h-3/4 object-cover group-hover:scale-105 transition duration-300 opacity-80" />
+                                            <div className="absolute bottom-0 inset-x-0 h-1/3 bg-white dark:bg-fbCardDark flex flex-col justify-end items-center pb-2">
+                                                <div className="w-8 h-8 rounded-full bg-fbBlue text-white flex items-center justify-center border-2 border-white dark:border-fbCardDark -mt-4 shadow-lg">
+                                                    <i className="fa-solid fa-plus text-sm"></i>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200 mt-1">Create Story</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Stories List */}
+                                        {stories.map((story) => (
+                                            <div 
+                                                key={story.id} 
+                                                onClick={() => setActiveStoryViewer(story)}
+                                                className="relative min-w-[105px] h-[170px] rounded-2xl overflow-hidden shadow-md group cursor-pointer flex-shrink-0 border border-gray-200 dark:border-fbBorderDark bg-black"
+                                            >
+                                                <img src={story.image} className="w-full h-full object-cover group-hover:scale-110 transition duration-500 opacity-85" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30"></div>
+                                                <img src={story.avatar} className="absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-fbBlue object-cover shadow" />
+                                                <span className="absolute bottom-2 left-2 right-2 text-[10px] font-bold text-white truncate drop-shadow">
+                                                    {story.user}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Posts Rendering Loop */}
+                                    {filteredPosts.length === 0 ? (
+                                        <div className="bg-white dark:bg-fbCardDark rounded-2xl p-10 text-center space-y-3 shadow border border-gray-200 dark:border-fbBorderDark">
+                                            <i className="fa-solid fa-feather text-4xl text-gray-400"></i>
+                                            <p className="text-gray-500 font-semibold text-sm">No posts found. Share something new today!</p>
+                                        </div>
+                                    ) : (
+                                        filteredPosts.map((post) => {
+                                            const myReaction = user ? (post.userReactions && post.userReactions[user.uid]) : null;
+                                            const isSaved = savedPostIds.includes(post.id);
+
+                                            return (
+                                                <div key={post.id} className="bg-white dark:bg-fbCardDark rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark p-4 space-y-3 relative">
+                                                    {/* Post Header */}
+                                                    <div className="flex justify-between items-center">
+                                                        <div className="flex items-center space-x-3">
+                                                            <img src={post.authorAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-10 h-10 rounded-full object-cover border border-fbBlue" />
+                                                            <div>
+                                                                <div className="flex items-center space-x-1 flex-wrap">
+                                                                    <h4 className="font-bold text-sm hover:underline cursor-pointer">{post.author}</h4>
+                                                                    {post.feeling && <span className="text-xs text-gray-500">is feeling <b>{post.feeling}</b></span>}
+                                                                    {post.location && <span className="text-xs text-red-500 font-medium">📍 {post.location}</span>}
+                                                                </div>
+                                                                <p className="text-[10px] text-gray-400 flex items-center space-x-1">
+                                                                    <span>{post.time || 'Recently'}</span>
+                                                                    <span>•</span>
+                                                                    <span className="font-semibold text-fbBlue">{post.privacy || 'Public'}</span>
+                                                                </p>
                                                             </div>
-                                                            <p className="text-xs text-gray-400 flex items-center space-x-1">
-                                                                <span>{post.time || 'Recently'}</span>
-                                                                <span>•</span>
-                                                                <i className="fa-solid fa-earth-americas text-[10px]"></i>
-                                                            </p>
                                                         </div>
-                                                    </div>
-                                                </div>
 
-                                                {/* Text Content */}
-                                                <p className="text-sm md:text-base leading-relaxed whitespace-pre-line">
-                                                    {post.text}
-                                                </p>
-
-                                                {/* Media Attachment */}
-                                                {post.mediaUrl && (
-                                                    <div className="rounded-lg overflow-hidden max-h-[450px] bg-black border border-gray-100 dark:border-gray-800">
-                                                        {post.mediaType === 'video' ? (
-                                                            <video src={post.mediaUrl} controls className="w-full max-h-[450px] object-contain" />
-                                                        ) : (
-                                                            <img src={post.mediaUrl} className="w-full max-h-[450px] object-contain" />
-                                                        )}
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (isSaved) {
+                                                                    setSavedPostIds(savedPostIds.filter(id => id !== post.id));
+                                                                    showToast("Removed from bookmarks");
+                                                                } else {
+                                                                    setSavedPostIds([...savedPostIds, post.id]);
+                                                                    showToast("Saved to bookmarks!");
+                                                                }
+                                                            }} 
+                                                            className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-fbHoverDark transition ${isSaved ? 'text-fbBlue' : 'text-gray-400'}`}
+                                                        >
+                                                            <i className={`fa-${isSaved ? 'solid' : 'regular'} fa-bookmark text-base`}></i>
+                                                        </button>
                                                     </div>
-                                                )}
 
-                                                {/* Reaction Counters */}
-                                                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 pt-2 border-b border-gray-100 dark:border-gray-800 pb-2">
-                                                    <div className="flex items-center space-x-1">
-                                                        <span className="bg-fbBlue text-white p-1 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">👍</span>
-                                                        <span className="bg-red-500 text-white p-1 rounded-full w-4 h-4 flex items-center justify-center text-[8px]">❤️</span>
-                                                        <span>{post.likes || 0}</span>
-                                                    </div>
-                                                    <div className="space-x-3">
-                                                        <span>{commentsList.length} comments</span>
-                                                    </div>
-                                                </div>
+                                                    {/* Text Body */}
+                                                    {post.bgGradient ? (
+                                                        <div className={`p-8 rounded-2xl ${post.bgGradient} text-white font-extrabold text-xl text-center shadow-inner flex items-center justify-center min-h-[160px]`}>
+                                                            {post.text}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs md:text-sm leading-relaxed whitespace-pre-line text-gray-800 dark:text-gray-200 font-medium">
+                                                            {post.text}
+                                                        </p>
+                                                    )}
 
-                                                {/* Reaction Popover & Action Buttons */}
-                                                <div className="relative grid grid-cols-3 gap-1 pt-1 text-xs md:text-sm font-semibold text-gray-600 dark:text-gray-300">
-                                                    {activeReactionPicker === post.id && (
-                                                        <div className="absolute -top-10 left-0 bg-white dark:bg-fbCardDark shadow-xl rounded-full px-3 py-1.5 border border-gray-200 dark:border-gray-700 flex space-x-3 z-30 animate-bounce">
-                                                            <button onClick={() => handleReaction(post.id, 'like')} className="hover:scale-125 transition text-lg">👍</button>
-                                                            <button onClick={() => handleReaction(post.id, 'love')} className="hover:scale-125 transition text-lg">❤️</button>
-                                                            <button onClick={() => handleReaction(post.id, 'haha')} className="hover:scale-125 transition text-lg">😂</button>
-                                                            <button onClick={() => handleReaction(post.id, 'wow')} className="hover:scale-125 transition text-lg">😮</button>
-                                                            <button onClick={() => handleReaction(post.id, 'sad')} className="hover:scale-125 transition text-lg">😢</button>
-                                                            <button onClick={() => handleReaction(post.id, 'angry')} className="hover:scale-125 transition text-lg">😡</button>
+                                                    {/* Poll Widget */}
+                                                    {post.poll && (
+                                                        <div className="bg-gray-50 dark:bg-fbHoverDark p-3 rounded-xl space-y-2 border border-gray-200 dark:border-gray-700">
+                                                            <h5 className="font-bold text-xs uppercase text-fbBlue">{post.poll.question}</h5>
+                                                            {post.poll.options.map((opt, idx) => (
+                                                                <div key={idx} className="bg-white dark:bg-fbCardDark p-2 rounded-lg text-xs font-bold border flex justify-between">
+                                                                    <span>{opt.text}</span>
+                                                                    <span className="text-fbBlue">{opt.votes || 0} votes</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     )}
 
-                                                    <button 
-                                                        onClick={() => handleReaction(post.id, myReaction ? myReaction : 'like')}
-                                                        onMouseEnter={() => setActiveReactionPicker(post.id)}
-                                                        className={`flex items-center justify-center space-x-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-fbHoverDark transition ${myReaction ? 'text-fbBlue font-bold' : ''}`}
-                                                    >
-                                                        <span>{myReaction === 'love' ? '❤️ Love' : myReaction === 'haha' ? '😂 Haha' : myReaction === 'sad' ? '😢 Sad' : myReaction === 'angry' ? '😡 Angry' : '👍 Like'}</span>
-                                                    </button>
-                                                    
-                                                    <button className="flex items-center justify-center space-x-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-fbHoverDark transition">
-                                                        <i className="fa-regular fa-message"></i>
-                                                        <span>Comment</span>
-                                                    </button>
-                                                    <button className="flex items-center justify-center space-x-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-fbHoverDark transition">
-                                                        <i className="fa-solid fa-share"></i>
-                                                        <span>Share</span>
-                                                    </button>
-                                                </div>
+                                                    {/* Media Content */}
+                                                    {post.mediaUrl && (
+                                                        <div className="rounded-xl overflow-hidden max-h-[420px] bg-black">
+                                                            {post.mediaType === 'video' ? (
+                                                                <video src={post.mediaUrl} controls className="w-full max-h-[420px] object-contain" />
+                                                            ) : (
+                                                                <img src={post.mediaUrl} className="w-full max-h-[420px] object-contain" />
+                                                            )}
+                                                        </div>
+                                                    )}
 
-                                                {/* Comments List */}
-                                                {commentsList.length > 0 && (
-                                                    <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                                                        {commentsList.map((c, idx) => (
-                                                            <div key={idx} className="flex items-start space-x-2">
-                                                                <div className="bg-gray-100 dark:bg-fbHoverDark p-2 rounded-2xl text-xs max-w-[85%]">
-                                                                    <span className="font-bold block">{c.user}</span>
-                                                                    <span>{c.text}</span>
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                    {/* Reaction Counters */}
+                                                    <div className="flex justify-between items-center text-xs text-gray-500 pt-1 border-b border-gray-100 dark:border-fbBorderDark pb-2">
+                                                        <div className="flex items-center space-x-1">
+                                                            <span className="bg-fbBlue text-white p-1 rounded-full text-[9px]">👍</span>
+                                                            <span className="bg-red-500 text-white p-1 rounded-full text-[9px]">❤️</span>
+                                                            <span className="font-bold">{post.likes || 0} reactions</span>
+                                                        </div>
+                                                        <span>{post.commentsCount || (post.comments ? post.comments.length : 0)} comments</span>
                                                     </div>
-                                                )}
 
-                                                {/* Interactive Comment Input Box */}
-                                                <div className="flex items-center space-x-2 pt-2">
-                                                    <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-7 h-7 rounded-full object-cover" />
-                                                    <input 
-                                                        type="text" 
-                                                        value={commentInputs[post.id] || ''}
-                                                        onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                                                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post.id)}
-                                                        placeholder="Write a comment..." 
-                                                        className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-xs px-3 py-2 rounded-full focus:outline-none"
-                                                    />
-                                                    <button 
-                                                        onClick={() => handleAddComment(post.id)}
-                                                        className="text-fbBlue hover:bg-blue-50 dark:hover:bg-fbHoverDark p-1.5 rounded-full"
-                                                    >
-                                                        <i className="fa-solid fa-paper-plane text-sm"></i>
-                                                    </button>
+                                                    {/* Reaction & Action Toolbar */}
+                                                    <div className="grid grid-cols-3 gap-1 text-xs font-bold text-gray-600 dark:text-gray-300 relative group">
+                                                        {/* Reaction Bar */}
+                                                        <button 
+                                                            onClick={() => handleReaction(post.id, 'like')}
+                                                            className={`flex items-center justify-center space-x-1 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-fbHoverDark transition ${myReaction ? 'text-fbBlue' : ''}`}
+                                                        >
+                                                            <i className="fa-solid fa-thumbs-up"></i>
+                                                            <span>{myReaction ? myReaction.toUpperCase() : 'Like'}</span>
+                                                        </button>
+
+                                                        <button onClick={() => setActiveCommentPost(post)} className="flex items-center justify-center space-x-1 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-fbHoverDark transition">
+                                                            <i className="fa-regular fa-comment"></i>
+                                                            <span>Comment</span>
+                                                        </button>
+
+                                                        <button onClick={() => showToast("Post link copied to clipboard!")} className="flex items-center justify-center space-x-1 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-fbHoverDark transition">
+                                                            <i className="fa-solid fa-share"></i>
+                                                            <span>Share</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
 
+                                {/* Right Sidebar Widgets */}
+                                <div className="hidden lg:block lg:col-span-1 space-y-4 sticky top-20 h-fit">
+                                    <div className="bg-white dark:bg-fbCardDark p-3.5 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark space-y-2">
+                                        <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider">Sponsored Ad</h4>
+                                        <img src="https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=400" className="w-full h-28 object-cover rounded-xl" />
+                                        <h5 className="font-bold text-xs">SAFINTech Pro ANC Headset</h5>
+                                        <p className="text-[11px] text-gray-500">Immersive Audio - 40% OFF Today!</p>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-fbCardDark p-3.5 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark space-y-3">
+                                        <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider">Online Contacts</h4>
+                                        {['Tanisha Islam', 'Abu Shovo', 'Tusar Suvro', 'Ariyan Rakid'].map((friend, i) => (
+                                            <div 
+                                                key={i} 
+                                                onClick={() => { setActiveChatUser(friend); setActiveTab('messenger'); }}
+                                                className="flex items-center space-x-3 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-fbHoverDark cursor-pointer transition"
+                                            >
+                                                <div className="relative">
+                                                    <img src={`https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100`} className="w-8 h-8 rounded-full object-cover" />
+                                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-fbCardDark rounded-full"></span>
+                                                </div>
+                                                <span className="text-xs font-bold">{friend}</span>
                                             </div>
-                                        );
-                                    })
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {}
+                        {activeTab === 'watch' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <h2 className="text-xl font-black flex items-center space-x-2">
+                                    <i className="fa-solid fa-tv text-purple-500"></i>
+                                    <span>SafinBook Watch & Long Videos</span>
+                                </h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {watchVideos.map((vid) => (
+                                        <div key={vid.id} className="bg-white dark:bg-fbCardDark rounded-2xl overflow-hidden shadow border border-gray-200 dark:border-fbBorderDark space-y-3 p-3">
+                                            <div className="relative rounded-xl overflow-hidden bg-black">
+                                                <video src={vid.videoUrl} controls className="w-full h-52 object-cover" />
+                                                <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                                                    {vid.duration}
+                                                </span>
+                                            </div>
+                                            <div className="flex space-x-3">
+                                                <img src={vid.avatar} className="w-10 h-10 rounded-full object-cover border border-fbBlue" />
+                                                <div>
+                                                    <h4 className="font-bold text-sm leading-snug">{vid.title}</h4>
+                                                    <p className="text-xs text-gray-500 mt-1">{vid.channel} • {vid.views} • {vid.time}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* MARKETPLACE TAB */}
+                        {activeTab === 'marketplace' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <div className="flex justify-between items-center bg-white dark:bg-fbCardDark p-4 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark">
+                                    <div>
+                                        <h2 className="text-xl font-black">SafinBook Marketplace</h2>
+                                        <p className="text-xs text-gray-500">Buy & Sell items in your local area</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowCreateItemModal(true)} 
+                                        className="bg-fbBlue text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow hover:bg-fbHoverBlue transition"
+                                    >
+                                        + Sell Something
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {marketplace.map((item) => (
+                                        <div key={item.id} className="bg-white dark:bg-fbCardDark rounded-2xl overflow-hidden shadow border border-gray-200 dark:border-fbBorderDark flex flex-col group hover:shadow-xl transition">
+                                            <img src={item.image} className="w-full h-40 object-cover group-hover:scale-105 transition duration-300" />
+                                            <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                                                <div>
+                                                    <span className="text-xs font-black text-fbBlue">{item.price}</span>
+                                                    <h4 className="font-bold text-xs line-clamp-1">{item.title}</h4>
+                                                    <p className="text-[10px] text-gray-500">📍 {item.location}</p>
+                                                </div>
+                                                <button onClick={() => showToast(`Inquiry sent to seller ${item.seller}`)} className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs font-bold py-2 rounded-xl hover:bg-fbBlue hover:text-white transition">
+                                                    Message Seller
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* GROUPS TAB */}
+                        {activeTab === 'groups' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <h2 className="text-xl font-black">Your Groups & Communities</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {groups.map((group) => (
+                                        <div key={group.id} className="bg-white dark:bg-fbCardDark rounded-2xl overflow-hidden shadow border border-gray-200 dark:border-fbBorderDark">
+                                            <img src={group.cover} className="w-full h-32 object-cover" />
+                                            <div className="p-4 space-y-3">
+                                                <div>
+                                                    <h3 className="font-bold text-base">{group.name}</h3>
+                                                    <p className="text-xs text-gray-500">{group.members} members</p>
+                                                    <p className="text-xs text-gray-400 mt-1">{group.description}</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        const updated = groups.map(g => g.id === group.id ? { ...g, isJoined: !g.isJoined } : g);
+                                                        setGroups(updated);
+                                                        showToast(group.isJoined ? "Left group" : "Joined group!");
+                                                    }}
+                                                    className={`w-full text-xs font-bold py-2 rounded-xl transition ${group.isJoined ? 'bg-gray-200 dark:bg-fbHoverDark text-gray-800 dark:text-gray-200' : 'bg-fbBlue text-white'}`}
+                                                >
+                                                    {group.isJoined ? 'Joined ✔' : 'Join Group'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PAGES TAB */}
+                        {activeTab === 'pages' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <div className="flex justify-between items-center bg-white dark:bg-fbCardDark p-4 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark">
+                                    <div>
+                                        <h2 className="text-xl font-black">Pages You Like & Follow</h2>
+                                        <p className="text-xs text-gray-500">Discover businesses, brands and creators</p>
+                                    </div>
+                                    <button onClick={() => setShowCreatePageModal(true)} className="bg-fbBlue text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow hover:bg-fbHoverBlue transition">
+                                        + Create New Page
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {pages.map((page) => (
+                                        <div key={page.id} className="bg-white dark:bg-fbCardDark rounded-2xl overflow-hidden shadow border border-gray-200 dark:border-fbBorderDark p-4 space-y-3">
+                                            <div className="flex items-center space-x-3">
+                                                <img src={page.avatar} className="w-12 h-12 rounded-full object-cover border-2 border-fbBlue" />
+                                                <div>
+                                                    <h3 className="font-bold text-sm">{page.name}</h3>
+                                                    <p className="text-xs text-gray-500">{page.category} • {page.followers}</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => {
+                                                    setPages(pages.map(p => p.id === page.id ? { ...p, isLiked: !p.isLiked } : p));
+                                                    showToast(page.isLiked ? "Unliked Page" : "Liked Page!");
+                                                }}
+                                                className={`w-full text-xs font-bold py-2 rounded-xl transition ${page.isLiked ? 'bg-gray-200 dark:bg-fbHoverDark text-gray-800 dark:text-gray-200' : 'bg-fbBlue text-white'}`}
+                                            >
+                                                {page.isLiked ? 'Following ✔' : 'Follow Page'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* EVENTS TAB */}
+                        {activeTab === 'events' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <h2 className="text-xl font-black">Upcoming Tech & Local Events</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {events.map((evt) => (
+                                        <div key={evt.id} className="bg-white dark:bg-fbCardDark rounded-2xl overflow-hidden shadow border border-gray-200 dark:border-fbBorderDark flex flex-col md:flex-row">
+                                            <img src={evt.cover} className="w-full md:w-48 h-40 object-cover" />
+                                            <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                                                <div>
+                                                    <span className="text-xs font-bold text-red-500">{evt.date}</span>
+                                                    <h3 className="font-bold text-base mt-1">{evt.title}</h3>
+                                                    <p className="text-xs text-gray-500">📍 {evt.location}</p>
+                                                    <p className="text-xs text-gray-400 mt-1">{evt.attendees}</p>
+                                                </div>
+                                                <button onClick={() => showToast("Response saved!")} className="bg-fbBlue text-white font-bold text-xs py-2 rounded-xl">
+                                                    {evt.status} ✔
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* GAMING TAB */}
+                        {activeTab === 'gaming' && (
+                            <div className="lg:col-span-4 bg-white dark:bg-fbCardDark p-6 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark space-y-4 text-center max-w-lg mx-auto">
+                                <h2 className="text-xl font-black flex items-center justify-center space-x-2">
+                                    <i className="fa-solid fa-gamepad text-indigo-500"></i>
+                                    <span>SafinBook Gaming Hub (Tic-Tac-Toe vs AI)</span>
+                                </h2>
+                                <p className="text-xs text-gray-500">Play a quick game inside SafinBook!</p>
+                                
+                                {gameWinner && (
+                                    <div className="p-3 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-200 font-bold rounded-xl text-sm">
+                                        {gameWinner === 'Draw' ? "It's a Draw!" : `Winner: Player ${gameWinner}! 🎉`}
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-3 gap-2 w-60 h-60 mx-auto">
+                                    {board.map((cell, i) => (
+                                        <button 
+                                            key={i} 
+                                            onClick={() => handleBoardClick(i)} 
+                                            className="bg-gray-100 dark:bg-fbHoverDark text-2xl font-black rounded-xl border border-gray-200 dark:border-fbBorderDark flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                                        >
+                                            {cell}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <button 
+                                    onClick={() => { setBoard(Array(9).fill(null)); setGameWinner(null); }} 
+                                    className="bg-fbBlue text-white text-xs font-bold px-4 py-2 rounded-xl shadow hover:bg-fbHoverBlue transition"
+                                >
+                                    Reset Game
+                                </button>
+                            </div>
+                        )}
+
+                        {/* MEMORIES TAB */}
+                        {activeTab === 'memories' && (
+                            <div className="lg:col-span-4 bg-white dark:bg-fbCardDark p-6 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark text-center space-y-3 max-w-lg mx-auto">
+                                <i className="fa-solid fa-clock-rotate-left text-4xl text-yellow-500"></i>
+                                <h2 className="text-xl font-black">On This Day - Memories</h2>
+                                <p className="text-xs text-gray-500">We hope you enjoy looking back on your memories from 1 year ago today!</p>
+                                <div className="bg-gray-50 dark:bg-fbHoverDark p-4 rounded-2xl text-left space-y-2 border border-gray-200 dark:border-fbBorderDark">
+                                    <span className="text-[10px] font-bold text-gray-400">1 YEAR AGO TODAY</span>
+                                    <p className="text-xs font-semibold">"Just launched my first tech project on SafinBook! 🚀"</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* BOOKMARKS TAB */}
+                        {activeTab === 'bookmarks' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <h2 className="text-xl font-black flex items-center space-x-2">
+                                    <i className="fa-solid fa-bookmark text-pink-500"></i>
+                                    <span>Saved Posts & Bookmarks</span>
+                                </h2>
+                                {savedPostIds.length === 0 ? (
+                                    <div className="bg-white dark:bg-fbCardDark p-8 rounded-2xl text-center shadow text-xs text-gray-500 border border-gray-200 dark:border-fbBorderDark">
+                                        No saved posts yet. Click the bookmark icon on any post to save it for later.
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-500">{savedPostIds.length} item(s) saved in your bookmarks.</p>
                                 )}
                             </div>
                         )}
 
-                        {/* TAB 2: FRIENDS */}
-                        {activeTab === 'friends' && (
-                            <div className="bg-white dark:bg-fbCardDark rounded-xl p-4 shadow border border-gray-200 dark:border-gray-800 space-y-4">
-                                <h2 className="text-xl font-bold">Friend Requests</h2>
-                                {friendRequests.map(req => (
-                                    <div key={req.id} className="flex items-center space-x-3 p-2 border-b border-gray-100 dark:border-gray-800">
-                                        <img src={req.avatar} className="w-14 h-14 rounded-full object-cover" />
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-sm">{req.name}</h4>
-                                            <p className="text-xs text-gray-500 mb-2">{req.mutual} mutual friends</p>
-                                            <div className="flex space-x-2">
-                                                <button onClick={() => handleFriendRequest(req.id)} className="bg-fbBlue text-white text-xs font-bold px-4 py-1.5 rounded-lg">Confirm</button>
-                                                <button onClick={() => handleFriendRequest(req.id)} className="bg-gray-200 dark:bg-fbHoverDark text-xs font-bold px-4 py-1.5 rounded-lg">Delete</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* TAB 3: MESSENGER */}
+                        {/* MESSENGER TAB */}
                         {activeTab === 'messenger' && (
-                            <div className="bg-white dark:bg-fbCardDark rounded-xl shadow border border-gray-200 dark:border-gray-800 h-[70vh] flex flex-col md:flex-row overflow-hidden">
-                                <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-800 p-3 space-y-3">
-                                    <h2 className="text-xl font-bold">Chats</h2>
-                                    {['Tanisha Islam', 'Ariyan Rakid', 'Abu Shovo', 'Md Abdul Khalak'].map((u, idx) => (
+                            <div className="lg:col-span-4 bg-white dark:bg-fbCardDark rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark grid grid-cols-1 md:grid-cols-3 h-[500px] overflow-hidden">
+                                <div className="border-r border-gray-200 dark:border-fbBorderDark p-3 space-y-3 overflow-y-auto">
+                                    <h3 className="font-black text-base">Chats</h3>
+                                    {['Tanisha Islam', 'Abu Shovo', 'Tusar Suvro', 'Ariyan Rakid'].map((u, i) => (
                                         <div 
-                                            key={idx}
+                                            key={i} 
                                             onClick={() => setActiveChatUser(u)}
-                                            className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer ${activeChatUser === u ? 'bg-blue-50 dark:bg-fbHoverDark' : 'hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}
+                                            className={`flex items-center space-x-3 p-2 rounded-xl cursor-pointer transition ${activeChatUser === u ? 'bg-blue-50 dark:bg-fbHoverDark' : 'hover:bg-gray-100 dark:hover:bg-fbHoverDark'}`}
                                         >
-                                            <img src={`https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100`} className="w-10 h-10 rounded-full object-cover" />
+                                            <img src={`https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100`} className="w-9 h-9 rounded-full object-cover" />
                                             <div>
-                                                <h4 className="font-bold text-sm">{u}</h4>
-                                                <p className="text-xs text-gray-500">Active now</p>
+                                                <h4 className="font-bold text-xs">{u}</h4>
+                                                <p className="text-[10px] text-gray-400">Active now</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="flex-1 flex flex-col justify-between bg-gray-50 dark:bg-fbDarkBg">
-                                    <div className="p-3 bg-white dark:bg-fbCardDark border-b border-gray-200 dark:border-gray-800 font-bold">
-                                        Chatting with {activeChatUser}
+                                <div className="md:col-span-2 flex flex-col justify-between p-4 bg-gray-50 dark:bg-fbDarkBg">
+                                    <div className="flex justify-between items-center border-b pb-2 border-gray-200 dark:border-fbBorderDark">
+                                        <div className="flex items-center space-x-2">
+                                            <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100" className="w-8 h-8 rounded-full object-cover" />
+                                            <h4 className="font-bold text-sm">{activeChatUser}</h4>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <button onClick={() => { setCallType('audio'); setCallStatus('Calling...'); setShowCallModal(true); }} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-fbHoverDark flex items-center justify-center text-xs">
+                                                <i className="fa-solid fa-phone"></i>
+                                            </button>
+                                            <button onClick={() => { setCallType('video'); setCallStatus('Video Calling...'); setShowCallModal(true); }} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-fbHoverDark flex items-center justify-center text-xs">
+                                                <i className="fa-solid fa-video"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="p-3 flex-1 overflow-y-auto space-y-2">
+                                    <div className="flex-1 overflow-y-auto py-3 space-y-2">
                                         {messages.map((m) => (
-                                            <div key={m.id} className={`flex ${m.sender === (user?.displayName || 'SAFIN') ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`p-2.5 rounded-2xl text-xs max-w-[70%] ${m.sender === (user?.displayName || 'SAFIN') ? 'bg-fbBlue text-white' : 'bg-white dark:bg-fbCardDark border'}`}>
+                                            <div key={m.id} className={`flex ${m.sender === 'SAFIN' ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-xs p-2.5 rounded-2xl text-xs ${m.sender === 'SAFIN' ? 'bg-fbBlue text-white' : 'bg-white dark:bg-fbCardDark border border-gray-200 dark:border-fbBorderDark'}`}>
                                                     <p>{m.text}</p>
-                                                    <span className="text-[9px] opacity-70 block text-right mt-1">{m.time}</span>
+                                                    <span className="text-[9px] opacity-70 block text-right mt-0.5">{m.time}</span>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="p-2 bg-white dark:bg-fbCardDark border-t border-gray-200 dark:border-gray-800 flex items-center space-x-2">
+                                    <div className="flex space-x-2 pt-2">
                                         <input 
                                             type="text" 
                                             value={currentChatMessage}
                                             onChange={(e) => setCurrentChatMessage(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                            placeholder="Write a message..."
-                                            className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-xs px-3 py-2 rounded-full focus:outline-none"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && currentChatMessage.trim()) {
+                                                    setMessages([...messages, { id: Date.now(), sender: 'SAFIN', text: currentChatMessage, time: 'Just now' }]);
+                                                    setCurrentChatMessage('');
+                                                }
+                                            }}
+                                            placeholder="Type a message..." 
+                                            className="flex-1 bg-white dark:bg-fbCardDark text-xs px-3 py-2 rounded-full border border-gray-200 dark:border-fbBorderDark focus:outline-none" 
                                         />
-                                        <button onClick={handleSendMessage} className="bg-fbBlue text-white p-2 rounded-full w-8 h-8 flex items-center justify-center">
-                                            <i className="fa-solid fa-paper-plane text-xs"></i>
+                                        <button 
+                                            onClick={() => {
+                                                if (currentChatMessage.trim()) {
+                                                    setMessages([...messages, { id: Date.now(), sender: 'SAFIN', text: currentChatMessage, time: 'Just now' }]);
+                                                    setCurrentChatMessage('');
+                                                }
+                                            }} 
+                                            className="bg-fbBlue text-white text-xs px-4 py-2 rounded-full font-bold"
+                                        >
+                                            Send
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* TAB 4: REELS */}
-                        {activeTab === 'reels' && (
-                            <div className="flex justify-center items-center py-4">
-                                <div className="w-full max-w-sm h-[70vh] bg-black rounded-2xl relative overflow-hidden flex items-center justify-center shadow-2xl">
-                                    <video src="https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4" autoPlay loop muted className="w-full h-full object-cover"></video>
-                                    <div className="absolute bottom-4 left-4 text-white">
-                                        <h4 className="font-bold text-sm">@safin_official</h4>
-                                        <p className="text-xs">Enjoying the vibes! 🌿 #safinbook</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* TAB 5: MENU */}
-                        {activeTab === 'menu' && (
-                            <div className="bg-white dark:bg-fbCardDark rounded-xl p-4 shadow border border-gray-200 dark:border-gray-800 space-y-4">
-                                <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 dark:border-gray-800">
-                                    <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-14 h-14 rounded-full object-cover" />
-                                    <div>
-                                        <h3 className="font-bold text-base">{user?.displayName || user?.email || user?.phoneNumber || "Guest User"}</h3>
-                                        <p className="text-xs text-gray-500">SafinBook Member</p>
-                                    </div>
-                                </div>
-
+                        {/* NOTIFICATIONS TAB */}
+                        {activeTab === 'notifications' && (
+                            <div className="lg:col-span-4 bg-white dark:bg-fbCardDark p-5 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark space-y-3 max-w-2xl mx-auto">
+                                <h2 className="text-xl font-black">Notifications</h2>
                                 <div className="space-y-2">
-                                    <div onClick={toggleDarkMode} className="flex justify-between items-center p-3 bg-gray-100 dark:bg-fbHoverDark rounded-xl cursor-pointer">
-                                        <span className="text-xs font-bold">Dark Mode</span>
-                                        <input type="checkbox" checked={darkMode} readOnly />
+                                    {notifications.map((n) => (
+                                        <div key={n.id} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-fbHoverDark border border-gray-100 dark:border-fbBorderDark">
+                                            <div className={`w-8 h-8 rounded-full ${n.iconBg} text-white flex items-center justify-center text-xs flex-shrink-0`}>
+                                                {n.icon}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-xs font-semibold">{n.text}</p>
+                                                <span className="text-[10px] text-gray-400">{n.time}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PROFILE TAB */}
+                        {activeTab === 'profile' && (
+                            <div className="lg:col-span-4 space-y-4">
+                                <div className="bg-white dark:bg-fbCardDark rounded-2xl overflow-hidden shadow border border-gray-200 dark:border-fbBorderDark">
+                                    <div className="h-44 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
+                                        <div className="absolute -bottom-10 left-6">
+                                            <img src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"} className="w-24 h-24 rounded-full border-4 border-white dark:border-fbCardDark object-cover shadow-lg" />
+                                        </div>
                                     </div>
-                                    {user && (
-                                        <button onClick={handleSignOut} className="w-full bg-red-500 text-white font-bold text-xs py-3 rounded-xl">
-                                            Log Out
+                                    <div className="pt-12 p-6 flex justify-between items-start flex-wrap gap-3">
+                                        <div>
+                                            <h2 className="text-2xl font-black">{user?.displayName || "Md Safin"}</h2>
+                                            <p className="text-xs text-gray-500 mt-1">{userBio}</p>
+                                            <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
+                                                <span>💼 {userWork}</span>
+                                                <span>📍 {userLives}</span>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setShowEditProfileModal(true)} className="bg-gray-200 dark:bg-fbHoverDark text-xs font-bold px-4 py-2 rounded-xl">
+                                            ✏️ Edit Profile
                                         </button>
-                                    )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SETTINGS TAB */}
+                        {activeTab === 'settings' && (
+                            <div className="lg:col-span-4 bg-white dark:bg-fbCardDark p-5 rounded-2xl shadow border border-gray-200 dark:border-fbBorderDark space-y-6 max-w-3xl mx-auto">
+                                <h2 className="text-xl font-black flex items-center space-x-2 border-b pb-3 border-gray-200 dark:border-fbBorderDark">
+                                    <i className="fa-solid fa-gear text-fbBlue"></i>
+                                    <span>{lang === 'BN' ? 'অ্যাপ সেটিংস ও প্রাইভেসী কন্টেন্ট' : 'Settings & Privacy Central'}</span>
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Appearance */}
+                                    <div className="bg-gray-50 dark:bg-fbHoverDark p-4 rounded-xl space-y-3">
+                                        <h3 className="font-bold text-sm text-fbBlue">🎨 Visual Appearance</h3>
+                                        <div onClick={toggleDarkMode} className="flex justify-between items-center cursor-pointer">
+                                            <span className="text-xs font-semibold">Dark Theme Mode</span>
+                                            <input type="checkbox" checked={darkMode} readOnly className="w-4 h-4 rounded" />
+                                        </div>
+                                    </div>
+
+                                    {/* Privacy */}
+                                    <div className="bg-gray-50 dark:bg-fbHoverDark p-4 rounded-xl space-y-3">
+                                        <h3 className="font-bold text-sm text-fbBlue">🔒 Profile Privacy Controls</h3>
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-semibold">Who can see your posts?</span>
+                                            <select value={privacyProfile} onChange={(e) => setPrivacyProfile(e.target.value)} className="bg-white dark:bg-fbCardDark text-xs p-1 rounded border">
+                                                <option value="Public">Public</option>
+                                                <option value="Friends">Friends Only</option>
+                                                <option value="Only Me">Only Me</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Security Settings */}
+                                    <div className="bg-gray-50 dark:bg-fbHoverDark p-4 rounded-xl space-y-3">
+                                        <h3 className="font-bold text-sm text-fbBlue">🛡️ Account Security</h3>
+                                        <div onClick={() => setTwoFactorAuth(!twoFactorAuth)} className="flex justify-between items-center cursor-pointer">
+                                            <span className="text-xs font-semibold">Two-Factor Authentication</span>
+                                            <input type="checkbox" checked={twoFactorAuth} readOnly className="w-4 h-4 rounded" />
+                                        </div>
+                                        <button onClick={() => showToast("Password reset link sent to your email!")} className="text-xs text-fbBlue font-bold hover:underline block">
+                                            Change Account Password
+                                        </button>
+                                    </div>
+
+                                    {/* Notifications Preferences */}
+                                    <div className="bg-gray-50 dark:bg-fbHoverDark p-4 rounded-xl space-y-3">
+                                        <h3 className="font-bold text-sm text-fbBlue">🔔 Push Notifications</h3>
+                                        <div onClick={() => setNotifPostLike(!notifPostLike)} className="flex justify-between items-center cursor-pointer">
+                                            <span className="text-xs font-semibold">Post Reaction Alerts</span>
+                                            <input type="checkbox" checked={notifPostLike} readOnly className="w-4 h-4 rounded" />
+                                        </div>
+                                        <div onClick={() => setNotifComments(!notifComments)} className="flex justify-between items-center cursor-pointer">
+                                            <span className="text-xs font-semibold">Comment Alerts</span>
+                                            <input type="checkbox" checked={notifComments} readOnly className="w-4 h-4 rounded" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-200 dark:border-fbBorderDark flex justify-between items-center">
+                                    <button onClick={() => showToast("Cache and temporary data cleared!")} className="text-xs text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 font-bold">
+                                        🧹 Clear App Cache
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => { auth.signOut(); showToast("লগআউট করা হয়েছে"); setShowAuthModal(true); }} 
+                                        className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition"
+                                    >
+                                        Log Out of SafinBook
+                                    </button>
                                 </div>
                             </div>
                         )}
 
                     </main>
 
-                    {}
-                    {/* MODAL: AUTHENTICATION (LOGIN / SIGNUP / PHONE) */}
+                    {/* ALL MODALS AND POPUPS */}
+
+                    {/* AUTHENTICATION MODAL */}
                     {showAuthModal && (
-                        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-800 space-y-4">
-                                <div className="flex justify-between items-center border-b pb-3 border-gray-200 dark:border-gray-700">
-                                    <h3 className="text-xl font-extrabold text-fbBlue">SafinBook Auth</h3>
-                                    <button onClick={() => setShowAuthModal(false)} className="text-gray-400 hover:text-gray-600">
-                                        <i className="fa-solid fa-xmark text-xl"></i>
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4 border border-gray-200 dark:border-fbBorderDark animate-fadeIn">
+                                <div className="text-center space-y-1">
+                                    <h2 className="text-3xl font-black text-fbBlue tracking-tight">SafinBook</h2>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Connect with friends and the world around you.</p>
+                                </div>
+
+                                <div className="flex border-b border-gray-200 dark:border-fbBorderDark">
+                                    <button 
+                                        onClick={() => setAuthTab('login')} 
+                                        className={`flex-1 py-2 font-bold text-xs transition border-b-2 ${authTab === 'login' ? 'border-fbBlue text-fbBlue' : 'border-transparent text-gray-400'}`}
+                                    >
+                                        LOG IN
+                                    </button>
+                                    <button 
+                                        onClick={() => setAuthTab('signup')} 
+                                        className={`flex-1 py-2 font-bold text-xs transition border-b-2 ${authTab === 'signup' ? 'border-fbBlue text-fbBlue' : 'border-transparent text-gray-400'}`}
+                                    >
+                                        REGISTER
                                     </button>
                                 </div>
 
-                                {/* Auth Type Tabs */}
-                                <div className="flex border-b border-gray-200 dark:border-gray-700">
-                                    <button 
-                                        onClick={() => setAuthMode('email')} 
-                                        className={`flex-1 py-2 font-bold text-xs ${authMode === 'email' ? 'border-b-2 border-fbBlue text-fbBlue' : 'text-gray-400'}`}
-                                    >
-                                        Email & Password
-                                    </button>
-                                    <button 
-                                        onClick={() => setAuthMode('phone')} 
-                                        className={`flex-1 py-2 font-bold text-xs ${authMode === 'phone' ? 'border-b-2 border-fbBlue text-fbBlue' : 'text-gray-400'}`}
-                                    >
-                                        Phone Number
-                                    </button>
-                                </div>
-
-                                {authError && <div className="p-2 bg-red-100 text-red-600 text-xs rounded">{authError}</div>}
-                                {authMsg && <div className="p-2 bg-green-100 text-green-700 text-xs rounded">{authMsg}</div>}
-
-                                {/* EMAIL AUTH FORM */}
-                                {authMode === 'email' && (
-                                    <form onSubmit={handleEmailAuth} className="space-y-3">
-                                        {isSignUp && (
-                                            <div>
-                                                <label className="text-xs font-bold block mb-1">Full Name</label>
-                                                <input 
-                                                    type="text" 
-                                                    required 
-                                                    value={displayName}
-                                                    onChange={(e) => setDisplayName(e.target.value)}
-                                                    placeholder="Md. Safin"
-                                                    className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
-                                                />
-                                            </div>
-                                        )}
-                                        <div>
-                                            <label className="text-xs font-bold block mb-1">Email Address</label>
-                                            <input 
-                                                type="email" 
-                                                required 
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                placeholder="example@gmail.com"
-                                                className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold block mb-1">Password</label>
-                                            <input 
-                                                type="password" 
-                                                required 
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                placeholder="••••••••"
-                                                className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
-                                            />
-                                        </div>
-
-                                        <button type="submit" className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-lg text-xs hover:opacity-90">
-                                            {isSignUp ? 'Create Account' : 'Log In'}
-                                        </button>
-
-                                        <div className="text-center pt-2">
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setIsSignUp(!isSignUp)}
-                                                className="text-fbBlue text-xs font-semibold hover:underline"
-                                            >
-                                                {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-
-                                {/* PHONE AUTH FORM */}
-                                {authMode === 'phone' && (
-                                    <div className="space-y-3">
-                                        {!confirmationResult ? (
-                                            <form onSubmit={handleSendPhoneCode} className="space-y-3">
-                                                <div>
-                                                    <label className="text-xs font-bold block mb-1">Phone Number (with country code)</label>
-                                                    <input 
-                                                        type="tel" 
-                                                        required 
-                                                        value={phoneNumber}
-                                                        onChange={(e) => setPhoneNumber(e.target.value)}
-                                                        placeholder="+8801700000000"
-                                                        className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none"
-                                                    />
-                                                </div>
-                                                <button type="submit" className="w-full bg-green-600 text-white font-bold py-2.5 rounded-lg text-xs hover:opacity-90">
-                                                    Send OTP Code
-                                                </button>
-                                            </form>
-                                        ) : (
-                                            <form onSubmit={handleVerifyPhoneCode} className="space-y-3">
-                                                <div>
-                                                    <label className="text-xs font-bold block mb-1">Enter OTP Verification Code</label>
-                                                    <input 
-                                                        type="text" 
-                                                        required 
-                                                        value={verificationCode}
-                                                        onChange={(e) => setVerificationCode(e.target.value)}
-                                                        placeholder="123456"
-                                                        className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-2.5 rounded-lg border focus:outline-none text-center letter-spacing-2 font-bold"
-                                                    />
-                                                </div>
-                                                <button type="submit" className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-lg text-xs hover:opacity-90">
-                                                    Verify & Sign In
-                                                </button>
-                                            </form>
-                                        )}
+                                {authError && (
+                                    <div className="p-3 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-200 rounded-xl text-xs font-semibold">
+                                        ⚠️ {authError}
                                     </div>
                                 )}
+
+                                <form onSubmit={handleAuth} className="space-y-3">
+                                    {authTab === 'signup' && (
+                                        <div>
+                                            <label className="text-[11px] font-bold text-gray-500 uppercase">Full Name</label>
+                                            <input 
+                                                type="text" 
+                                                required
+                                                value={authName}
+                                                onChange={(e) => setAuthName(e.target.value)}
+                                                placeholder="e.g. Md Safin"
+                                                className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-3 rounded-xl focus:outline-none mt-1"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="text-[11px] font-bold text-gray-500 uppercase">Email Address</label>
+                                        <input 
+                                            type="email" 
+                                            required
+                                            value={authEmail}
+                                            onChange={(e) => setAuthEmail(e.target.value)}
+                                            placeholder="safin@example.com"
+                                            className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-3 rounded-xl focus:outline-none mt-1"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[11px] font-bold text-gray-500 uppercase">Password</label>
+                                        <input 
+                                            type="password" 
+                                            required
+                                            value={authPassword}
+                                            onChange={(e) => setAuthPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className="w-full bg-gray-100 dark:bg-fbHoverDark text-xs p-3 rounded-xl focus:outline-none mt-1"
+                                        />
+                                    </div>
+
+                                    <button type="submit" className="w-full bg-fbBlue text-white font-bold py-3 rounded-xl text-xs hover:bg-fbHoverBlue shadow-md transition">
+                                        {authTab === 'login' ? 'LOG IN TO SAFINBOOK' : 'CREATE NEW ACCOUNT'}
+                                    </button>
+                                </form>
+
+                                <div className="relative flex py-1 items-center">
+                                    <div className="flex-grow border-t border-gray-200 dark:border-fbBorderDark"></div>
+                                    <span className="flex-shrink mx-2 text-[10px] text-gray-400 font-bold">OR</span>
+                                    <div className="flex-grow border-t border-gray-200 dark:border-fbBorderDark"></div>
+                                </div>
+
+                                <button 
+                                    onClick={handleGuestLogin} 
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition"
+                                >
+                                    🚀 Continue as Guest User
+                                </button>
                             </div>
                         </div>
                     )}
 
-                    {/* MODAL: CREATE POST */}
-                    {showCreatePostModal && (
-                        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3">
-                            <div className="bg-white dark:bg-fbCardDark w-full max-w-lg rounded-xl shadow-2xl p-4 space-y-3 border border-gray-200 dark:border-gray-800">
+                    {/* EDIT PROFILE MODAL */}
+                    {showEditProfileModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-3 border border-gray-200 dark:border-fbBorderDark">
                                 <div className="flex justify-between items-center border-b pb-2">
-                                    <h3 className="font-bold text-center flex-1">Create Post</h3>
+                                    <h3 className="font-extrabold text-sm">Edit Profile Details</h3>
+                                    <button onClick={() => setShowEditProfileModal(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div className="space-y-2 text-xs">
+                                    <div>
+                                        <label className="font-bold text-gray-500">Bio Statement</label>
+                                        <input type="text" value={userBio} onChange={(e) => setUserBio(e.target.value)} className="w-full p-2 bg-gray-100 dark:bg-fbHoverDark rounded-lg mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="font-bold text-gray-500">Workplace</label>
+                                        <input type="text" value={userWork} onChange={(e) => setUserWork(e.target.value)} className="w-full p-2 bg-gray-100 dark:bg-fbHoverDark rounded-lg mt-1" />
+                                    </div>
+                                    <div>
+                                        <label className="font-bold text-gray-500">Lives In</label>
+                                        <input type="text" value={userLives} onChange={(e) => setUserLives(e.target.value)} className="w-full p-2 bg-gray-100 dark:bg-fbHoverDark rounded-lg mt-1" />
+                                    </div>
+                                </div>
+                                <button onClick={handleUpdateProfile} className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-xl text-xs">
+                                    Save Profile Changes
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CREATE STORY MODAL */}
+                    {showCreateStoryModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-3 border border-gray-200 dark:border-fbBorderDark">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-extrabold text-sm">Create New Story</h3>
+                                    <button onClick={() => setShowCreateStoryModal(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500">Image URL</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="https://images.unsplash.com/..." 
+                                        value={newStoryImg} 
+                                        onChange={(e) => setNewStoryImg(e.target.value)} 
+                                        className="w-full text-xs p-2.5 bg-gray-100 dark:bg-fbHoverDark rounded-xl mt-1"
+                                    />
+                                </div>
+                                <button onClick={handleCreateStory} className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-xl text-xs">
+                                    Share to Story
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CREATE MARKETPLACE ITEM MODAL */}
+                    {showCreateItemModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-3 border border-gray-200 dark:border-fbBorderDark">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-extrabold text-sm">Sell an Item on Marketplace</h3>
+                                    <button onClick={() => setShowCreateItemModal(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div className="space-y-2 text-xs">
+                                    <input type="text" placeholder="Item Title (e.g. iPhone 15 Pro)" value={newItemTitle} onChange={(e) => setNewItemTitle(e.target.value)} className="w-full p-2.5 bg-gray-100 dark:bg-fbHoverDark rounded-xl" />
+                                    <input type="text" placeholder="Price in BDT (e.g. 50,000)" value={newItemPrice} onChange={(e) => setNewItemPrice(e.target.value)} className="w-full p-2.5 bg-gray-100 dark:bg-fbHoverDark rounded-xl" />
+                                    <input type="text" placeholder="Location (e.g. Dhaka)" value={newItemLoc} onChange={(e) => setNewItemLoc(e.target.value)} className="w-full p-2.5 bg-gray-100 dark:bg-fbHoverDark rounded-xl" />
+                                </div>
+                                <button onClick={handleCreateMarketplaceItem} className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-xl text-xs">
+                                    List Item For Sale
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CREATE PAGE MODAL */}
+                    {showCreatePageModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-md rounded-2xl shadow-2xl p-5 space-y-3 border border-gray-200 dark:border-fbBorderDark">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-extrabold text-sm">Create New Page</h3>
+                                    <button onClick={() => setShowCreatePageModal(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div className="space-y-2 text-xs">
+                                    <input type="text" placeholder="Page Name" value={newPageName} onChange={(e) => setNewPageName(e.target.value)} className="w-full p-2.5 bg-gray-100 dark:bg-fbHoverDark rounded-xl" />
+                                    <select value={newPageCategory} onChange={(e) => setNewPageCategory(e.target.value)} className="w-full p-2.5 bg-gray-100 dark:bg-fbHoverDark rounded-xl">
+                                        <option value="Technology">Technology & Software</option>
+                                        <option value="Education">Education & Learning</option>
+                                        <option value="Entertainment">Entertainment & Media</option>
+                                    </select>
+                                </div>
+                                <button onClick={handleCreatePage} className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-xl text-xs">
+                                    Create Page
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CREATE POST MODAL */}
+                    {showCreatePostModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-lg rounded-2xl shadow-2xl p-5 space-y-4 border border-gray-200 dark:border-fbBorderDark">
+                                <div className="flex justify-between items-center border-b pb-2 border-gray-200 dark:border-gray-700">
+                                    <h3 className="font-extrabold text-base text-center flex-1">Create Post</h3>
                                     <button onClick={() => setShowCreatePostModal(false)}>
-                                        <i className="fa-solid fa-xmark"></i>
+                                        <i className="fa-solid fa-xmark text-lg"></i>
                                     </button>
                                 </div>
 
-                                <textarea 
-                                    rows="3"
-                                    value={newPostText}
-                                    onChange={(e) => setNewPostText(e.target.value)}
-                                    placeholder="What's on your mind?"
-                                    className="w-full bg-transparent border-none text-sm focus:outline-none resize-none"
-                                ></textarea>
+                                <div className={`rounded-xl p-3 ${postBgGradient || 'bg-transparent'}`}>
+                                    <textarea 
+                                        rows="3"
+                                        value={newPostText}
+                                        onChange={(e) => setNewPostText(e.target.value)}
+                                        placeholder="What's on your mind?"
+                                        className={`w-full bg-transparent border-none text-sm focus:outline-none resize-none ${postBgGradient ? 'text-white font-bold placeholder-white/80' : ''}`}
+                                    ></textarea>
+                                </div>
 
-                                {selectedMedia && (
-                                    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-black">
-                                        <button onClick={() => setSelectedMedia(null)} className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                                            <i className="fa-solid fa-xmark"></i>
-                                        </button>
-                                        <img src={selectedMedia.url} className="w-full h-40 object-contain" />
+                                <div className="flex space-x-2">
+                                    <button onClick={() => setPostBgGradient('')} className="w-7 h-7 rounded-full border border-gray-400 bg-white dark:bg-fbHoverDark"></button>
+                                    <button onClick={() => setPostBgGradient('bg-gradient-post-1')} className="w-7 h-7 rounded-full bg-gradient-post-1"></button>
+                                    <button onClick={() => setPostBgGradient('bg-gradient-post-2')} className="w-7 h-7 rounded-full bg-gradient-post-2"></button>
+                                    <button onClick={() => setPostBgGradient('bg-gradient-post-3')} className="w-7 h-7 rounded-full bg-gradient-post-3"></button>
+                                    <button onClick={() => setPostBgGradient('bg-gradient-post-4')} className="w-7 h-7 rounded-full bg-gradient-post-4"></button>
+                                    <button onClick={() => setPostBgGradient('bg-gradient-post-5')} className="w-7 h-7 rounded-full bg-gradient-post-5"></button>
+                                </div>
+
+                                {showPollInputs && (
+                                    <div className="space-y-2 border-t pt-2">
+                                        <span className="text-xs font-bold text-amber-500">Poll Options:</span>
+                                        <input type="text" placeholder="Option 1" value={pollOptions[0]} onChange={(e) => setPollOptions([e.target.value, pollOptions[1]])} className="w-full text-xs p-2 rounded-lg bg-gray-100 dark:bg-fbHoverDark" />
+                                        <input type="text" placeholder="Option 2" value={pollOptions[1]} onChange={(e) => setPollOptions([pollOptions[0], e.target.value])} className="w-full text-xs p-2 rounded-lg bg-gray-100 dark:bg-fbHoverDark" />
                                     </div>
                                 )}
 
-                                <input type="file" ref={fileInputRef} accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
+                                <input type="file" ref={fileInputRef} accept="image/*,video/*" onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => setSelectedMedia({ url: reader.result, type: file.type.startsWith('video') ? 'video' : 'image' });
+                                        reader.readAsDataURL(file);
+                                    }
+                                }} className="hidden" />
 
-                                <div className="border rounded-lg p-2 flex justify-between items-center">
-                                    <span className="text-xs font-semibold">Add to your post</span>
-                                    <button onClick={() => fileInputRef.current?.click()} className="text-green-500 text-lg">
-                                        <i className="fa-solid fa-images"></i>
+                                <button onClick={handleCreatePost} className="w-full bg-fbBlue text-white font-bold py-2.5 rounded-xl text-xs hover:bg-fbHoverBlue transition">
+                                    PUBLISH POST
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* COMMENTS DRAWER / MODAL */}
+                    {activeCommentPost && (
+                        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4">
+                            <div className="bg-white dark:bg-fbCardDark w-full max-w-lg rounded-2xl shadow-2xl p-4 space-y-3 border border-gray-200 dark:border-fbBorderDark max-h-[80vh] flex flex-col justify-between">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <h3 className="font-bold text-sm">Comments ({activeCommentPost.comments ? activeCommentPost.comments.length : 0})</h3>
+                                    <button onClick={() => setActiveCommentPost(null)}>
+                                        <i className="fa-solid fa-xmark text-lg"></i>
                                     </button>
                                 </div>
 
-                                <button onClick={handleCreatePost} className="w-full bg-fbBlue text-white font-bold py-2 rounded-lg text-xs">
-                                    POST
+                                <div className="flex-1 overflow-y-auto space-y-2 p-1">
+                                    {(!activeCommentPost.comments || activeCommentPost.comments.length === 0) ? (
+                                        <p className="text-center text-xs text-gray-400 py-4">No comments yet. Be the first to comment!</p>
+                                    ) : (
+                                        activeCommentPost.comments.map((c) => (
+                                            <div key={c.id} className="flex space-x-2">
+                                                <img src={c.avatar} className="w-7 h-7 rounded-full object-cover" />
+                                                <div className="bg-gray-100 dark:bg-fbHoverDark p-2 rounded-2xl text-xs flex-1">
+                                                    <b className="block text-[11px] font-bold">{c.author}</b>
+                                                    <p>{c.text}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                <div className="flex items-center space-x-2 pt-2 border-t">
+                                    <input 
+                                        type="text" 
+                                        value={commentInputText}
+                                        onChange={(e) => setCommentInputText(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                                        placeholder="Write a comment..."
+                                        className="flex-1 bg-gray-100 dark:bg-fbHoverDark text-xs px-3 py-2 rounded-full focus:outline-none"
+                                    />
+                                    <button onClick={handleAddComment} className="bg-fbBlue text-white px-4 py-2 rounded-full text-xs font-bold">Post</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STORY VIEWER MODAL */}
+                    {activeStoryViewer && (
+                        <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between p-4">
+                            <div className="flex justify-between items-center text-white z-10">
+                                <div className="flex items-center space-x-2">
+                                    <img src={activeStoryViewer.avatar} className="w-9 h-9 rounded-full border-2 border-fbBlue object-cover" />
+                                    <div>
+                                        <h4 className="font-bold text-xs">{activeStoryViewer.user}</h4>
+                                        <span className="text-[10px] opacity-70">{activeStoryViewer.time}</span>
+                                    </div>
+                                </div>
+                                <button onClick={() => setActiveStoryViewer(null)} className="text-white text-2xl">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <div className="relative flex-1 rounded-2xl overflow-hidden my-3 flex items-center justify-center">
+                                <img src={activeStoryViewer.image} className="w-full h-full object-contain" />
+                            </div>
+
+                            <div className="flex space-x-2 max-w-md mx-auto w-full z-10">
+                                <input type="text" placeholder={`Reply to ${activeStoryViewer.user}...`} className="flex-1 bg-white/20 text-white placeholder-white/70 text-xs px-4 py-2.5 rounded-full border border-white/30 focus:outline-none" />
+                                <button onClick={() => { showToast("Story reply sent!"); setActiveStoryViewer(null); }} className="bg-fbBlue text-white font-bold text-xs px-4 py-2.5 rounded-full">Send</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* LIVE STREAM MODAL */}
+                    {showGoLiveModal && (
+                        <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between p-4">
+                            <div className="flex justify-between items-center text-white z-10">
+                                <div className="flex items-center space-x-2">
+                                    <span className="bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-md animate-pulse">LIVE</span>
+                                    <span className="text-xs font-bold bg-black/50 px-2 py-1 rounded">👁️ 3,410 Viewers</span>
+                                </div>
+                                <button onClick={() => setShowGoLiveModal(false)} className="text-white text-2xl">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <div className="relative flex-1 rounded-2xl overflow-hidden bg-gray-900 my-3 flex items-center justify-center">
+                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800" className="w-full h-full object-cover" />
+                                <div className="absolute bottom-4 left-4 right-4 text-white space-y-2 max-h-36 overflow-y-auto no-scrollbar">
+                                    <div className="bg-black/40 backdrop-blur-sm p-1.5 rounded-lg text-xs"><b>Tanisha Islam:</b> Love the broadcast! ❤️</div>
+                                    <div className="bg-black/40 backdrop-blur-sm p-1.5 rounded-lg text-xs"><b>Abu Shovo:</b> Hello Safin! 👋</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CALL MODAL */}
+                    {showCallModal && (
+                        <div className="fixed inset-0 z-50 bg-gray-900 text-white flex flex-col items-center justify-between p-8">
+                            <div className="text-center space-y-2 mt-10">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" className="w-28 h-28 rounded-full border-4 border-fbBlue mx-auto object-cover animate-pulse" />
+                                <h3 className="text-xl font-bold">{activeChatUser}</h3>
+                                <p className="text-xs text-gray-400">{callStatus}</p>
+                            </div>
+
+                            <div className="flex space-x-6 mb-10">
+                                <button onClick={() => setShowCallModal(false)} className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-xl">
+                                    <i className="fa-solid fa-phone-slash"></i>
                                 </button>
                             </div>
                         </div>
