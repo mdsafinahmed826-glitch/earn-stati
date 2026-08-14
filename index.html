@@ -935,7 +935,7 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({
                     audio: true,
-                    video: type === 'video'
+                    video: true 
                 });
 
                 if (type === 'video') {
