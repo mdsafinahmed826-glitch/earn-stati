@@ -98,26 +98,26 @@
 
         <!-- Center Section: Navigation Tabs -->
         <nav class="flex items-center justify-center gap-1 md:gap-8 flex-1 max-w-xl mx-2">
-            <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn active text-fb-blue border-b-4 border-fb-blue py-2.5 px-3 md:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
-                <i class="fa-solid fa-house text-xl"></i>
+            <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn active text-fb-blue border-b-4 border-fb-blue py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
+                <i class="fa-solid fa-house text-lg sm:text-xl"></i>
             </button>
-            <button onclick="switchTab('friends')" id="tab-friends" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-3 md:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition relative">
-                <i class="fa-solid fa-user-group text-xl"></i>
-                <span class="absolute top-1.5 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">4</span>
+            <button onclick="switchTab('friends')" id="tab-friends" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition relative">
+                <i class="fa-solid fa-user-group text-lg sm:text-xl"></i>
+                <span class="absolute top-1.5 right-1 sm:right-2 bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full">4</span>
             </button>
-            <button onclick="switchTab('reels')" id="tab-reels" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-3 md:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
-                <i class="fa-solid fa-circle-play text-xl"></i>
+            <button onclick="switchTab('reels')" id="tab-reels" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
+                <i class="fa-solid fa-circle-play text-lg sm:text-xl"></i>
             </button>
-            <button onclick="switchTab('market')" id="tab-market" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-3 md:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
-                <i class="fa-solid fa-store text-xl"></i>
+            <button onclick="switchTab('market')" id="tab-market" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
+                <i class="fa-solid fa-store text-lg sm:text-xl"></i>
             </button>
-            <button onclick="switchTab('menu')" id="tab-menu" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-3 md:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition md:hidden">
-                <i class="fa-solid fa-bars text-xl"></i>
+            <button onclick="switchTab('menu')" id="tab-menu" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition md:hidden">
+                <i class="fa-solid fa-bars text-lg sm:text-xl"></i>
             </button>
         </nav>
 
-        <!-- Right Section: Action Controls -->
-        <div class="flex items-center gap-2">
+        <!-- Right Section: Action Controls (Hidden on small mobile screens to prevent header overcrowding, available inside Menu) -->
+        <div class="hidden md:flex items-center gap-2">
             <!-- Dark Mode Toggle -->
             <button onclick="toggleDarkMode()" title="ডার্ক মোড টগল" class="w-9 h-9 rounded-full bg-gray-200 dark:bg-fb-darkhover flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-300 transition">
                 <i id="darkModeIcon" class="fa-solid fa-moon"></i>
@@ -445,20 +445,63 @@
                         <p id="menuUserLocation" class="text-gray-700 dark:text-gray-300 flex items-center gap-2"><i class="fa-solid fa-location-dot text-red-500 w-4"></i> <span>Dhaka, Bangladesh</span></p>
                     </div>
 
+                    <!-- Quick Tools & Feature Options (Mobile Quick Menu Controls) -->
+                    <div class="mt-5 text-left border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">কুইক একসেস ও সেটিংস</h3>
+                        
+                        <div class="space-y-2.5">
+                            <!-- Messenger Shortcut -->
+                            <div onclick="toggleMessenger()" class="flex items-center justify-between p-3 bg-blue-50 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 transition border border-blue-100 dark:border-gray-700">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-full bg-fb-blue text-white flex items-center justify-center">
+                                        <i class="fa-brands fa-facebook-messenger text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-sm text-fb-blue dark:text-blue-400">মেসেঞ্জার (Messenger)</p>
+                                        <p class="text-[11px] text-gray-500 dark:text-gray-400">মেসেজ ও চ্যাট চালু করুন</p>
+                                    </div>
+                                </div>
+                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">2</span>
+                            </div>
+
+                            <!-- Dark Mode Toggle Shortcut -->
+                            <div onclick="toggleDarkMode()" class="flex items-center justify-between p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center">
+                                        <i id="menuDarkModeIcon" class="fa-solid fa-moon text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-sm">ডার্ক / লাইট মোড (Dark Mode)</p>
+                                        <p class="text-[11px] text-gray-500 dark:text-gray-400" id="darkModeStatusText">থিম পরিবর্তন করতে টগল করুন</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-toggle-on text-2xl text-fb-blue"></i>
+                            </div>
+
+                            <!-- Search Shortcut -->
+                            <div class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl">
+                                <div class="relative">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
+                                    <input type="text" placeholder="SafinBook-এ পোস্ট বা বন্ধু খুঁজুন..." class="w-full pl-8 pr-3 py-2 bg-white dark:bg-fb-darkcard text-xs rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-fb-blue">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-3 mt-4 text-left">
-                        <div class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl">
+                        <div onclick="alert('গ্রুপসমূহ লোড হচ্ছে...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                             <i class="fa-solid fa-users text-blue-500 text-lg"></i>
                             <p class="font-bold text-xs mt-1">গ্রুপসমূহ</p>
                         </div>
-                        <div class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl">
+                        <div onclick="alert('পেজেস লোড হচ্ছে...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                             <i class="fa-solid fa-flag text-orange-500 text-lg"></i>
                             <p class="font-bold text-xs mt-1">পেজেস (Pages)</p>
                         </div>
-                        <div class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl">
+                        <div onclick="alert('জন্মদিনের তালিকা...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                             <i class="fa-solid fa-cake-candles text-pink-500 text-lg"></i>
                             <p class="font-bold text-xs mt-1">জন্মদিন (Birthdays)</p>
                         </div>
-                        <div class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl">
+                        <div onclick="alert('সেটিংস অপশন ওপেন হচ্ছে...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                             <i class="fa-solid fa-gear text-gray-500 text-lg"></i>
                             <p class="font-bold text-xs mt-1">সেটিংস</p>
                         </div>
@@ -627,6 +670,17 @@
 
     <!-- MAIN JAVASCRIPT APP LOGIC -->
     <script>
+        // Global error boundary to catch cross-origin CDN and runtime script errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.warn("Handled runtime warning:", message, "at", source, ":", lineno);
+            return true; // Suppress error propagation
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            console.warn("Handled unhandled promise rejection:", event.reason);
+            if (event.preventDefault) event.preventDefault();
+        });
+
         // --- 1. FIREBASE CONFIGURATION & INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
@@ -639,13 +693,23 @@
             measurementId: "G-S8FXSQMLR3"
         };
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        // Initialize Firebase with fallback guard
+        let auth = null;
+        let database = null;
+        let storage = null;
+
+        try {
+            if (typeof firebase !== 'undefined' && firebase.apps) {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                auth = firebase.auth ? firebase.auth() : null;
+                database = firebase.database ? firebase.database() : null;
+                storage = firebase.storage ? firebase.storage() : null;
+            }
+        } catch (err) {
+            console.warn("Firebase initialization skipped (running in offline mode):", err);
         }
-        const auth = firebase.auth();
-        const database = firebase.database();
-        const storage = firebase.storage();
 
         // --- APP STATE ---
         let currentUser = null;
@@ -692,28 +756,37 @@
             setInterval(() => {
                 total += Math.floor(Math.random() * 2);
                 online = 120 + Math.floor(Math.random() * 15);
-                document.getElementById('liveUsersCount').innerText = `${total.toLocaleString('bn-BD')} জন মোট ইউজার`;
-                document.getElementById('onlineUsersCount').innerText = `${online.toLocaleString('bn-BD')} জন অনলাইনে এক্টিভ`;
+                const liveEl = document.getElementById('liveUsersCount');
+                const onlineEl = document.getElementById('onlineUsersCount');
+                if (liveEl) liveEl.innerText = `${total.toLocaleString('bn-BD')} জন মোট ইউজার`;
+                if (onlineEl) onlineEl.innerText = `${online.toLocaleString('bn-BD')} জন অনলাইনে এক্টিভ`;
             }, 4000);
         }
 
         // --- AUTHENTICATION HANDLERS ---
         function listenToAuth() {
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = {
-                        uid: user.uid,
-                        displayName: user.displayName || user.email.split('@')[0] || "Md Safin Ahmed",
-                        email: user.email,
-                        photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-                    };
-                    document.getElementById('authModal').classList.add('hidden');
-                    updateUserUI();
-                } else {
-                    currentUser = null;
-                    document.getElementById('authModal').classList.remove('hidden');
-                }
-            });
+            if (!auth) return;
+            try {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        currentUser = {
+                            uid: user.uid,
+                            displayName: user.displayName || user.email.split('@')[0] || "Md Safin Ahmed",
+                            email: user.email,
+                            photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+                        };
+                        const modal = document.getElementById('authModal');
+                        if (modal) modal.classList.add('hidden');
+                        updateUserUI();
+                    } else {
+                        currentUser = null;
+                        const modal = document.getElementById('authModal');
+                        if (modal) modal.classList.remove('hidden');
+                    }
+                });
+            } catch (err) {
+                console.warn("Auth state change error:", err);
+            }
         }
 
         function toggleAuthMode() {
@@ -723,13 +796,116 @@
             const switchBtn = document.getElementById('switchAuthBtn');
 
             if (isSignUpMode) {
-                subtitle.innerText = "নতুন SafinBook অ্যাকাউন্ট রেজিস্টার করুন";
-                submitBtn.innerHTML = "<span>রেজিস্টার করুন</span>";
-                switchBtn.innerText = "ইতিমধ্যে অ্যাকাউন্ট আছে? লগইন করুন";
+                if (subtitle) subtitle.innerText = "নতুন SafinBook অ্যাকাউন্ট রেজিস্টার করুন";
+                if (submitBtn) submitBtn.innerHTML = "<span>রেজিস্টার করুন</span>";
+                if (switchBtn) switchBtn.innerText = "ইতিমধ্যে অ্যাকাউন্ট আছে? লগইন করুন";
             } else {
-                subtitle.innerText = "অ্যাকাউন্টে লগইন করুন";
-                submitBtn.innerHTML = "<span>লগইন করুন</span>";
-                switchBtn.innerText = "নতুন SafinBook অ্যাকাউন্ট তৈরি করুন";
+                if (subtitle) subtitle.innerText = "অ্যাকাউন্টে লগইন করুন";
+                if (submitBtn) submitBtn.innerHTML = "<span>লগইন করুন</span>";
+                if (switchBtn) switchBtn.innerText = "নতুন SafinBook অ্যাকাউন্ট তৈরি করুন";
+            }
+        }
+
+        function handleAuth(e, mode) {
+            e.preventDefault();
+            const emailInputEl = document.getElementById('authEmail');
+            const passwordInputEl = document.getElementById('authPassword');
+            const errDiv = document.getElementById('authError');
+            if (errDiv) errDiv.classList.add('hidden');
+
+            const emailInput = emailInputEl ? emailInputEl.value.trim() : '';
+            const passwordInput = passwordInputEl ? passwordInputEl.value : '';
+
+            // Format Phone/Email input
+            let email = emailInput;
+            if (email && !email.includes('@')) {
+                email = `${email.replace(/[^0-9]/g, '')}@safinbook.com`;
+            }
+
+            if (!auth) {
+                guestLogin();
+                return;
+            }
+
+            if (isSignUpMode) {
+                auth.createUserWithEmailAndPassword(email, passwordInput)
+                    .then((res) => {
+                        if (res.user) {
+                            res.user.updateProfile({ displayName: "SafinBook User" }).catch(() => {});
+                        }
+                        alert("SafinBook-এ সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে!");
+                    })
+                    .catch((err) => {
+                        if (errDiv) {
+                            errDiv.innerText = "ত্রুটি: " + (err.message || err);
+                            errDiv.classList.remove('hidden');
+                        }
+                    });
+            } else {
+                auth.signInWithEmailAndPassword(email, passwordInput)
+                    .catch((err) => {
+                        if (errDiv) {
+                            errDiv.innerText = "লগইন ত্রুটি: " + (err.message || err);
+                            errDiv.classList.remove('hidden');
+                        }
+                    });
+            }
+        }
+
+        function guestLogin() {
+            currentUser = {
+                uid: 'guest_123',
+                displayName: 'Md Safin Ahmed',
+                email: 'safin@safinbook.com',
+                photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'
+            };
+            const modal = document.getElementById('authModal');
+            if (modal) modal.classList.add('hidden');
+            updateUserUI();
+        }
+
+        function handleLogout() {
+            if (auth) {
+                auth.signOut().then(() => {
+                    location.reload();
+                }).catch(() => {
+                    location.reload();
+                });
+            } else {
+                currentUser = null;
+                const modal = document.getElementById('authModal');
+                if (modal) modal.classList.remove('hidden');
+            }
+        }
+
+        function updateUserUI() {
+            if (!currentUser) return;
+            const name = currentUser.displayName || "Md Safin Ahmed";
+            const img = currentUser.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80";
+
+            const sideName = document.getElementById('sideUserName');
+            const menuName = document.getElementById('menuUserName');
+            const menuEmail = document.getElementById('menuUserEmail');
+
+            if (sideName) sideName.innerText = name;
+            if (menuName) menuName.innerText = name;
+            if (menuEmail) menuEmail.innerText = currentUser.email || 'safinbook@app.com';
+
+            ['headerAvatar', 'sideAvatar', 'postCreatorAvatar', 'storyUserAvatar', 'menuAvatar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.src = img;
+            });
+
+            if (document.getElementById('menuUserBio')) {
+                document.getElementById('menuUserBio').innerText = currentUser.bio || 'SafinBook-এ সক্রিয় ইউজার';
+            }
+            if (document.getElementById('menuUserWork')) {
+                const workSpan = document.getElementById('menuUserWork').querySelector('span');
+                if (workSpan) workSpan.innerText = currentUser.work || 'SafinBook Owner & Founder';
+            }
+            if (document.getElementById('menuUserLocation')) {
+                const locSpan = document.getElementById('menuUserLocation').querySelector('span');
+                if (locSpan) locSpan.innerText = currentUser.location || 'Dhaka, Bangladesh';
             }
         }
 
@@ -938,7 +1114,8 @@
 
         // --- CREATE POST & REALTIME DB ---
         function createNewPost() {
-            const text = document.getElementById('postInputText').value.trim();
+            const textInput = document.getElementById('postInputText');
+            const text = textInput ? textInput.value.trim() : '';
             if (!text && !selectedFile) {
                 alert("অনুগ্রহ করে কিছু লিখুন অথবা গ্যালারি থেকে ছবি/ভিডিও সিলেক্ট করুন!");
                 return;
@@ -960,18 +1137,18 @@
                 newPost.mediaUrl = mediaUrl;
                 newPost.mediaType = mediaType;
                 
-                // Save to Realtime Database if accessible, else unshift sample Array
-                try {
-                    database.ref('posts/' + newPost.id).set(newPost);
-                } catch(e) {
-                    console.log("Saving locally fallback");
+                if (database) {
+                    try {
+                        database.ref('posts/' + newPost.id).set(newPost);
+                    } catch(e) {
+                        console.warn("Saving post locally fallback");
+                    }
                 }
 
                 samplePosts.unshift(newPost);
                 renderPosts();
 
-                // Clear input
-                document.getElementById('postInputText').value = '';
+                if (textInput) textInput.value = '';
                 clearSelectedFile();
                 alert("পোস্টটি সফলভাবে প্রকাশিত হয়েছে!");
             };
@@ -985,6 +1162,24 @@
                 reader.readAsDataURL(selectedFile);
             } else {
                 finalizePost();
+            }
+        }
+
+        function listenToRealtimeDatabase() {
+            if (!database) return;
+            try {
+                database.ref('posts').on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const dbPosts = Object.values(data).reverse();
+                        samplePosts = dbPosts;
+                        renderPosts();
+                    }
+                }, (error) => {
+                    console.warn("Database listener error:", error);
+                });
+            } catch(e) {
+                console.warn("Firebase DB offline fallback", e);
             }
         }
 
@@ -1216,20 +1411,33 @@
 
         function copyShareLink() {
             const input = document.getElementById('shareLinkInput');
+            if (!input) return;
             input.select();
-            document.execCommand('copy');
-            alert('পোস্ট লিংক ক্লিপবোর্ডে কপি করা হয়েছে:\n' + input.value);
+            try {
+                document.execCommand('copy');
+                alert('পোস্ট লিংক ক্লিপবোর্ডে কপি করা হয়েছে:\n' + input.value);
+            } catch(e) {
+                alert('পোস্ট লিংক:\n' + input.value);
+            }
             closeShareModal();
         }
 
         // --- DARK MODE TOGGLE ---
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
             const icon = document.getElementById('darkModeIcon');
-            if (document.documentElement.classList.contains('dark')) {
-                icon.className = 'fa-solid fa-sun text-amber-400';
-            } else {
-                icon.className = 'fa-solid fa-moon';
+            const menuIcon = document.getElementById('menuDarkModeIcon');
+            const statusText = document.getElementById('darkModeStatusText');
+            
+            if (icon) {
+                icon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
+            }
+            if (menuIcon) {
+                menuIcon.className = isDark ? 'fa-solid fa-sun text-amber-300' : 'fa-solid fa-moon text-lg';
+            }
+            if (statusText) {
+                statusText.innerText = isDark ? 'ডার্ক মোড সক্রিয়' : 'লাইট মোড সক্রিয়';
             }
         }
     </script>
