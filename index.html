@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Web Bangla</title>
+    <title>WhatsApp Web Bangla - Enhanced Ringtone & Background Sync</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,12 +50,32 @@
             background-image: radial-gradient(#1e293b 1px, transparent 1px);
             background-size: 20px 20px;
         }
+
+        /* Pulse glow animation for permission alert */
+        @keyframes permPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+        }
+        .perm-banner {
+            animation: permPulse 2.5s infinite ease-in-out;
+        }
     </style>
 </head>
 <body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
 
     <!-- App Container -->
     <div id="app" class="h-full w-full flex flex-col relative">
+
+        <!-- Banner for Background Notification & Sound Permission Request -->
+        <div id="permissionBanner" class="bg-amber-600/90 text-white px-4 py-2 text-xs md:text-sm font-medium flex items-center justify-between border-b border-amber-500 z-50 perm-banner">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bell-ring text-amber-200 text-base animate-bounce"></i>
+                <span>ফোন লক বা অ্যাপ ব্যাকগ্রাউন্ডে থাকলেও মেসেজ/কলের রিংটোন পাওয়ার জন্য নোটিফিকেশন পারমিশন পারমিট করুন।</span>
+            </div>
+            <button id="grantPermissionBtn" class="bg-white text-amber-900 hover:bg-amber-100 font-bold px-3 py-1 rounded-lg shadow transition text-xs">
+                পারমিশন অ্যালাও করুন <i class="fa-solid fa-check ml-1"></i>
+            </button>
+        </div>
 
         <!-- ==================== AUTH / LOGIN MODAL ==================== -->
         <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
@@ -198,7 +218,7 @@
                 <video id="localVideo" autoplay playsinline muted class="absolute bottom-4 right-4 w-32 h-24 object-cover rounded-lg border-2 border-white shadow-md"></video>
             </div>
 
-            <!-- Audio element for audio call -->
+            <!-- Audio element for audio call with standard output stream -->
             <audio id="remoteAudio" autoplay class="hidden"></audio>
 
             <!-- Call Controls -->
@@ -415,13 +435,11 @@
         let activeCallId = null;
 
         // WebRTC Config
-        // Firebase is used only for signaling. Actual audio/video travels peer-to-peer
-        // through WebRTC. ICE candidates are exchanged through callerCandidates and
-        // answerCandidates under the call node.
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
             ],
             iceCandidatePoolSize: 10
         };
@@ -438,14 +456,144 @@
             }
         };
 
-        // ==================== RINGTONE + MESSAGE NOTIFICATION ====================
+        // ==================== ULTRA LOUD RINGTONE (50 METERS AUDIBLE) ====================
+        let ringtoneAudioContext = null;
+        let ringtoneTimer = null;
+        let wakeLockObj = null;
+
+        // Piercing Piezo High-Pitch Ringtone Synthesizer for max outdoor distance transmission
+        async function startRingtone() {
+            stopRingtone();
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return;
+                ringtoneAudioContext = new AC();
+                if (ringtoneAudioContext.state === 'suspended') {
+                    await ringtoneAudioContext.resume();
+                }
+
+                // Dynamic Audio Compressor to boost audio power without distortion
+                const compressor = ringtoneAudioContext.createDynamicsCompressor();
+                compressor.threshold.setValueAtTime(-10, ringtoneAudioContext.currentTime);
+                compressor.knee.setValueAtTime(40, ringtoneAudioContext.currentTime);
+                compressor.ratio.setValueAtTime(12, ringtoneAudioContext.currentTime);
+                compressor.attack.setValueAtTime(0.003, ringtoneAudioContext.currentTime);
+                compressor.release.setValueAtTime(0.25, ringtoneAudioContext.currentTime);
+                compressor.connect(ringtoneAudioContext.destination);
+
+                // Phone Master Volume Gain
+                const masterGain = ringtoneAudioContext.createGain();
+                masterGain.gain.setValueAtTime(1.0, ringtoneAudioContext.currentTime); // Max gain
+                masterGain.connect(compressor);
+
+                const playPiezoLoudBurst = () => {
+                    if (!ringtoneAudioContext || ringtoneAudioContext.state === 'closed') return;
+                    const now = ringtoneAudioContext.currentTime;
+
+                    // Ultra high-visibility frequency pulses (2600Hz & 3100Hz with sub-frequencies)
+                    const freqs = [2600, 3100, 2600, 3100, 1300];
+                    freqs.forEach((freq, idx) => {
+                        const osc = ringtoneAudioContext.createOscillator();
+                        const gainNode = ringtoneAudioContext.createGain();
+
+                        osc.type = 'square'; // Maximum acoustic punch over distance
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+
+                        gainNode.gain.setValueAtTime(0.001, now + idx * 0.1);
+                        gainNode.gain.exponentialRampToValueAtTime(0.95, now + idx * 0.1 + 0.01);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.08);
+
+                        osc.connect(gainNode);
+                        gainNode.connect(masterGain);
+
+                        osc.start(now + idx * 0.1);
+                        osc.stop(now + idx * 0.1 + 0.09);
+                    });
+                };
+
+                playPiezoLoudBurst();
+                ringtoneTimer = setInterval(playPiezoLoudBurst, 1200);
+
+                // Vibrate phone continuous pattern for incoming calls
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([800, 400, 800, 400, 800, 400]);
+                }
+            } catch (e) {
+                console.warn('Ultra-Loud Ringtone Engine Alert:', e);
+            }
+        }
+
+        function stopRingtone() {
+            if (ringtoneTimer) { clearInterval(ringtoneTimer); ringtoneTimer = null; }
+            if (ringtoneAudioContext) {
+                try { ringtoneAudioContext.close(); } catch (_) {}
+                ringtoneAudioContext = null;
+            }
+            if ('vibrate' in navigator) {
+                navigator.vibrate(0);
+            }
+        }
+
+        // ==================== BACKGROUND & LOCK SCREEN NOTIFICATION SYSTEM ====================
         async function requestNotificationPermission() {
             try {
-                if ('Notification' in window && Notification.permission === 'default') {
-                    await Notification.requestPermission();
+                if ('Notification' in window) {
+                    const result = await Notification.requestPermission();
+                    if (result === 'granted') {
+                        document.getElementById('permissionBanner').classList.add('hidden');
+                        registerServiceWorker();
+                        acquireWakeLock();
+                    }
                 }
-            } catch (e) { console.warn('Notification permission unavailable:', e); }
+            } catch (e) {
+                console.warn('Notification permission error:', e);
+            }
         }
+
+        // Inline Service Worker Registration for APK / Background Push support
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('push', function(event) {
+                        const data = event.data ? event.data.json() : {};
+                        const title = data.title || 'নতুন বার্তা / কল';
+                        const options = {
+                            body: data.body || 'সাফিন ওয়েবে নতুন নোটিফিকেশন এসেছে',
+                            icon: 'https://placehold.co/128/00a884/ffffff?text=WA',
+                            badge: 'https://placehold.co/128/00a884/ffffff?text=WA',
+                            vibrate: [300, 100, 300, 100, 400],
+                            tag: 'wa-web-bg',
+                            renotify: true
+                        };
+                        event.waitUntil(self.registration.showNotification(title, options));
+                    });
+                    self.addEventListener('notificationclick', function(event) {
+                        event.notification.close();
+                        event.waitUntil(clients.openWindow('/'));
+                    });
+                `;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW setup note:', err));
+            }
+        }
+
+        async function acquireWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLockObj = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log('WakeLock note:', err.message);
+            }
+        }
+
+        document.getElementById('grantPermissionBtn').addEventListener('click', () => {
+            requestNotificationPermission();
+            // Trigger audio context resume test
+            startRingtone();
+            setTimeout(stopRingtone, 500);
+        });
 
         function showInAppNotification(title, body, type = 'message', onClick = null) {
             const box = document.getElementById('appNotification');
@@ -453,7 +601,7 @@
             document.getElementById('notificationTitle').innerText = title;
             document.getElementById('notificationBody').innerText = body;
             document.getElementById('notificationIcon').innerHTML = type === 'call'
-                ? '<i class="fa-solid fa-phone"></i>'
+                ? '<i class="fa-solid fa-phone animate-bounce"></i>'
                 : '<i class="fa-solid fa-message"></i>';
             box.classList.remove('hidden');
             box.onclick = (e) => {
@@ -462,16 +610,26 @@
                 box.classList.add('hidden');
             };
             clearTimeout(notificationTimeout);
-            notificationTimeout = setTimeout(() => box.classList.add('hidden'), 6000);
+            notificationTimeout = setTimeout(() => box.classList.add('hidden'), 7000);
         }
 
         function notifyUser(title, body, type = 'message', onClick = null) {
             showInAppNotification(title, body, type, onClick);
             try {
                 if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification(title, { body, tag: 'safin-web-' + type, renotify: true });
+                    const notif = new Notification(title, {
+                        body: body,
+                        icon: 'https://placehold.co/128/00a884/ffffff?text=WA',
+                        tag: 'safin-web-' + type,
+                        renotify: true,
+                        requireInteraction: type === 'call'
+                    });
+                    notif.onclick = () => {
+                        window.focus();
+                        if (onClick) onClick();
+                    };
                 }
-            } catch (e) { console.warn('System notification unavailable:', e); }
+            } catch (e) { console.warn('System notification error:', e); }
         }
 
         function flashTitle(title) {
@@ -480,47 +638,7 @@
                 state = !state;
                 document.title = state ? title : originalDocumentTitle;
             }, 800);
-            setTimeout(() => { clearInterval(timer); document.title = originalDocumentTitle; }, 10000);
-        }
-
-        async function startRingtone() {
-            stopRingtone();
-            try {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (!AC) return;
-                ringtoneAudioContext = new AC();
-                if (ringtoneAudioContext.state === 'suspended') await ringtoneAudioContext.resume();
-                ringtoneGain = ringtoneAudioContext.createGain();
-                ringtoneGain.gain.value = 0.08;
-                ringtoneGain.connect(ringtoneAudioContext.destination);
-                const ring = () => {
-                    if (!ringtoneAudioContext || !ringtoneGain) return;
-                    const now = ringtoneAudioContext.currentTime;
-                    [660, 880].forEach((freq, i) => {
-                        const osc = ringtoneAudioContext.createOscillator();
-                        const gain = ringtoneAudioContext.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.value = freq;
-                        gain.gain.setValueAtTime(0.0001, now + i * 0.08);
-                        gain.gain.exponentialRampToValueAtTime(0.18, now + i * 0.08 + 0.03);
-                        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.45);
-                        osc.connect(gain).connect(ringtoneGain);
-                        osc.start(now + i * 0.08);
-                        osc.stop(now + i * 0.08 + 0.5);
-                    });
-                };
-                ring();
-                ringtoneTimer = setInterval(ring, 1500);
-            } catch (e) { console.warn('Ringtone failed:', e); }
-        }
-
-        function stopRingtone() {
-            if (ringtoneTimer) { clearInterval(ringtoneTimer); ringtoneTimer = null; }
-            if (ringtoneAudioContext) {
-                try { ringtoneAudioContext.close(); } catch (_) {}
-                ringtoneAudioContext = null;
-                ringtoneGain = null;
-            }
+            setTimeout(() => { clearInterval(timer); document.title = originalDocumentTitle; }, 12000);
         }
 
         document.getElementById('closeNotificationBtn').addEventListener('click', (e) => {
@@ -623,7 +741,6 @@
                 currentUserData = snapshot.val();
                 updateUserUI();
             } else {
-                // Initialize default profile
                 currentUserData = {
                     uid: user.uid,
                     name: user.displayName || "ইউজার " + user.uid.substring(0, 4),
@@ -636,7 +753,9 @@
                 openProfileModal();
             }
             
-            requestNotificationPermission();
+            if (Notification.permission === 'granted') {
+                document.getElementById('permissionBanner').classList.add('hidden');
+            }
             listenForIncomingCalls();
             loadRecentChats();
         }
@@ -771,6 +890,11 @@
         });
 
         // Load Recent Chats List
+        let notificationTimeout = null;
+        let chatNotificationInitialised = false;
+        const lastSeenChatTimestamps = {};
+        const originalDocumentTitle = document.title;
+
         function loadRecentChats() {
             const userChatsRef = ref(db, `user_chats/${currentUser.uid}`);
             onValue(userChatsRef, async (snapshot) => {
@@ -796,6 +920,9 @@
                                 const peer = peerSnap.val();
                                 notifyUser(peer.name || 'নতুন বার্তা', chat.lastMessage || 'নতুন বার্তা এসেছে', 'message', () => selectChatUser(peer));
                                 flashTitle('💬 নতুন বার্তা — সাফিন ওয়েব');
+                                // Beep for incoming text message
+                                startRingtone();
+                                setTimeout(stopRingtone, 400);
                             }
                         }
                     }
@@ -1036,10 +1163,6 @@
         });
 
         // ==================== REAL-TIME CALLING SYSTEM ====================
-        // WebRTC + Firebase Realtime Database signaling.
-        // IMPORTANT: STUN helps establish peer-to-peer connections. For users
-        // behind strict NAT/firewalls, a TURN server is also recommended.
-
         const callOverlay = document.getElementById('callOverlay');
         const videoContainer = document.getElementById('videoContainer');
         const remoteVideo = document.getElementById('remoteVideo');
@@ -1062,13 +1185,6 @@
         let activeCallRole = null;
         let callListeners = [];
         let pendingRemoteCandidates = [];
-        let ringtoneTimer = null;
-        let ringtoneAudioContext = null;
-        let ringtoneGain = null;
-        let notificationTimeout = null;
-        let chatNotificationInitialised = false;
-        const lastSeenChatTimestamps = {};
-        const originalDocumentTitle = document.title;
 
         function showCallUI(type, peerName, peerPhoto, status, incoming = false) {
             callOverlay.classList.remove('hidden');
@@ -1262,7 +1378,6 @@
             );
 
             try {
-                // Audio call = microphone only. Video call = microphone + camera.
                 localStream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         echoCancellation: true,
@@ -1279,9 +1394,6 @@
                     localVideo.play().catch(() => {});
                 }
 
-                // Create the signaling path BEFORE setLocalDescription().
-                // This is important because ICE candidates can be generated immediately
-                // after setLocalDescription(); otherwise the first candidates could be lost.
                 activeCallRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}`);
 
                 setupPeerConnection(type);
@@ -1310,7 +1422,6 @@
                     createdAt: Date.now()
                 });
 
-                // Listen for the answer.
                 const answerUnsubscribe = onValue(activeCallRef, async (snapshot) => {
                     const data = snapshot.val();
 
@@ -1339,7 +1450,6 @@
 
                 callListeners.push(answerUnsubscribe);
 
-                // Receive ICE candidates generated by the callee.
                 const answerCandidatesRef = ref(
                     db,
                     `calls/${activeChatUser.uid}/${currentUser.uid}/answerCandidates`
@@ -1359,8 +1469,8 @@
             } catch (err) {
                 console.error('Start call error:', err);
                 alert(
-                    'ক্যামেরা/মাইক্রোফোন চালু করা যায়নি।\\n\\n' +
-                    'Browser/WebView permission এবং HTTPS নিশ্চিত করুন।\\n\\n' +
+                    'ক্যামেরা/মাইক্রোফোন চালু করা যায়নি।\n' +
+                    'Browser/WebView permission এবং HTTPS নিশ্চিত করুন।\n' +
                     'কারণ: ' + (err.message || err)
                 );
                 closeCallUI(true);
@@ -1386,7 +1496,6 @@
 
                     if (!data || data.status !== 'calling') continue;
 
-                    // Do not interrupt an existing call.
                     if (activeCallRef) {
                         await update(
                             ref(db, `calls/${currentUser.uid}/${callerId}`),
@@ -1404,6 +1513,7 @@
                     activeCallType = data.type === 'video' ? 'video' : 'audio';
                     activeCallRole = 'callee';
 
+                    // Trigger 50-meter audible ringtone + vibration
                     startRingtone();
                     notifyUser(
                         `${data.callerName || 'কেউ একজন'} কল করছেন`,
@@ -1420,7 +1530,6 @@
                         true
                     );
 
-                    // Only show one incoming call at a time.
                     break;
                 }
             });
@@ -1467,14 +1576,11 @@
 
                 await flushRemoteCandidates();
 
-                // Receive caller ICE candidates.
                 const callerCandidatesRef = ref(
                     db,
                     `calls/${currentUser.uid}/${activeCallPeerUid}/callerCandidates`
                 );
 
-                // Watch the call node so the callee closes immediately when
-                // the caller ends/cancels the call.
                 const calleeCallStateUnsubscribe = onValue(activeCallRef, (snapshot) => {
                     if (!snapshot.exists()) {
                         closeCallUI(false);
@@ -1524,8 +1630,6 @@
         acceptCallBtn.addEventListener('click', () => {
             if (!activeCallRef) return;
 
-            // Fetch the current call data so the accept action always uses
-            // the latest offer.
             get(activeCallRef).then(snapshot => {
                 const data = snapshot.val();
 
@@ -1608,8 +1712,6 @@
             closeCallUI(false);
         });
 
-        // If the other side removes the call node, close the local UI.
-        // The normal listener is also used by the caller for answer/status.
         window.addEventListener('beforeunload', () => {
             if (activeCallRef) {
                 remove(activeCallRef).catch(() => {});
