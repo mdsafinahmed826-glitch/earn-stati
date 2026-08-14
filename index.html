@@ -903,181 +903,562 @@
             voiceRecordingOverlay.classList.add('hidden');
         });
 
-        // Calling System (Audio / Video Call via WebRTC)
+        // ==================== REAL-TIME CALLING SYSTEM ====================
+        // WebRTC + Firebase Realtime Database signaling.
+        // IMPORTANT: STUN helps establish peer-to-peer connections. For users
+        // behind strict NAT/firewalls, a TURN server is also recommended.
+
         const callOverlay = document.getElementById('callOverlay');
         const videoContainer = document.getElementById('videoContainer');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const localVideo = document.getElementById('localVideo');
+        const remoteAudio = document.getElementById('remoteAudio');
+
         const startAudioCallBtn = document.getElementById('startAudioCallBtn');
         const startVideoCallBtn = document.getElementById('startVideoCallBtn');
         const endCallBtn = document.getElementById('endCallBtn');
         const acceptCallBtn = document.getElementById('acceptCallBtn');
         const rejectCallBtn = document.getElementById('rejectCallBtn');
+        const toggleMicBtn = document.getElementById('toggleMicBtn');
+        const toggleCamBtn = document.getElementById('toggleCamBtn');
+        const incomingCallControls = document.getElementById('incomingCallControls');
+        const ongoingCallControls = document.getElementById('ongoingCallControls');
+
+        let activeCallRef = null;
+        let activeCallType = null;
+        let activeCallPeerUid = null;
+        let activeCallRole = null;
+        let callListeners = [];
+        let pendingRemoteCandidates = [];
+
+        function showCallUI(type, peerName, peerPhoto, status, incoming = false) {
+            callOverlay.classList.remove('hidden');
+            document.getElementById('callUserName').innerText = peerName || 'ব্যবহারকারী';
+            document.getElementById('callUserAvatar').src = peerPhoto || 'https://placehold.co/120';
+            document.getElementById('callStatusText').innerText = status || 'কলিং...';
+
+            if (type === 'video') {
+                videoContainer.classList.remove('hidden');
+                toggleCamBtn.classList.remove('hidden');
+            } else {
+                videoContainer.classList.add('hidden');
+                toggleCamBtn.classList.add('hidden');
+            }
+
+            if (incoming) {
+                incomingCallControls.classList.remove('hidden');
+                ongoingCallControls.classList.add('hidden');
+            } else {
+                incomingCallControls.classList.add('hidden');
+                ongoingCallControls.classList.remove('hidden');
+            }
+        }
+
+        function resetCallMedia() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    try { track.stop(); } catch (_) {}
+                });
+            }
+
+            localStream = null;
+
+            if (peerConnection) {
+                try { peerConnection.onicecandidate = null; } catch (_) {}
+                try { peerConnection.ontrack = null; } catch (_) {}
+                try { peerConnection.close(); } catch (_) {}
+            }
+
+            peerConnection = null;
+            remoteVideo.srcObject = null;
+            localVideo.srcObject = null;
+            remoteAudio.srcObject = null;
+            pendingRemoteCandidates = [];
+
+            toggleMicBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+            toggleCamBtn.innerHTML = '<i class="fa-solid fa-video"></i>';
+        }
+
+        function clearCallListeners() {
+            callListeners.forEach(fn => {
+                try { fn(); } catch (_) {}
+            });
+            callListeners = [];
+        }
+
+        function closeCallUI(removeRemoteCall = false) {
+            const refToRemove = activeCallRef;
+
+            clearCallListeners();
+            resetCallMedia();
+
+            callOverlay.classList.add('hidden');
+            activeCallRef = null;
+            activeCallType = null;
+            activeCallPeerUid = null;
+            activeCallRole = null;
+
+            if (removeRemoteCall && refToRemove) {
+                remove(refToRemove).catch(err => console.warn('Call cleanup:', err));
+            }
+        }
+
+        async function addRemoteIceCandidate(candidateData) {
+            if (!peerConnection || !candidateData) return;
+
+            const candidate = new RTCIceCandidate(candidateData);
+
+            if (peerConnection.remoteDescription) {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (err) {
+                    console.warn('ICE candidate error:', err);
+                }
+            } else {
+                pendingRemoteCandidates.push(candidate);
+            }
+        }
+
+        async function flushRemoteCandidates() {
+            if (!peerConnection || !peerConnection.remoteDescription) return;
+
+            const queued = [...pendingRemoteCandidates];
+            pendingRemoteCandidates = [];
+
+            for (const candidate of queued) {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (err) {
+                    console.warn('Queued ICE candidate error:', err);
+                }
+            }
+        }
+
+        function setupPeerConnection(type) {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            peerConnection.onicecandidate = async (event) => {
+                if (!event.candidate || !activeCallRef) return;
+
+                try {
+                    const candidatePath = activeCallRole === 'caller'
+                        ? `${activeCallRef.toString()}/callerCandidates`
+                        : `${activeCallRef.toString()}/answerCandidates`;
+
+                    await push(ref(db, candidatePath), event.candidate.toJSON());
+                } catch (err) {
+                    console.warn('Could not save ICE candidate:', err);
+                }
+            };
+
+            peerConnection.ontrack = (event) => {
+                const stream = event.streams && event.streams[0];
+                if (!stream) return;
+
+                if (type === 'video') {
+                    remoteVideo.srcObject = stream;
+                    remoteVideo.play().catch(() => {});
+                } else {
+                    remoteAudio.srcObject = stream;
+                    remoteAudio.play().catch(() => {});
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                if (!peerConnection) return;
+
+                const state = peerConnection.connectionState;
+
+                if (state === 'connected') {
+                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হয়েছে';
+                } else if (state === 'connecting') {
+                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
+                } else if (state === 'disconnected') {
+                    document.getElementById('callStatusText').innerText = 'সংযোগ দুর্বল...';
+                } else if (state === 'failed') {
+                    document.getElementById('callStatusText').innerText = 'সংযোগ ব্যর্থ হয়েছে';
+                    setTimeout(() => {
+                        if (callOverlay && !callOverlay.classList.contains('hidden')) {
+                            closeCallUI(true);
+                        }
+                    }, 1200);
+                }
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                if (!peerConnection) return;
+                const state = peerConnection.iceConnectionState;
+                if (state === 'failed') {
+                    document.getElementById('callStatusText').innerText = 'নেটওয়ার্ক সংযোগ ব্যর্থ হয়েছে';
+                }
+            };
+        }
+
+        async function initiateCall(type) {
+            if (!currentUser || !activeChatUser) {
+                alert('প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।');
+                return;
+            }
+
+            if (activeCallRef) {
+                alert('একটি কল ইতিমধ্যে চলছে।');
+                return;
+            }
+
+            activeCallType = type;
+            activeCallPeerUid = activeChatUser.uid;
+            activeCallRole = 'caller';
+
+            showCallUI(
+                type,
+                activeChatUser.name,
+                activeChatUser.photo,
+                'কল দেওয়া হচ্ছে...',
+                false
+            );
+
+            try {
+                // Audio call = microphone only. Video call = microphone + camera.
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: type === 'video'
+                        ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                        : false
+                });
+
+                if (type === 'video') {
+                    localVideo.srcObject = localStream;
+                    localVideo.play().catch(() => {});
+                }
+
+                setupPeerConnection(type);
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // One call per caller -> callee pair.
+                activeCallRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}`);
+
+                const offer = await peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: type === 'video'
+                });
+
+                await peerConnection.setLocalDescription(offer);
+
+                await set(activeCallRef, {
+                    callerId: currentUser.uid,
+                    callerName: currentUserData?.name || currentUser.displayName || 'ব্যবহারকারী',
+                    callerPhoto: currentUserData?.photo || currentUser.photoURL || '',
+                    receiverId: activeChatUser.uid,
+                    type: type,
+                    offer: {
+                        type: offer.type,
+                        sdp: offer.sdp
+                    },
+                    status: 'calling',
+                    createdAt: Date.now()
+                });
+
+                // Listen for the answer.
+                const answerUnsubscribe = onValue(activeCallRef, async (snapshot) => {
+                    const data = snapshot.val();
+
+                    if (!data) {
+                        if (activeCallRole === 'caller') closeCallUI(false);
+                        return;
+                    }
+
+                    if (data.answer && peerConnection && !peerConnection.remoteDescription) {
+                        try {
+                            await peerConnection.setRemoteDescription(
+                                new RTCSessionDescription(data.answer)
+                            );
+                            await flushRemoteCandidates();
+                            document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
+                        } catch (err) {
+                            console.error('Set remote answer error:', err);
+                        }
+                    }
+
+                    if (data.status === 'rejected') {
+                        document.getElementById('callStatusText').innerText = 'কল প্রত্যাখ্যান করা হয়েছে';
+                        setTimeout(() => closeCallUI(true), 900);
+                    }
+                });
+
+                callListeners.push(answerUnsubscribe);
+
+                // Receive ICE candidates generated by the callee.
+                const answerCandidatesRef = ref(
+                    db,
+                    `calls/${activeChatUser.uid}/${currentUser.uid}/answerCandidates`
+                );
+
+                const candidateUnsubscribe = onValue(answerCandidatesRef, async (snapshot) => {
+                    if (!snapshot.exists()) return;
+
+                    const candidates = snapshot.val();
+                    for (const key of Object.keys(candidates)) {
+                        await addRemoteIceCandidate(candidates[key]);
+                    }
+                });
+
+                callListeners.push(candidateUnsubscribe);
+
+            } catch (err) {
+                console.error('Start call error:', err);
+                alert(
+                    'ক্যামেরা/মাইক্রোফোন চালু করা যায়নি।\\n\\n' +
+                    'Browser/WebView permission এবং HTTPS নিশ্চিত করুন।\\n\\n' +
+                    'কারণ: ' + (err.message || err)
+                );
+                closeCallUI(true);
+            }
+        }
 
         startAudioCallBtn.addEventListener('click', () => initiateCall('audio'));
         startVideoCallBtn.addEventListener('click', () => initiateCall('video'));
 
-        async function initiateCall(type) {
-            if (!activeChatUser) return;
-
-            activeCallId = currentUser.uid;
-            callOverlay.classList.remove('hidden');
-            document.getElementById('callUserName').innerText = activeChatUser.name;
-            document.getElementById('callUserAvatar').src = activeChatUser.photo || 'https://placehold.co/100';
-            document.getElementById('callStatusText').innerText = "কল দেওয়া হচ্ছে...";
-            document.getElementById('incomingCallControls').classList.add('hidden');
-            document.getElementById('ongoingCallControls').classList.remove('hidden');
-
-            if (type === 'video') {
-                videoContainer.classList.remove('hidden');
-            } else {
-                videoContainer.classList.add('hidden');
-            }
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: true 
-                });
-
-                if (type === 'video') {
-                    document.getElementById('localVideo').srcObject = localStream;
-                }
-
-                peerConnection = new RTCPeerConnection(rtcConfig);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-                peerConnection.ontrack = (e) => {
-                    if (type === 'video') {
-                        document.getElementById('remoteVideo').srcObject = e.streams[0];
-                    } else {
-                        document.getElementById('remoteAudio').srcObject = e.streams[0];
-                    }
-                };
-
-                const callRef = ref(db, `calls/${activeChatUser.uid}`);
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-
-                await set(callRef, {
-                    callerId: currentUser.uid,
-                    callerName: currentUserData.name,
-                    callerPhoto: currentUserData.photo,
-                    type: type,
-                    offer: { sdp: offer.sdp, type: offer.type },
-                    status: 'calling'
-                });
-
-                // Listen for Call Answer
-                onValue(callRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data && data.answer && !peerConnection.currentRemoteDescription) {
-                        const rtcSessionDescription = new RTCSessionDescription(data.answer);
-                        peerConnection.setRemoteDescription(rtcSessionDescription);
-                        document.getElementById('callStatusText').innerText = "সংযুক্ত হয়েছে";
-                    }
-                    if (!data) {
-                        closeCallUI();
-                    }
-                });
-
-            } catch (err) {
-                alert("ক্যামেরা/মাইক্রোফোন এক্সেস পাওয়া যায়নি: " + err.message);
-                closeCallUI();
-            }
-        }
-
-        // Listen for Incoming Calls
+        // Listen for incoming calls addressed to the current user.
         function listenForIncomingCalls() {
-            const myCallRef = ref(db, `calls/${currentUser.uid}`);
-            onValue(myCallRef, async (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.status === 'calling') {
-                    callOverlay.classList.remove('hidden');
-                    document.getElementById('callUserName').innerText = data.callerName;
-                    document.getElementById('callUserAvatar').src = data.callerPhoto || 'https://placehold.co/100';
-                    document.getElementById('callStatusText').innerText = `ইনকামিং ${data.type === 'video' ? 'ভিডিও' : 'অডিও'} কল...`;
+            if (!currentUser) return;
 
-                    document.getElementById('incomingCallControls').classList.remove('hidden');
-                    document.getElementById('ongoingCallControls').classList.add('hidden');
+            const myCallsRef = ref(db, `calls/${currentUser.uid}`);
 
-                    if (data.type === 'video') {
-                        videoContainer.classList.remove('hidden');
-                    } else {
-                        videoContainer.classList.add('hidden');
+            onValue(myCallsRef, async (snapshot) => {
+                if (!snapshot.exists()) return;
+
+                const calls = snapshot.val();
+
+                for (const callerId of Object.keys(calls)) {
+                    const data = calls[callerId];
+
+                    if (!data || data.status !== 'calling') continue;
+
+                    // Do not interrupt an existing call.
+                    if (activeCallRef) {
+                        await update(
+                            ref(db, `calls/${currentUser.uid}/${callerId}`),
+                            { status: 'busy' }
+                        );
+                        continue;
                     }
 
-                    acceptCallBtn.onclick = () => acceptIncomingCall(data);
-                    rejectCallBtn.onclick = () => {
-                        remove(myCallRef);
-                        closeCallUI();
-                    };
+                    activeCallRef = ref(
+                        db,
+                        `calls/${currentUser.uid}/${callerId}`
+                    );
+
+                    activeCallPeerUid = callerId;
+                    activeCallType = data.type === 'video' ? 'video' : 'audio';
+                    activeCallRole = 'callee';
+
+                    showCallUI(
+                        activeCallType,
+                        data.callerName,
+                        data.callerPhoto,
+                        `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল...`,
+                        true
+                    );
+
+                    // Only show one incoming call at a time.
+                    break;
                 }
             });
         }
 
-        // Accept Call
         async function acceptIncomingCall(callData) {
-            document.getElementById('incomingCallControls').classList.add('hidden');
-            document.getElementById('ongoingCallControls').classList.remove('hidden');
-            document.getElementById('callStatusText').innerText = "সংযুক্ত হচ্ছে...";
+            if (!activeCallRef || activeCallRole !== 'callee') return;
+
+            incomingCallControls.classList.add('hidden');
+            ongoingCallControls.classList.remove('hidden');
+            document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
 
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
                     video: callData.type === 'video'
+                        ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                        : false
                 });
 
                 if (callData.type === 'video') {
-                    document.getElementById('localVideo').srcObject = localStream;
+                    localVideo.srcObject = localStream;
+                    localVideo.play().catch(() => {});
                 }
 
-                peerConnection = new RTCPeerConnection(rtcConfig);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                setupPeerConnection(callData.type);
 
-                peerConnection.ontrack = (e) => {
-                    if (callData.type === 'video') {
-                        document.getElementById('remoteVideo').srcObject = e.streams[0];
-                    } else {
-                        document.getElementById('remoteAudio').srcObject = e.streams[0];
-                    }
-                };
-
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                await update(ref(db, `calls/${currentUser.uid}`), {
-                    answer: { sdp: answer.sdp, type: answer.type },
-                    status: 'connected'
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
                 });
 
-                document.getElementById('callStatusText').innerText = "সংযুক্ত হয়েছে";
+                if (!callData.offer || !callData.offer.sdp) {
+                    throw new Error('কল অফার পাওয়া যায়নি।');
+                }
+
+                await peerConnection.setRemoteDescription(
+                    new RTCSessionDescription(callData.offer)
+                );
+
+                await flushRemoteCandidates();
+
+                // Receive caller ICE candidates.
+                const callerCandidatesRef = ref(
+                    db,
+                    `calls/${currentUser.uid}/${activeCallPeerUid}/callerCandidates`
+                );
+
+                // Watch the call node so the callee closes immediately when
+                // the caller ends/cancels the call.
+                const calleeCallStateUnsubscribe = onValue(activeCallRef, (snapshot) => {
+                    if (!snapshot.exists()) {
+                        closeCallUI(false);
+                    }
+                });
+                callListeners.push(calleeCallStateUnsubscribe);
+
+                const callerCandidateUnsubscribe = onValue(
+                    callerCandidatesRef,
+                    async (snapshot) => {
+                        if (!snapshot.exists()) return;
+
+                        const candidates = snapshot.val();
+                        for (const key of Object.keys(candidates)) {
+                            await addRemoteIceCandidate(candidates[key]);
+                        }
+                    }
+                );
+
+                callListeners.push(callerCandidateUnsubscribe);
+
+                const answer = await peerConnection.createAnswer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: callData.type === 'video'
+                });
+
+                await peerConnection.setLocalDescription(answer);
+
+                await update(activeCallRef, {
+                    answer: {
+                        type: answer.type,
+                        sdp: answer.sdp
+                    },
+                    status: 'connected',
+                    answeredAt: Date.now()
+                });
+
+                document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
 
             } catch (err) {
-                alert("কল ধরতে সমস্যা হয়েছে: " + err.message);
-                closeCallUI();
+                console.error('Accept call error:', err);
+                alert('কল ধরতে সমস্যা হয়েছে: ' + (err.message || err));
+                closeCallUI(true);
             }
         }
 
-        // End / Close Call
-        endCallBtn.addEventListener('click', () => {
-            if (currentUser) {
-                remove(ref(db, `calls/${currentUser.uid}`));
-            }
-            if (activeChatUser) {
-                remove(ref(db, `calls/${activeChatUser.uid}`));
-            }
-            closeCallUI();
+        acceptCallBtn.addEventListener('click', () => {
+            if (!activeCallRef) return;
+
+            // Fetch the current call data so the accept action always uses
+            // the latest offer.
+            get(activeCallRef).then(snapshot => {
+                const data = snapshot.val();
+
+                if (!data || !data.offer) {
+                    alert('কলটি আর পাওয়া যাচ্ছে না।');
+                    closeCallUI(false);
+                    return;
+                }
+
+                acceptIncomingCall(data);
+            }).catch(err => {
+                console.error(err);
+                alert('কলের তথ্য পাওয়া যায়নি।');
+                closeCallUI(false);
+            });
         });
 
-        function closeCallUI() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
+        rejectCallBtn.addEventListener('click', async () => {
+            if (!activeCallRef) return;
+
+            try {
+                await update(activeCallRef, {
+                    status: 'rejected',
+                    rejectedAt: Date.now()
+                });
+            } catch (err) {
+                console.warn('Reject call error:', err);
             }
-            if (peerConnection) {
-                peerConnection.close();
+
+            setTimeout(() => closeCallUI(true), 300);
+        });
+
+        // Microphone toggle.
+        toggleMicBtn.addEventListener('click', () => {
+            if (!localStream) return;
+
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (!audioTrack) return;
+
+            audioTrack.enabled = !audioTrack.enabled;
+
+            toggleMicBtn.innerHTML = audioTrack.enabled
+                ? '<i class="fa-solid fa-microphone"></i>'
+                : '<i class="fa-solid fa-microphone-slash"></i>';
+
+            toggleMicBtn.classList.toggle('bg-red-600', !audioTrack.enabled);
+            toggleMicBtn.classList.toggle('bg-gray-800', audioTrack.enabled);
+        });
+
+        // Camera toggle.
+        toggleCamBtn.addEventListener('click', () => {
+            if (!localStream || activeCallType !== 'video') return;
+
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (!videoTrack) return;
+
+            videoTrack.enabled = !videoTrack.enabled;
+
+            toggleCamBtn.innerHTML = videoTrack.enabled
+                ? '<i class="fa-solid fa-video"></i>'
+                : '<i class="fa-solid fa-video-slash"></i>';
+
+            toggleCamBtn.classList.toggle('bg-red-600', !videoTrack.enabled);
+            toggleCamBtn.classList.toggle('bg-gray-800', videoTrack.enabled);
+        });
+
+        // End call from either side.
+        endCallBtn.addEventListener('click', async () => {
+            const refToRemove = activeCallRef;
+
+            if (refToRemove) {
+                try {
+                    await remove(refToRemove);
+                } catch (err) {
+                    console.warn('End call cleanup error:', err);
+                }
             }
-            callOverlay.classList.add('hidden');
-        }
+
+            closeCallUI(false);
+        });
+
+        // If the other side removes the call node, close the local UI.
+        // The normal listener is also used by the caller for answer/status.
+        window.addEventListener('beforeunload', () => {
+            if (activeCallRef) {
+                remove(activeCallRef).catch(() => {});
+            }
+        });
 
         // Auth state observer
         onAuthStateChanged(auth, (user) => {
