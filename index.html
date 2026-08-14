@@ -59,7 +59,7 @@
 
         <!-- ==================== AUTH / LOGIN MODAL ==================== -->
         <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
-            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center">
+            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center hidden">
                 <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-lg">
                     <i class="fa-brands font-bold fa-whatsapp"></i>
                 </div>
@@ -520,7 +520,10 @@
         });
 
         // Check and fetch user profile from Realtime DB
-        async function checkAndSetupUserProfile(user) {
+            }
+        });
+        
+               async function checkAndSetupUserProfile(user)
             // Make sure the local auth persistence has been established
             // before continuing with the authenticated app state.
             await authPersistenceReady;
