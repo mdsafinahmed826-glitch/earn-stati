@@ -40,6 +40,7 @@
 
     <style>
         body { font-family: 'Hind Siliguri', sans-serif; }
+        /* Custom scrollbar for WhatsApp look */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #374045; border-radius: 3px; }
@@ -52,9 +53,6 @@
     </style>
 </head>
 <body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
-
-    <!-- Background Audio Element for locked/background tab audio stability -->
-    <audio id="bgRingtoneAudio" loop class="hidden"></audio>
 
     <!-- App Container -->
     <div id="app" class="h-full w-full flex flex-col relative">
@@ -174,7 +172,7 @@
         </div>
 
         <!-- ==================== APP NOTIFICATIONS ==================== -->
-        <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer animate-bounce">
+        <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer">
             <div class="flex items-start gap-3">
                 <div id="notificationIcon" class="w-11 h-11 rounded-full bg-wa-green flex items-center justify-center text-white text-lg shrink-0"><i class="fa-solid fa-message"></i></div>
                 <div class="min-w-0 flex-1">
@@ -420,11 +418,32 @@
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' }
             ],
             iceCandidatePoolSize: 10
         };
+
+        // Register Inline Service Worker for Background Notification handling
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', event => self.skipWaiting());
+                self.addEventListener('activate', event => event.waitUntil(clients.claim()));
+                self.addEventListener('notificationclick', event => {
+                    event.notification.close();
+                    event.waitUntil(
+                        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+                            if (clientList.length > 0) {
+                                return clientList[0].focus();
+                            }
+                            return clients.openWindow('/');
+                        })
+                    );
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(err => console.warn('SW Register:', err));
+        }
 
         // Setup Recaptcha for Phone auth
         window.setupRecaptcha = () => {
@@ -438,32 +457,30 @@
             }
         };
 
-        // ==================== ULTRA-LOUD 15-METER RINGTONE & NOTIFICATION ENGINE ====================
-        let ringtoneTimer = null;
-        let ringtoneAudioContext = null;
-        let ringtoneGain = null;
-        let notificationTimeout = null;
-        let chatNotificationInitialised = false;
-        const lastSeenChatTimestamps = {};
-        const originalDocumentTitle = document.title;
-        let isAudioUnlocked = false;
+        // ==================== LOUD 25-METER RINGTONE + PUSH NOTIFICATIONS ====================
+        let globalAudioCtx = null;
 
-        // Unlock Web Audio Context on first touch or user click anywhere
-        function unlockAudioEngine() {
-            if (isAudioUnlocked) return;
-            try {
+        function getAudioContext() {
+            if (!globalAudioCtx) {
                 const AC = window.AudioContext || window.webkitAudioContext;
-                if (AC) {
-                    const ctx = new AC();
-                    ctx.resume().then(() => {
-                        ctx.close();
-                        isAudioUnlocked = true;
-                    });
-                }
-            } catch (e) { console.warn('Audio unlock warning:', e); }
+                if (AC) globalAudioCtx = new AC();
+            }
+            if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+                globalAudioCtx.resume();
+            }
+            return globalAudioCtx;
         }
-        window.addEventListener('click', unlockAudioEngine, { once: true });
-        window.addEventListener('touchstart', unlockAudioEngine, { once: true });
+
+        // Unlock AudioContext on initial click/touch for background ringing readiness
+        const unlockAudio = () => {
+            getAudioContext();
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('touchstart', unlockAudio);
+            document.removeEventListener('keydown', unlockAudio);
+        };
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
+        document.addEventListener('keydown', unlockAudio);
 
         async function requestNotificationPermission() {
             try {
@@ -479,7 +496,7 @@
             document.getElementById('notificationTitle').innerText = title;
             document.getElementById('notificationBody').innerText = body;
             document.getElementById('notificationIcon').innerHTML = type === 'call'
-                ? '<i class="fa-solid fa-phone"></i>'
+                ? '<i class="fa-solid fa-phone animate-bounce"></i>'
                 : '<i class="fa-solid fa-message"></i>';
             box.classList.remove('hidden');
             box.onclick = (e) => {
@@ -493,23 +510,26 @@
 
         function notifyUser(title, body, type = 'message', onClick = null) {
             showInAppNotification(title, body, type, onClick);
-            
-            // Device vibration (Loud call pattern)
-            if ('vibrate' in navigator) {
-                navigator.vibrate(type === 'call' ? [1000, 500, 1000, 500, 1000, 500] : [200, 100, 200]);
-            }
-
             try {
                 if ('Notification' in window && Notification.permission === 'granted') {
-                    const n = new Notification(title, { 
-                        body, 
-                        icon: 'https://placehold.co/120/00a884/ffffff?text=WhatsApp',
-                        tag: 'safin-web-' + type, 
+                    const notifOptions = {
+                        body: body,
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
+                        tag: 'safin-web-' + type + '-' + Date.now(),
                         renotify: true,
-                        requireInteraction: type === 'call'
-                    });
-                    if (onClick) {
-                        n.onclick = () => { window.focus(); onClick(); };
+                        requireInteraction: type === 'call',
+                        vibrate: [500, 250, 500, 250, 500, 250, 500]
+                    };
+
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.ready.then(reg => {
+                            reg.showNotification(title, notifOptions);
+                        }).catch(() => {
+                            new Notification(title, notifOptions);
+                        });
+                    } else {
+                        const notif = new Notification(title, notifOptions);
+                        if (onClick) notif.onclick = onClick;
                     }
                 }
             } catch (e) { console.warn('System notification unavailable:', e); }
@@ -520,103 +540,71 @@
             const timer = setInterval(() => {
                 state = !state;
                 document.title = state ? title : originalDocumentTitle;
-            }, 700);
+            }, 800);
             setTimeout(() => { clearInterval(timer); document.title = originalDocumentTitle; }, 12000);
         }
 
-        // Extremely loud synthesized phone call ringtone (Audible up to 15 meters on mobile speakers)
+        // ULTRA-LOUD 25-METER REACHABLE RINGTONE SYNTHESIZER
         async function startRingtone() {
             stopRingtone();
             try {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (!AC) return;
-                ringtoneAudioContext = new AC();
-                if (ringtoneAudioContext.state === 'suspended') await ringtoneAudioContext.resume();
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                if (ctx.state === 'suspended') await ctx.resume();
 
-                // Dynamic Compressor + Gain Boost for maximum speaker volume output without distorting
-                const compressor = ringtoneAudioContext.createDynamicsCompressor();
-                compressor.threshold.setValueAtTime(-10, ringtoneAudioContext.currentTime);
-                compressor.knee.setValueAtTime(40, ringtoneAudioContext.currentTime);
-                compressor.ratio.setValueAtTime(12, ringtoneAudioContext.currentTime);
-                compressor.attack.setValueAtTime(0, ringtoneAudioContext.currentTime);
-                compressor.release.setValueAtTime(0.25, ringtoneAudioContext.currentTime);
+                // Dynamic Audio Compressor Node to push volume to maximum acoustic reach without clipping
+                const compressor = ctx.createDynamicsCompressor();
+                compressor.threshold.setValueAtTime(-10, ctx.currentTime);
+                compressor.knee.setValueAtTime(40, ctx.currentTime);
+                compressor.ratio.setValueAtTime(12, ctx.currentTime);
+                compressor.attack.setValueAtTime(0.003, ctx.currentTime);
+                compressor.release.setValueAtTime(0.25, ctx.currentTime);
+                compressor.connect(ctx.destination);
 
-                ringtoneGain = ringtoneAudioContext.createGain();
-                // Set gain to high output (1.0 peak)
-                ringtoneGain.gain.value = 1.0; 
-                
+                // High gain for 25m distance audibility
+                ringtoneGain = ctx.createGain();
+                ringtoneGain.gain.setValueAtTime(0.85, ctx.currentTime);
                 ringtoneGain.connect(compressor);
-                compressor.connect(ringtoneAudioContext.destination);
 
-                // Phone Call Dual-Tone Loud Ringing Melody
-                const ringBurst = () => {
-                    if (!ringtoneAudioContext || !ringtoneGain) return;
-                    const now = ringtoneAudioContext.currentTime;
+                // Distinct acoustic chime sequence (Optimized 1kHz - 2.5kHz formant frequencies for distance)
+                const playLoudChimePattern = () => {
+                    if (!globalAudioCtx || !ringtoneGain) return;
+                    const now = globalAudioCtx.currentTime;
+                    const freqs = [1046.50, 1318.51, 1567.98, 2093.00, 1567.98, 2093.00];
 
-                    // High penetration dual harmonic frequencies (850Hz & 1150Hz + 1700Hz pitch cut-through)
-                    const frequencies = [850, 1150, 1700];
+                    freqs.forEach((freq, idx) => {
+                        const osc = globalAudioCtx.createOscillator();
+                        const gain = globalAudioCtx.createGain();
+                        osc.type = 'triangle'; // High harmonic penetration
 
-                    frequencies.forEach((freq, idx) => {
-                        const osc = ringtoneAudioContext.createOscillator();
-                        const noteGain = ringtoneAudioContext.createGain();
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        gain.gain.setValueAtTime(0.001, now + idx * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.9, now + idx * 0.12 + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.28);
 
-                        // Square/Sawtooth waveforms cut through distance much better than pure sine
-                        osc.type = idx === 2 ? 'triangle' : 'square';
-                        osc.frequency.setValueAtTime(freq, now);
-
-                        // Double pulse ring "Trrr-Trrr"
-                        noteGain.gain.setValueAtTime(0.0, now);
-                        noteGain.gain.linearRampToValueAtTime(0.4, now + 0.05);
-                        noteGain.gain.linearRampToValueAtTime(0.0, now + 0.5);
-                        
-                        noteGain.gain.linearRampToValueAtTime(0.4, now + 0.65);
-                        noteGain.gain.linearRampToValueAtTime(0.0, now + 1.15);
-
-                        osc.connect(noteGain);
-                        noteGain.connect(ringtoneGain);
-
-                        osc.start(now);
-                        osc.stop(now + 1.2);
+                        osc.connect(gain).connect(ringtoneGain);
+                        osc.start(now + idx * 0.12);
+                        osc.stop(now + idx * 0.12 + 0.30);
                     });
                 };
 
-                ringBurst();
-                ringtoneTimer = setInterval(ringBurst, 2500);
+                playLoudChimePattern();
+                ringtoneTimer = setInterval(playLoudChimePattern, 1100);
 
-            } catch (e) { console.warn('Loud ringtone start failed:', e); }
-        }
-
-        // Short High Pitch Alert Sound for Messages
-        function playMessageSound() {
-            try {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (!AC) return;
-                const ctx = new AC();
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(950, now);
-                osc.frequency.exponentialRampToValueAtTime(1400, now + 0.12);
-
-                gain.gain.setValueAtTime(0.8, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start(now);
-                osc.stop(now + 0.25);
-            } catch (e) { console.warn('Message sound error:', e); }
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([1000, 500, 1000, 500, 1000, 500]);
+                }
+            } catch (e) { console.warn('Loud ringtone failed:', e); }
         }
 
         function stopRingtone() {
             if (ringtoneTimer) { clearInterval(ringtoneTimer); ringtoneTimer = null; }
-            if (ringtoneAudioContext) {
-                try { ringtoneAudioContext.close(); } catch (_) {}
-                ringtoneAudioContext = null;
+            if (ringtoneGain) {
+                try { ringtoneGain.gain.setValueAtTime(0.001, globalAudioCtx.currentTime); } catch (_) {}
                 ringtoneGain = null;
+            }
+            if ('vibrate' in navigator) {
+                navigator.vibrate(0);
             }
         }
 
@@ -707,14 +695,6 @@
             } catch (error) {
                 console.error("Google Signin Error:", error);
                 alert("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message);
-            }
-        });
-
-        // Auto auth listener
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                checkAndSetupUserProfile(user);
             }
         });
 
@@ -875,16 +855,6 @@
             }
         });
 
-        // Filter chat list locally
-        document.getElementById('filterChatsInput').addEventListener('input', (e) => {
-            const val = e.target.value.toLowerCase();
-            const items = document.querySelectorAll('#chatList > div');
-            items.forEach(item => {
-                const text = item.innerText.toLowerCase();
-                item.style.display = text.includes(val) ? 'flex' : 'none';
-            });
-        });
-
         // Load Recent Chats List
         function loadRecentChats() {
             const userChatsRef = ref(db, `user_chats/${currentUser.uid}`);
@@ -909,7 +879,6 @@
                             const peerSnap = await get(ref(db, `users/${peerUid}`));
                             if (peerSnap.exists() && (!activeChatUser || activeChatUser.uid !== peerUid)) {
                                 const peer = peerSnap.val();
-                                playMessageSound();
                                 notifyUser(peer.name || 'নতুন বার্তা', chat.lastMessage || 'নতুন বার্তা এসেছে', 'message', () => selectChatUser(peer));
                                 flashTitle('💬 নতুন বার্তা — সাফিন ওয়েব');
                             }
@@ -1168,10 +1137,18 @@
         const incomingCallControls = document.getElementById('incomingCallControls');
         const ongoingCallControls = document.getElementById('ongoingCallControls');
 
+        let activeCallRef = null;
         let activeCallType = null;
         let activeCallPeerUid = null;
         let activeCallRole = null;
-        let callUnsubscribe = null;
+        let callListeners = [];
+        let pendingRemoteCandidates = [];
+        let ringtoneTimer = null;
+        let ringtoneGain = null;
+        let notificationTimeout = null;
+        let chatNotificationInitialised = false;
+        const lastSeenChatTimestamps = {};
+        const originalDocumentTitle = document.title;
 
         function showCallUI(type, peerName, peerPhoto, status, incoming = false) {
             callOverlay.classList.remove('hidden');
@@ -1181,8 +1158,10 @@
 
             if (type === 'video') {
                 videoContainer.classList.remove('hidden');
+                toggleCamBtn.classList.remove('hidden');
             } else {
                 videoContainer.classList.add('hidden');
+                toggleCamBtn.classList.add('hidden');
             }
 
             if (incoming) {
@@ -1194,256 +1173,521 @@
             }
         }
 
-        function hideCallUI() {
-            stopRingtone();
-            callOverlay.classList.add('hidden');
+        function resetCallMedia() {
             if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
+                localStream.getTracks().forEach(track => {
+                    try { track.stop(); } catch (_) {}
+                });
             }
+
+            localStream = null;
+
             if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
+                try { peerConnection.onicecandidate = null; } catch (_) {}
+                try { peerConnection.ontrack = null; } catch (_) {}
+                try { peerConnection.close(); } catch (_) {}
             }
-            localVideo.srcObject = null;
+
+            peerConnection = null;
             remoteVideo.srcObject = null;
+            localVideo.srcObject = null;
             remoteAudio.srcObject = null;
-            activeCallId = null;
+            pendingRemoteCandidates = [];
+
+            toggleMicBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+            toggleCamBtn.innerHTML = '<i class="fa-solid fa-video"></i>';
+        }
+
+        function clearCallListeners() {
+            callListeners.forEach(fn => {
+                try { fn(); } catch (_) {}
+            });
+            callListeners = [];
+        }
+
+        function closeCallUI(removeRemoteCall = false) {
+            stopRingtone();
+            const refToRemove = activeCallRef;
+
+            clearCallListeners();
+            resetCallMedia();
+
+            callOverlay.classList.add('hidden');
+            activeCallRef = null;
+            activeCallType = null;
             activeCallPeerUid = null;
-            if (callUnsubscribe) {
-                callUnsubscribe();
-                callUnsubscribe = null;
+            activeCallRole = null;
+
+            if (removeRemoteCall && refToRemove) {
+                remove(refToRemove).catch(err => console.warn('Call cleanup:', err));
             }
         }
 
-        // Start Call (Audio or Video)
+        async function addRemoteIceCandidate(candidateData) {
+            if (!peerConnection || !candidateData) return;
+
+            const candidate = new RTCIceCandidate(candidateData);
+
+            if (peerConnection.remoteDescription) {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (err) {
+                    console.warn('ICE candidate error:', err);
+                }
+            } else {
+                pendingRemoteCandidates.push(candidate);
+            }
+        }
+
+        async function flushRemoteCandidates() {
+            if (!peerConnection || !peerConnection.remoteDescription) return;
+
+            const queued = [...pendingRemoteCandidates];
+            pendingRemoteCandidates = [];
+
+            for (const candidate of queued) {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (err) {
+                    console.warn('Queued ICE candidate error:', err);
+                }
+            }
+        }
+
+        function setupPeerConnection(type) {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            peerConnection.onicecandidate = async (event) => {
+                if (!event.candidate || !activeCallRef) return;
+
+                try {
+                    const candidatePath = activeCallRole === 'caller'
+                        ? `${activeCallRef.toString()}/callerCandidates`
+                        : `${activeCallRef.toString()}/answerCandidates`;
+
+                    await push(ref(db, candidatePath), event.candidate.toJSON());
+                } catch (err) {
+                    console.warn('Could not save ICE candidate:', err);
+                }
+            };
+
+            peerConnection.ontrack = (event) => {
+                const stream = event.streams && event.streams[0];
+                if (!stream) return;
+
+                if (type === 'video') {
+                    remoteVideo.srcObject = stream;
+                    remoteVideo.play().catch(() => {});
+                } else {
+                    remoteAudio.srcObject = stream;
+                    remoteAudio.play().catch(() => {});
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                if (!peerConnection) return;
+
+                const state = peerConnection.connectionState;
+
+                if (state === 'connected') {
+                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হয়েছে';
+                } else if (state === 'connecting') {
+                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
+                } else if (state === 'disconnected') {
+                    document.getElementById('callStatusText').innerText = 'সংযোগ দুর্বল...';
+                } else if (state === 'failed') {
+                    document.getElementById('callStatusText').innerText = 'সংযোগ ব্যর্থ হয়েছে';
+                    setTimeout(() => {
+                        if (callOverlay && !callOverlay.classList.contains('hidden')) {
+                            closeCallUI(true);
+                        }
+                    }, 1200);
+                }
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                if (!peerConnection) return;
+                const state = peerConnection.iceConnectionState;
+                if (state === 'checking') {
+                    document.getElementById('callStatusText').innerText = 'নেটওয়ার্ক সংযোগ খোঁজা হচ্ছে...';
+                } else if (state === 'connected' || state === 'completed') {
+                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হয়েছে';
+                } else if (state === 'failed') {
+                    document.getElementById('callStatusText').innerText = 'নেটওয়ার্ক সংযোগ ব্যর্থ হয়েছে';
+                }
+            };
+        }
+
         async function initiateCall(type) {
-            if (!currentUser || !activeChatUser) return;
+            if (!currentUser || !activeChatUser) {
+                alert('প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।');
+                return;
+            }
+
+            if (activeCallRef) {
+                alert('একটি কল ইতিমধ্যে চলছে।');
+                return;
+            }
+
             activeCallType = type;
             activeCallPeerUid = activeChatUser.uid;
             activeCallRole = 'caller';
-            activeCallId = getChatRoomId(currentUser.uid, activeChatUser.uid);
 
-            showCallUI(type, activeChatUser.name, activeChatUser.photo, 'কল করা হচ্ছে...');
+            showCallUI(
+                type,
+                activeChatUser.name,
+                activeChatUser.photo,
+                'কল দেওয়া হচ্ছে...',
+                false
+            );
 
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
                     video: type === 'video'
+                        ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                        : false
                 });
 
                 if (type === 'video') {
                     localVideo.srcObject = localStream;
+                    localVideo.play().catch(() => {});
                 }
 
-                peerConnection = new RTCPeerConnection(rtcConfig);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                activeCallRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}`);
 
-                peerConnection.ontrack = (event) => {
-                    if (type === 'video') {
-                        remoteVideo.srcObject = event.streams[0];
-                    } else {
-                        remoteAudio.srcObject = event.streams[0];
-                    }
-                };
+                setupPeerConnection(type);
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
 
-                const callRef = ref(db, `calls/${activeCallId}`);
-                await remove(callRef);
+                const offer = await peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: type === 'video'
+                });
 
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        push(ref(db, `calls/${activeCallId}/callerCandidates`), event.candidate.toJSON());
-                    }
-                };
-
-                const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
-                const callData = {
-                    callerUid: currentUser.uid,
-                    callerName: currentUserData.name || 'ব্যবহারকারী',
-                    callerPhoto: currentUserData.photo || '',
-                    receiverUid: activeChatUser.uid,
+                await set(activeCallRef, {
+                    callerId: currentUser.uid,
+                    callerName: currentUserData?.name || currentUser.displayName || 'ব্যবহারকারী',
+                    callerPhoto: currentUserData?.photo || currentUser.photoURL || '',
+                    receiverId: activeChatUser.uid,
                     type: type,
+                    offer: {
+                        type: offer.type,
+                        sdp: offer.sdp
+                    },
                     status: 'calling',
-                    offer: { type: offer.type, sdp: offer.sdp }
-                };
+                    createdAt: Date.now()
+                });
 
-                await set(callRef, callData);
-
-                // Listen for Answer and ICE candidates
-                callUnsubscribe = onValue(callRef, async (snapshot) => {
-                    if (!snapshot.exists()) {
-                        hideCallUI();
-                        return;
-                    }
+                const answerUnsubscribe = onValue(activeCallRef, async (snapshot) => {
                     const data = snapshot.val();
 
-                    if (data.status === 'rejected' || data.status === 'ended') {
-                        hideCallUI();
-                        alert("কল শেষ বা প্রত্যাখাত হয়েছে।");
+                    if (!data) {
+                        if (activeCallRole === 'caller') closeCallUI(false);
                         return;
                     }
 
-                    if (data.answer && !peerConnection.currentRemoteDescription) {
-                        const answer = new RTCSessionDescription(data.answer);
-                        await peerConnection.setRemoteDescription(answer);
-                        document.getElementById('callStatusText').innerText = 'কথা বলছেন...';
+                    if (data.answer && peerConnection && !peerConnection.remoteDescription) {
+                        try {
+                            await peerConnection.setRemoteDescription(
+                                new RTCSessionDescription(data.answer)
+                            );
+                            await flushRemoteCandidates();
+                            document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
+                        } catch (err) {
+                            console.error('Set remote answer error:', err);
+                        }
+                    }
+
+                    if (data.status === 'rejected') {
+                        document.getElementById('callStatusText').innerText = 'কল প্রত্যাখ্যান করা হয়েছে';
+                        setTimeout(() => closeCallUI(true), 900);
                     }
                 });
 
-                // Listen for Answerer ICE Candidates
-                onValue(ref(db, `calls/${activeCallId}/answerCandidates`), (snapshot) => {
-                    if (snapshot.exists()) {
-                        snapshot.forEach((childSnap) => {
-                            const candidate = new RTCIceCandidate(childSnap.val());
-                            peerConnection.addIceCandidate(candidate);
-                        });
+                callListeners.push(answerUnsubscribe);
+
+                const answerCandidatesRef = ref(
+                    db,
+                    `calls/${activeChatUser.uid}/${currentUser.uid}/answerCandidates`
+                );
+
+                const candidateUnsubscribe = onValue(answerCandidatesRef, async (snapshot) => {
+                    if (!snapshot.exists()) return;
+
+                    const candidates = snapshot.val();
+                    for (const key of Object.keys(candidates)) {
+                        await addRemoteIceCandidate(candidates[key]);
                     }
                 });
+
+                callListeners.push(candidateUnsubscribe);
 
             } catch (err) {
-                console.error("Call creation error:", err);
-                alert("কল শুরু করা যায়নি: " + err.message);
-                hideCallUI();
+                console.error('Start call error:', err);
+                alert(
+                    'ক্যামেরা/মাইক্রোফোন চালু করা যায়নি।\n\n' +
+                    'Browser/WebView permission এবং HTTPS নিশ্চিত করুন।\n\n' +
+                    'কারণ: ' + (err.message || err)
+                );
+                closeCallUI(true);
             }
         }
 
         startAudioCallBtn.addEventListener('click', () => initiateCall('audio'));
         startVideoCallBtn.addEventListener('click', () => initiateCall('video'));
 
-        // Listen for Incoming Calls
+        // Listen for incoming calls addressed to the current user.
         function listenForIncomingCalls() {
             if (!currentUser) return;
-            const callsRef = ref(db, 'calls');
 
-            onValue(callsRef, async (snapshot) => {
+            const myCallsRef = ref(db, `calls/${currentUser.uid}`);
+
+            onValue(myCallsRef, async (snapshot) => {
                 if (!snapshot.exists()) return;
 
                 const calls = snapshot.val();
-                Object.keys(calls).forEach(async (cId) => {
-                    const call = calls[cId];
-                    if (call.receiverUid === currentUser.uid && call.status === 'calling') {
-                        activeCallId = cId;
-                        activeCallType = call.type;
-                        activeCallPeerUid = call.callerUid;
-                        activeCallRole = 'receiver';
 
-                        showCallUI(call.type, call.callerName, call.callerPhoto, 'ইনকামিং কল...', true);
-                        
-                        // Ring tone & alert notification
-                        startRingtone();
-                        notifyUser(call.callerName + ' আপনাকে কল করছেন', 'ইনকামিং ' + (call.type === 'video' ? 'ভিডিও' : 'অডিও') + ' কল...', 'call');
-                        flashTitle('📞 ইনকামিং কল — সাফিন ওয়েব');
+                for (const callerId of Object.keys(calls)) {
+                    const data = calls[callerId];
+
+                    if (!data || data.status !== 'calling') continue;
+
+                    if (activeCallRef) {
+                        await update(
+                            ref(db, `calls/${currentUser.uid}/${callerId}`),
+                            { status: 'busy' }
+                        );
+                        continue;
                     }
-                });
+
+                    activeCallRef = ref(
+                        db,
+                        `calls/${currentUser.uid}/${callerId}`
+                    );
+
+                    activeCallPeerUid = callerId;
+                    activeCallType = data.type === 'video' ? 'video' : 'audio';
+                    activeCallRole = 'callee';
+
+                    startRingtone();
+                    notifyUser(
+                        `${data.callerName || 'কেউ একজন'} কল করছেন`,
+                        `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল`,
+                        'call'
+                    );
+                    flashTitle('📞 ইনকামিং কল — সাফিন ওয়েব');
+
+                    showCallUI(
+                        activeCallType,
+                        data.callerName,
+                        data.callerPhoto,
+                        `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল...`,
+                        true
+                    );
+
+                    break;
+                }
             });
         }
 
-        // Accept Call
-        acceptCallBtn.addEventListener('click', async () => {
+        async function acceptIncomingCall(callData) {
             stopRingtone();
+            if (!activeCallRef || activeCallRole !== 'callee') return;
+
             incomingCallControls.classList.add('hidden');
             ongoingCallControls.classList.remove('hidden');
-            document.getElementById('callStatusText').innerText = 'সংযোগ স্থাপন হচ্ছে...';
+            document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
 
             try {
-                const callRef = ref(db, `calls/${activeCallId}`);
-                const snapshot = await get(callRef);
-                if (!snapshot.exists()) {
-                    hideCallUI();
-                    return;
-                }
-                const callData = snapshot.val();
-
                 localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: activeCallType === 'video'
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: callData.type === 'video'
+                        ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
+                        : false
                 });
 
-                if (activeCallType === 'video') {
+                if (callData.type === 'video') {
                     localVideo.srcObject = localStream;
+                    localVideo.play().catch(() => {});
                 }
 
-                peerConnection = new RTCPeerConnection(rtcConfig);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                setupPeerConnection(callData.type);
 
-                peerConnection.ontrack = (event) => {
-                    if (activeCallType === 'video') {
-                        remoteVideo.srcObject = event.streams[0];
-                    } else {
-                        remoteAudio.srcObject = event.streams[0];
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                if (!callData.offer || !callData.offer.sdp) {
+                    throw new Error('কল অফার পাওয়া যায়নি।');
+                }
+
+                await peerConnection.setRemoteDescription(
+                    new RTCSessionDescription(callData.offer)
+                );
+
+                await flushRemoteCandidates();
+
+                const callerCandidatesRef = ref(
+                    db,
+                    `calls/${currentUser.uid}/${activeCallPeerUid}/callerCandidates`
+                );
+
+                const calleeCallStateUnsubscribe = onValue(activeCallRef, (snapshot) => {
+                    if (!snapshot.exists()) {
+                        closeCallUI(false);
                     }
-                };
+                });
+                callListeners.push(calleeCallStateUnsubscribe);
 
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        push(ref(db, `calls/${activeCallId}/answerCandidates`), event.candidate.toJSON());
+                const callerCandidateUnsubscribe = onValue(
+                    callerCandidatesRef,
+                    async (snapshot) => {
+                        if (!snapshot.exists()) return;
+
+                        const candidates = snapshot.val();
+                        for (const key of Object.keys(candidates)) {
+                            await addRemoteIceCandidate(candidates[key]);
+                        }
                     }
-                };
+                );
 
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-                const answer = await peerConnection.createAnswer();
+                callListeners.push(callerCandidateUnsubscribe);
+
+                const answer = await peerConnection.createAnswer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: callData.type === 'video'
+                });
+
                 await peerConnection.setLocalDescription(answer);
 
-                await update(callRef, {
-                    status: 'accepted',
-                    answer: { type: answer.type, sdp: answer.sdp }
+                await update(activeCallRef, {
+                    answer: {
+                        type: answer.type,
+                        sdp: answer.sdp
+                    },
+                    status: 'connected',
+                    answeredAt: Date.now()
                 });
 
-                document.getElementById('callStatusText').innerText = 'কথা বলছেন...';
-
-                // Add Caller ICE Candidates
-                onValue(ref(db, `calls/${activeCallId}/callerCandidates`), (snapshot) => {
-                    if (snapshot.exists()) {
-                        snapshot.forEach((childSnap) => {
-                            const candidate = new RTCIceCandidate(childSnap.val());
-                            peerConnection.addIceCandidate(candidate);
-                        });
-                    }
-                });
+                document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
 
             } catch (err) {
-                console.error("Accept call error:", err);
-                alert("কল রিসিভ করা সম্ভব হয়নি: " + err.message);
-                hideCallUI();
+                console.error('Accept call error:', err);
+                alert('কল ধরতে সমস্যা হয়েছে: ' + (err.message || err));
+                closeCallUI(true);
             }
+        }
+
+        acceptCallBtn.addEventListener('click', () => {
+            if (!activeCallRef) return;
+
+            get(activeCallRef).then(snapshot => {
+                const data = snapshot.val();
+
+                if (!data || !data.offer) {
+                    alert('কলটি আর পাওয়া যাচ্ছে না।');
+                    closeCallUI(false);
+                    return;
+                }
+
+                acceptIncomingCall(data);
+            }).catch(err => {
+                console.error(err);
+                alert('কলের তথ্য পাওয়া যায়নি।');
+                closeCallUI(false);
+            });
         });
 
-        // Reject Call
         rejectCallBtn.addEventListener('click', async () => {
-            if (activeCallId) {
-                await update(ref(db, `calls/${activeCallId}`), { status: 'rejected' });
+            stopRingtone();
+            if (!activeCallRef) return;
+
+            try {
+                await update(activeCallRef, {
+                    status: 'rejected',
+                    rejectedAt: Date.now()
+                });
+            } catch (err) {
+                console.warn('Reject call error:', err);
             }
-            hideCallUI();
+
+            setTimeout(() => closeCallUI(true), 300);
         });
 
-        // End Ongoing Call
-        endCallBtn.addEventListener('click', async () => {
-            if (activeCallId) {
-                await update(ref(db, `calls/${activeCallId}`), { status: 'ended' });
-            }
-            hideCallUI();
-        });
-
-        // Toggle Mic & Video Controls
+        // Microphone toggle
         toggleMicBtn.addEventListener('click', () => {
-            if (localStream) {
-                const audioTrack = localStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    audioTrack.enabled = !audioTrack.enabled;
-                    toggleMicBtn.classList.toggle('bg-red-600', !audioTrack.enabled);
+            if (!localStream) return;
+
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (!audioTrack) return;
+
+            audioTrack.enabled = !audioTrack.enabled;
+
+            toggleMicBtn.innerHTML = audioTrack.enabled
+                ? '<i class="fa-solid fa-microphone"></i>'
+                : '<i class="fa-solid fa-microphone-slash"></i>';
+
+            toggleMicBtn.classList.toggle('bg-red-600', !audioTrack.enabled);
+            toggleMicBtn.classList.toggle('bg-gray-800', audioTrack.enabled);
+        });
+
+        // Camera toggle
+        toggleCamBtn.addEventListener('click', () => {
+            if (!localStream || activeCallType !== 'video') return;
+
+            const videoTrack = localStream.getVideoTracks()[0];
+            if (!videoTrack) return;
+
+            videoTrack.enabled = !videoTrack.enabled;
+
+            toggleCamBtn.innerHTML = videoTrack.enabled
+                ? '<i class="fa-solid fa-video"></i>'
+                : '<i class="fa-solid fa-video-slash"></i>';
+
+            toggleCamBtn.classList.toggle('bg-red-600', !videoTrack.enabled);
+            toggleCamBtn.classList.toggle('bg-gray-800', videoTrack.enabled);
+        });
+
+        // End call from either side
+        endCallBtn.addEventListener('click', async () => {
+            const refToRemove = activeCallRef;
+
+            if (refToRemove) {
+                try {
+                    await remove(refToRemove);
+                } catch (err) {
+                    console.warn('End call cleanup error:', err);
                 }
+            }
+
+            closeCallUI(false);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (activeCallRef) {
+                remove(activeCallRef).catch(() => {});
             }
         });
 
-        toggleCamBtn.addEventListener('click', () => {
-            if (localStream && activeCallType === 'video') {
-                const videoTrack = localStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    videoTrack.enabled = !videoTrack.enabled;
-                    toggleCamBtn.classList.toggle('bg-red-600', !videoTrack.enabled);
-                }
+        // Auth state observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                checkAndSetupUserProfile(user);
+            } else {
+                authScreen.classList.remove('hidden');
             }
         });
 
