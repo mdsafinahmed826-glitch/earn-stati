@@ -1,706 +1,379 @@
 <!DOCTYPE html>
-<html lang="bn" class="light">
+<html lang="bn" class="h-full bg-gray-900">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafinBook - Connected World</title>
+    <title>WhatsApp Web Bangla</title>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Hind Siliguri for Bangla) -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        fb: {
-                            blue: '#0866FF',
-                            hover: '#166fe5',
-                            bg: '#F0F2F5',
-                            darkbg: '#18191A',
-                            darkcard: '#242526',
-                            darkhover: '#3A3B3C',
-                            text: '#050505',
-                            darktext: '#E4E6EB'
+                        wa: {
+                            dark: '#111b21',
+                            panel: '#202c33',
+                            header: '#202c33',
+                            green: '#00a884',
+                            lightgreen: '#005c4b',
+                            chatbg: '#0b141a',
+                            bubbleIn: '#202c33',
+                            bubbleOut: '#005c4b',
+                            text: '#e9edef',
+                            muted: '#8696a0'
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Hind Siliguri', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDK (Compat v9 for direct browser usage) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-    
+
     <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .glass-effect { backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.85); }
-        .dark .glass-effect { background-color: rgba(36, 37, 38, 0.85); }
+        body { font-family: 'Hind Siliguri', sans-serif; }
+        /* Custom scrollbar for WhatsApp look */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374045; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a555c; }
+        
+        .chat-pattern {
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
     </style>
 </head>
-<body class="bg-fb-bg dark:bg-fb-darkbg text-fb-text dark:text-fb-darktext font-sans antialiased min-h-screen pb-12 transition-colors duration-200">
+<body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
 
-    <!-- LOGIN / REGISTER MODAL (Appears if not logged in) -->
-    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 hidden">
-        <div class="bg-white dark:bg-fb-darkcard w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 relative animate-fade-in border border-gray-200 dark:border-gray-700">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-black text-fb-blue tracking-tight">SafinBook</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Owner: <span class="font-bold text-gray-700 dark:text-gray-200">Md Safin Ahmed (SAFIN)</span></p>
-                <p id="authSubtitle" class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-2">অ্যাকাউন্টে লগইন করুন</p>
-            </div>
+    <!-- App Container -->
+    <div id="app" class="h-full w-full flex flex-col relative">
 
-            <!-- Login Form -->
-            <form id="loginForm" onsubmit="handleAuth(event, 'login')" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">ইমেইল অথবা ফোন নম্বর</label>
-                    <input type="text" id="authEmail" required placeholder="user@safinbook.com বা 01700000000" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-fb-darkhover text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue dark:text-white">
+        <!-- ==================== AUTH / LOGIN MODAL ==================== -->
+        <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
+            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center">
+                <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-lg">
+                    <i class="fa-brands font-bold fa-whatsapp"></i>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-1">পাসওয়ার্ড</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-fb-darkhover text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue dark:text-white">
-                </div>
-                <div id="authError" class="text-red-500 text-xs hidden font-medium text-center"></div>
-                <button type="submit" id="authSubmitBtn" class="w-full bg-fb-blue hover:bg-fb-hover text-white font-bold py-3 rounded-xl shadow-md transition duration-200 flex justify-center items-center gap-2">
-                    <span>লগইন করুন</span>
-                </button>
-            </form>
+                <h2 class="text-2xl font-bold text-white mb-2">ওয়াটসঅ্যাপ ওয়েব</h2>
+                <p class="text-wa-muted mb-6 text-sm">স্বাগতম! চ্যাট শুরু করতে লগইন করুন</p>
 
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-300 dark:border-gray-600"></div></div>
-                <div class="relative flex justify-center text-xs uppercase"><span class="bg-white dark:bg-fb-darkcard px-2 text-gray-500">অথবা</span></div>
-            </div>
-
-            <div class="space-y-2">
-                <button onclick="toggleAuthMode()" id="switchAuthBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl shadow transition duration-200 text-sm">
-                    নতুন SafinBook অ্যাকাউন্ট তৈরি করুন
-                </button>
-                <button onclick="guestLogin()" class="w-full bg-gray-200 dark:bg-fb-darkhover hover:bg-gray-300 text-gray-800 dark:text-white font-semibold py-2 rounded-xl text-xs transition duration-200">
-                    গেস্ট মোডে প্রবেশ করুন (Quick Test)
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN NAVBAR -->
-    <header class="sticky top-0 z-40 bg-white dark:bg-fb-darkcard shadow-sm border-b border-gray-200 dark:border-gray-800 px-4 py-1 flex items-center justify-between">
-        <!-- Left Section: Logo & Search -->
-        <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-black text-fb-blue tracking-tighter cursor-pointer" onclick="switchTab('feed')">SafinBook</h1>
-            <div class="relative hidden sm:block">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-                <input type="text" placeholder="SafinBook-এ খুঁজুন..." class="pl-9 pr-4 py-1.5 bg-gray-100 dark:bg-fb-darkhover text-xs rounded-full border-none focus:outline-none focus:ring-2 focus:ring-fb-blue w-40 md:w-56">
-            </div>
-        </div>
-
-        <!-- Center Section: Navigation Tabs -->
-        <nav class="flex items-center justify-center gap-1 md:gap-8 flex-1 max-w-xl mx-2">
-            <button onclick="switchTab('feed')" id="tab-feed" class="tab-btn active text-fb-blue border-b-4 border-fb-blue py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
-                <i class="fa-solid fa-house text-lg sm:text-xl"></i>
-            </button>
-            <button onclick="switchTab('friends')" id="tab-friends" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition relative">
-                <i class="fa-solid fa-user-group text-lg sm:text-xl"></i>
-                <span class="absolute top-1.5 right-1 sm:right-2 bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full">4</span>
-            </button>
-            <button onclick="switchTab('reels')" id="tab-reels" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
-                <i class="fa-solid fa-circle-play text-lg sm:text-xl"></i>
-            </button>
-            <button onclick="switchTab('market')" id="tab-market" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition">
-                <i class="fa-solid fa-store text-lg sm:text-xl"></i>
-            </button>
-            <button onclick="switchTab('menu')" id="tab-menu" class="tab-btn text-gray-500 dark:text-gray-400 py-2.5 px-2 sm:px-6 hover:bg-gray-100 dark:hover:bg-fb-darkhover rounded-lg transition md:hidden">
-                <i class="fa-solid fa-bars text-lg sm:text-xl"></i>
-            </button>
-        </nav>
-
-        <!-- Right Section: Action Controls (Hidden on small mobile screens to prevent header overcrowding, available inside Menu) -->
-        <div class="hidden md:flex items-center gap-2">
-            <!-- Dark Mode Toggle -->
-            <button onclick="toggleDarkMode()" title="ডার্ক মোড টগল" class="w-9 h-9 rounded-full bg-gray-200 dark:bg-fb-darkhover flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-300 transition">
-                <i id="darkModeIcon" class="fa-solid fa-moon"></i>
-            </button>
-            <!-- Messenger Button -->
-            <button onclick="toggleMessenger()" title="মেসেঞ্জার" class="w-9 h-9 rounded-full bg-gray-200 dark:bg-fb-darkhover flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-300 transition relative">
-                <i class="fa-brands fa-facebook-messenger text-lg text-fb-blue"></i>
-                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">2</span>
-            </button>
-            <!-- User Profile / Auth Status -->
-            <div id="userProfileHeader" class="flex items-center gap-2 cursor-pointer pl-1" onclick="switchTab('menu')">
-                <img id="headerAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full border border-fb-blue object-cover" alt="User">
-            </div>
-        </div>
-    </header>
-
-    <!-- LIVE USER ACTIVITY STATS BAR -->
-    <div class="bg-gradient-to-r from-fb-blue via-blue-600 to-indigo-700 text-white px-4 py-1.5 text-xs font-semibold flex items-center justify-between shadow-inner">
-        <div class="flex items-center gap-2 mx-auto">
-            <span class="inline-flex items-center gap-1.5 bg-white/20 px-2.5 py-0.5 rounded-full">
-                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span id="liveUsersCount">১৪,২৫৮ জন মোট ইউজার</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5 bg-green-500/30 px-2.5 py-0.5 rounded-full text-green-200">
-                <i class="fa-solid fa-bolt text-[10px]"></i>
-                <span id="onlineUsersCount">১২৪ জন অনলাইনে এক্টিভ</span>
-            </span>
-            <span class="hidden md:inline text-white/80 border-l border-white/30 pl-2">
-                Owner: <strong class="text-white">Md Safin Ahmed</strong>
-            </span>
-        </div>
-    </div>
-
-    <!-- MAIN CONTAINER WITH TABS -->
-    <main class="max-w-6xl mx-auto px-2 sm:px-4 py-4 grid grid-cols-1 md:grid-cols-12 gap-4">
-
-        <!-- LEFT SIDEBAR (Desktop Menu) -->
-        <aside class="hidden md:block md:col-span-3 space-y-1 sticky top-16 h-fit">
-            <div onclick="switchTab('menu')" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-fb-darkhover cursor-pointer transition">
-                <img id="sideAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-9 h-9 rounded-full object-cover" alt="Avatar">
-                <div>
-                    <p id="sideUserName" class="font-bold text-sm">Md Safin Ahmed</p>
-                    <p class="text-[11px] text-gray-500">SafinBook Owner & Admin</p>
-                </div>
-            </div>
-            <div onclick="switchTab('friends')" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-fb-darkhover cursor-pointer text-sm font-semibold transition">
-                <i class="fa-solid fa-user-group text-blue-500 text-lg w-7 text-center"></i>
-                <span>বন্ধুরা (Friends)</span>
-            </div>
-            <div onclick="switchTab('reels')" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-fb-darkhover cursor-pointer text-sm font-semibold transition">
-                <i class="fa-solid fa-film text-purple-500 text-lg w-7 text-center"></i>
-                <span>রিলস এবং ভিডিও (Reels)</span>
-            </div>
-            <div onclick="switchTab('market')" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-fb-darkhover cursor-pointer text-sm font-semibold transition">
-                <i class="fa-solid fa-store text-cyan-500 text-lg w-7 text-center"></i>
-                <span>মার্কেটপ্লেস (Marketplace)</span>
-            </div>
-            <div onclick="alert('SafinBook সেভড পোস্ট ফিচার চালু রয়েছে!')" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-fb-darkhover cursor-pointer text-sm font-semibold transition">
-                <i class="fa-solid fa-bookmark text-pink-500 text-lg w-7 text-center"></i>
-                <span>সেভ করা আইটেম</span>
-            </div>
-            <div onclick="alert('SafinBook মেমোরিজ লোড হচ্ছে...')" class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-200 dark:hover:bg-fb-darkhover cursor-pointer text-sm font-semibold transition">
-                <i class="fa-solid fa-clock-rotate-left text-amber-500 text-lg w-7 text-center"></i>
-                <span>স্মৃতিচারণ (Memories)</span>
-            </div>
-            <div class="border-t border-gray-300 dark:border-gray-700 my-2 pt-2 text-xs text-gray-500 dark:text-gray-400 px-2">
-                SafinBook © 2026 • Created by Md Safin Ahmed
-            </div>
-        </aside>
-
-        <!-- CENTER CONTENT (Dynamic Views) -->
-        <section class="col-span-1 md:col-span-9 lg:col-span-6 space-y-4">
-
-            <!-- TAB 1: HOME FEED -->
-            <div id="view-feed" class="tab-view space-y-4">
-                
-                <!-- Stories Carousel -->
-                <div class="bg-white dark:bg-fb-darkcard p-3 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
-                    <div class="flex items-center justify-between mb-2 px-1">
-                        <span class="font-bold text-xs uppercase tracking-wider text-gray-500">স্টোরিজ (Stories)</span>
-                        <span class="text-xs text-fb-blue font-semibold cursor-pointer">সব দেখুন</span>
-                    </div>
-                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1" id="storiesContainer">
-                        <!-- Add Story Card -->
-                        <div onclick="triggerStoryUpload()" class="relative min-w-[100px] h-40 rounded-xl overflow-hidden bg-gray-100 dark:bg-fb-darkhover border border-gray-300 dark:border-gray-700 flex-shrink-0 cursor-pointer group">
-                            <img id="storyUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="h-28 w-full object-cover group-hover:scale-105 transition duration-300">
-                            <div class="absolute bottom-0 w-full h-12 bg-white dark:bg-fb-darkcard flex flex-col items-center pt-3">
-                                <div class="absolute -top-4 bg-fb-blue text-white rounded-full w-7 h-7 flex items-center justify-center border-2 border-white dark:border-fb-darkcard shadow-md">
-                                    <i class="fa-solid fa-plus text-xs"></i>
-                                </div>
-                                <span class="text-[10px] font-bold text-gray-700 dark:text-gray-200">স্টোরি দিন</span>
-                            </div>
-                            <input type="file" id="storyFileInput" accept="image/*,video/*" class="hidden" onchange="uploadStoryFile(event)">
-                        </div>
-
-                        <!-- Sample Stories -->
-                        <div class="relative min-w-[100px] h-40 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer group border border-gray-200 dark:border-gray-700">
-                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            <div class="absolute top-2 left-2 border-2 border-fb-blue rounded-full">
-                                <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=80&q=80" class="w-7 h-7 rounded-full object-cover">
-                            </div>
-                            <span class="absolute bottom-2 left-2 text-white text-[11px] font-bold drop-shadow-md">আরিফ হোসেন</span>
-                        </div>
-                        <div class="relative min-w-[100px] h-40 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer group border border-gray-200 dark:border-gray-700">
-                            <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=300&q=80" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            <div class="absolute top-2 left-2 border-2 border-fb-blue rounded-full">
-                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80" class="w-7 h-7 rounded-full object-cover">
-                            </div>
-                            <span class="absolute bottom-2 left-2 text-white text-[11px] font-bold drop-shadow-md">নাবিলা খান</span>
-                        </div>
-                    </div>
+                <!-- Auth Tabs -->
+                <div class="flex border-b border-gray-700 mb-6">
+                    <button id="phoneTabBtn" class="flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition">ফোন নম্বর</button>
+                    <button id="googleTabBtn" class="flex-1 py-2 text-wa-muted hover:text-white font-semibold transition">Google দিয়ে</button>
                 </div>
 
-                <!-- Create Post Box -->
-                <div class="bg-white dark:bg-fb-darkcard p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 space-y-3">
-                    <div class="flex items-center gap-3">
-                        <img id="postCreatorAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-10 h-10 rounded-full object-cover">
-                        <input type="text" id="postInputText" placeholder="আপনার মনে কি আছে, সাফিন?" class="bg-gray-100 dark:bg-fb-darkhover w-full px-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue text-fb-text dark:text-fb-darktext">
-                    </div>
+                <!-- Phone Form -->
+                <div id="phoneAuthForm" class="space-y-4">
+                    <div id="recaptcha-container" class="flex justify-center my-2"></div>
                     
-                    <!-- Selected File Preview -->
-                    <div id="filePreviewContainer" class="hidden relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 max-h-60 bg-black">
-                        <button onclick="clearSelectedFile()" class="absolute top-2 right-2 bg-black/70 text-white rounded-full w-7 h-7 flex items-center justify-center z-10 hover:bg-black">
-                            <i class="fa-solid fa-xmark text-xs"></i>
+                    <div id="phoneInputGroup">
+                        <label class="block text-left text-xs text-wa-muted mb-1">আপনার ফোন নম্বর (দেশি কোডসহ)</label>
+                        <div class="flex gap-2">
+                            <input type="tel" id="phoneNumberInput" placeholder="+8801700000000" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-wa-green">
+                        </div>
+                        <button id="sendOtpBtn" class="w-full mt-4 bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                            <span>OTP কোড পাঠান</span>
+                            <i class="fa-solid fa-paper-plane text-sm"></i>
                         </button>
-                        <div id="filePreviewContent"></div>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-700">
+                    <!-- OTP Code Input (Hidden initially) -->
+                    <div id="otpInputGroup" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-left text-xs text-wa-muted mb-1">OTP কোড লিখুন</label>
+                            <input type="text" id="otpCodeInput" placeholder="123456" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-3 text-center text-xl font-mono text-white tracking-widest focus:outline-none focus:border-wa-green">
+                        </div>
+                        <button id="verifyOtpBtn" class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition">
+                            যাচাই করুন ও লগইন করুন
+                        </button>
+                    </div>
+                </div>
 
-                    <!-- Actions toolbar -->
-                    <div class="flex items-center justify-between text-xs font-semibold pt-1">
-                        <!-- Direct Phone Gallery Picker -->
-                        <label class="flex items-center gap-2 text-green-500 hover:bg-gray-100 dark:hover:bg-fb-darkhover p-2 rounded-xl cursor-pointer flex-1 justify-center">
-                            <i class="fa-solid fa-images text-lg"></i>
-                            <span>ছবি/ভিডিও আপলোড (গ্যালারি)</span>
-                            <input type="file" id="postFileInput" accept="image/*,video/*" class="hidden" onchange="handleFileSelect(event)">
+                <!-- Google Auth Form -->
+                <div id="googleAuthForm" class="hidden py-4">
+                    <button id="googleSignInBtn" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-3">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        Google অ্যাকাউন্টের মাধ্যমে সাইন ইন
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PROFILE SETUP / EDIT MODAL ==================== -->
+        <div id="profileModal" class="fixed inset-0 z-40 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
+            <div class="bg-wa-panel rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-800">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear text-wa-green"></i> প্রোফাইল এডিটর
+                    </h3>
+                    <button id="closeProfileBtn" class="text-wa-muted hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="text-center relative group">
+                        <img id="profileAvatarPreview" src="https://placehold.co/150x150/202c33/00a884?text=User" class="w-24 h-24 rounded-full object-cover mx-auto border-2 border-wa-green shadow">
+                        <label class="cursor-pointer bg-wa-green hover:bg-opacity-90 text-white rounded-full p-2 absolute bottom-0 right-1/2 translate-x-8 shadow-md">
+                            <i class="fa-solid fa-camera text-sm"></i>
+                            <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
                         </label>
-                        <button onclick="addEmojiToPost('😊')" class="flex items-center gap-2 text-amber-500 hover:bg-gray-100 dark:hover:bg-fb-darkhover p-2 rounded-xl flex-1 justify-center">
-                            <i class="fa-regular fa-face-smile text-lg"></i>
-                            <span>ফিলিং/ইমোজি</span>
-                        </button>
-                        <button onclick="createNewPost()" class="bg-fb-blue hover:bg-fb-hover text-white font-bold px-5 py-2 rounded-xl shadow-md transition ml-2">
-                            পোস্ট
-                        </button>
                     </div>
-                </div>
 
-                <!-- Feed Posts Container -->
-                <div id="feedPosts" class="space-y-4">
-                    <!-- Posts will load dynamically from Firebase / Local state -->
+                    <div>
+                        <label class="block text-xs text-wa-muted mb-1">আপনার নাম</label>
+                        <input type="text" id="profileNameInput" placeholder="যেমন: আব্দুর রহমান" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-wa-muted mb-1">ফোন নম্বর (যোগাযোগের জন্য)</label>
+                        <input type="tel" id="profilePhoneInput" placeholder="+8801700000000" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-wa-muted mb-1">স্ট্যাটাস / বায়ো</label>
+                        <input type="text" id="profileStatusInput" placeholder="Hey there! I am using WhatsApp." class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
+                    </div>
+
+                    <button id="saveProfileBtn" class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition mt-4">
+                        সেভ করুন
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- TAB 2: FRIENDS TAB -->
-            <div id="view-friends" class="tab-view hidden space-y-4">
-                <div class="bg-white dark:bg-fb-darkcard p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold">ফ্রেন্ড রিকোয়েস্ট (৪টি অপেক্ষমান)</h2>
-                        <span class="text-xs text-fb-blue font-semibold cursor-pointer">সব দেখুন</span>
-                    </div>
-
-                    <!-- Friend Requests Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="friendRequestsGrid">
-                        <!-- Request Widget 1 -->
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-fb-darkhover rounded-xl border border-gray-200 dark:border-gray-700">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-full object-cover">
-                            <div class="flex-1 space-y-1">
-                                <p class="font-bold text-sm">তানভীর ইসলাম</p>
-                                <p class="text-[11px] text-gray-500">১২টি মিউচুয়াল ফ্রেন্ড</p>
-                                <div class="flex gap-2 pt-1">
-                                    <button onclick="acceptFriend(this)" class="bg-fb-blue text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Confirm</button>
-                                    <button onclick="deleteFriend(this)" class="bg-gray-200 dark:bg-gray-700 text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Request Widget 2 -->
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-fb-darkhover rounded-xl border border-gray-200 dark:border-gray-700">
-                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-full object-cover">
-                            <div class="flex-1 space-y-1">
-                                <p class="font-bold text-sm">সুমাইয়া রহমান</p>
-                                <p class="text-[11px] text-gray-500">৫টি মিউচুয়াল ফ্রেন্ড</p>
-                                <div class="flex gap-2 pt-1">
-                                    <button onclick="acceptFriend(this)" class="bg-fb-blue text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Confirm</button>
-                                    <button onclick="deleteFriend(this)" class="bg-gray-200 dark:bg-gray-700 text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Request Widget 3 -->
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-fb-darkhover rounded-xl border border-gray-200 dark:border-gray-700">
-                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-full object-cover">
-                            <div class="flex-1 space-y-1">
-                                <p class="font-bold text-sm">রাকিবুল হাসান</p>
-                                <p class="text-[11px] text-gray-500">৮টি মিউচুয়াল ফ্রেন্ড</p>
-                                <div class="flex gap-2 pt-1">
-                                    <button onclick="acceptFriend(this)" class="bg-fb-blue text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Confirm</button>
-                                    <button onclick="deleteFriend(this)" class="bg-gray-200 dark:bg-gray-700 text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Request Widget 4 -->
-                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-fb-darkhover rounded-xl border border-gray-200 dark:border-gray-700">
-                            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=120&q=80" class="w-14 h-14 rounded-full object-cover">
-                            <div class="flex-1 space-y-1">
-                                <p class="font-bold text-sm">মেহজাবিন চৌধুরী</p>
-                                <p class="text-[11px] text-gray-500">২১টি মিউচুয়াল ফ্রেন্ড</p>
-                                <div class="flex gap-2 pt-1">
-                                    <button onclick="acceptFriend(this)" class="bg-fb-blue text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Confirm</button>
-                                    <button onclick="deleteFriend(this)" class="bg-gray-200 dark:bg-gray-700 text-xs font-bold px-3 py-1.5 rounded-lg flex-1">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <!-- ==================== USER SEARCH / ADD CONTACT MODAL ==================== -->
+        <div id="searchModal" class="fixed inset-0 z-40 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
+            <div class="bg-wa-panel rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-800">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-wa-green"></i> নতুন চ্যাট / বন্ধু খুঁজুন
+                    </h3>
+                    <button id="closeSearchBtn" class="text-wa-muted hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
 
-                <!-- Active Friends List -->
-                <div class="bg-white dark:bg-fb-darkcard p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
-                    <h3 class="font-bold text-md mb-3">এক্টিভ ফ্রেন্ডস (Active Friends)</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="relative">
-                                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-10 h-10 rounded-full object-cover">
-                                    <span class="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white"></span>
-                                </div>
-                                <div>
-                                    <p class="font-bold text-sm">Md Safin Ahmed <i class="fa-solid fa-circle-check text-fb-blue text-xs"></i></p>
-                                    <p class="text-[11px] text-gray-500">SafinBook Founder</p>
-                                </div>
-                            </div>
-                            <button onclick="openChatWith('Md Safin Ahmed')" class="bg-fb-blue/10 text-fb-blue font-bold px-3 py-1 rounded-full text-xs">মেসেজ</button>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="relative">
-                                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80" class="w-10 h-10 rounded-full object-cover">
-                                    <span class="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white"></span>
-                                </div>
-                                <div>
-                                    <p class="font-bold text-sm">আরিফ হোসেন</p>
-                                    <p class="text-[11px] text-gray-500">অনলাইনে আছেন</p>
-                                </div>
-                            </div>
-                            <button onclick="openChatWith('আরিফ হোসেন')" class="bg-fb-blue/10 text-fb-blue font-bold px-3 py-1 rounded-full text-xs">মেসেজ</button>
-                        </div>
-                    </div>
+                <div class="relative mb-4">
+                    <input type="text" id="userSearchInput" placeholder="নাম অথবা ফোন নম্বর লিখুন..." class="w-full bg-wa-dark border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-wa-green">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-wa-muted"></i>
+                </div>
+
+                <div id="searchResultsList" class="max-h-60 overflow-y-auto space-y-2">
+                    <p class="text-center text-wa-muted text-sm py-4">সার্চ করার জন্য উপরে ফোন নম্বর বা নাম লিখুন</p>
                 </div>
             </div>
+        </div>
 
-            <!-- TAB 3: REELS / VIDEO FEED -->
-            <div id="view-reels" class="tab-view hidden space-y-4">
-                <div class="bg-white dark:bg-fb-darkcard p-3 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex items-center justify-between">
-                    <h2 class="font-bold text-md flex items-center gap-2">
-                        <i class="fa-solid fa-clapperboard text-red-500"></i> SafinBook Reels Feed
-                    </h2>
-                    <label class="bg-fb-blue hover:bg-fb-hover text-white text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer">
-                        <i class="fa-solid fa-plus mr-1"></i> রিল আপলোড
-                        <input type="file" accept="video/*" class="hidden" onchange="uploadReelVideo(event)">
-                    </label>
+        <!-- ==================== CALL OVERLAY (AUDIO/VIDEO) ==================== -->
+        <div id="callOverlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
+            <!-- Call Header -->
+            <div class="text-center mt-8">
+                <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 animate-pulse">
+                <h3 id="callUserName" class="text-2xl font-bold text-white">ব্যবহারকারীর নাম</h3>
+                <p id="callStatusText" class="text-wa-green font-medium mt-1">কলিং...</p>
+            </div>
+
+            <!-- Video Streams Container -->
+            <div id="videoContainer" class="relative w-full max-w-2xl h-80 bg-black rounded-2xl overflow-hidden my-4 border border-gray-800 hidden">
+                <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                <video id="localVideo" autoplay playsinline muted class="absolute bottom-4 right-4 w-32 h-24 object-cover rounded-lg border-2 border-white shadow-md"></video>
+            </div>
+
+            <!-- Audio element for audio call -->
+            <audio id="remoteAudio" autoplay class="hidden"></audio>
+
+            <!-- Call Controls -->
+            <div class="flex items-center gap-6 mb-8">
+                <!-- Incoming call buttons -->
+                <div id="incomingCallControls" class="flex gap-8 hidden">
+                    <button id="rejectCallBtn" class="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition">
+                        <i class="fa-solid fa-phone-slash"></i>
+                    </button>
+                    <button id="acceptCallBtn" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition animate-bounce">
+                        <i class="fa-solid fa-phone"></i>
+                    </button>
                 </div>
 
-                <!-- Vertical Reel Cards -->
-                <div class="space-y-6 max-w-sm mx-auto" id="reelsContainer">
-                    <div class="bg-black rounded-3xl overflow-hidden shadow-xl relative aspect-[9/16] flex items-center justify-center">
-                        <video controls loop class="w-full h-full object-cover" poster="https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=600&q=80">
-                            <source src="https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4" type="video/mp4">
-                        </video>
-                        <div class="absolute bottom-4 left-4 text-white z-10 space-y-1">
-                            <p class="font-bold text-sm flex items-center gap-2">@safin_official <span class="bg-fb-blue text-[10px] px-2 py-0.5 rounded-full">Follow</span></p>
-                            <p class="text-xs text-gray-200">SafinBook Reels-এ প্রকৃতির সুন্দর দৃশ্য! ❤️</p>
+                <!-- Ongoing call controls -->
+                <div id="ongoingCallControls" class="flex gap-4">
+                    <button id="toggleMicBtn" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    <button id="toggleCamBtn" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-video"></i>
+                    </button>
+                    <button id="endCallBtn" class="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
+                        <i class="fa-solid fa-phone-slash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MAIN WHATSAPP APP UI ==================== -->
+        <div class="flex-1 flex h-full overflow-hidden">
+
+            <!-- SIDEBAR: Contact list & settings -->
+            <div id="sidebar" class="w-full md:w-96 bg-wa-panel border-r border-gray-800 flex flex-col h-full z-10 transition-all duration-300">
+                <!-- Sidebar Header -->
+                <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800">
+                    <div class="flex items-center gap-3 cursor-pointer" id="myProfileTrigger">
+                        <img id="myAvatarImg" src="https://placehold.co/100" class="w-10 h-10 rounded-full object-cover border border-wa-green">
+                        <div class="overflow-hidden">
+                            <h4 id="myNameTxt" class="font-bold text-sm text-white truncate">আমার নাম</h4>
+                            <p id="myPhoneTxt" class="text-xs text-wa-muted truncate">+8801700000000</p>
                         </div>
+                    </div>
+                    <div class="flex items-center gap-4 text-wa-muted">
+                        <button id="openSearchBtn" title="নতুন চ্যাট" class="hover:text-wa-green transition text-lg"><i class="fa-solid fa-message"></i></button>
+                        <button id="editProfileBtn" title="প্রোফাইল এডিট" class="hover:text-wa-green transition text-lg"><i class="fa-solid fa-user-pen"></i></button>
+                        <button id="logoutBtn" title="লগআউট" class="hover:text-red-400 transition text-lg"><i class="fa-solid fa-right-from-bracket"></i></button>
+                    </div>
+                </div>
+
+                <!-- Chat Filter Search Bar -->
+                <div class="p-2 bg-wa-dark border-b border-gray-800">
+                    <div class="relative">
+                        <input type="text" id="filterChatsInput" placeholder="চ্যাট খুঁজুন..." class="w-full bg-wa-panel text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none">
+                        <i class="fa-solid fa-magnifying-glass text-wa-muted text-xs absolute left-3 top-3"></i>
+                    </div>
+                </div>
+
+                <!-- Recent Conversations List -->
+                <div id="chatList" class="flex-1 overflow-y-auto divide-y divide-gray-800/40">
+                    <div class="p-8 text-center text-wa-muted text-sm">
+                        <i class="fa-solid fa-spinner fa-spin text-2xl text-wa-green mb-2 block"></i>
+                        চ্যাট লোড হচ্ছে...
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 4: MARKETPLACE -->
-            <div id="view-market" class="tab-view hidden space-y-4">
-                <div class="bg-white dark:bg-fb-darkcard p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
-                    <h2 class="font-bold text-lg mb-3">SafinBook মার্কেটপ্লেস</h2>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-fb-darkhover">
-                            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80" class="h-32 w-full object-cover">
-                            <div class="p-2.5">
-                                <p class="font-bold text-sm">৳ ৩,৫০০</p>
-                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">Wireless Headphones</p>
-                                <p class="text-[10px] text-gray-400">ঢাকা, বাংলাদেশ</p>
-                            </div>
-                        </div>
-                        <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-fb-darkhover">
-                            <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=300&q=80" class="w-full h-32 object-cover">
-                            <div class="p-2.5">
-                                <p class="font-bold text-sm">৳ ২,২০০</p>
-                                <p class="text-xs text-gray-600 dark:text-gray-300 truncate">Smart Watch V8</p>
-                                <p class="text-[10px] text-gray-400">সিরাজগঞ্জ, বাংলাদেশ</p>
-                            </div>
-                        </div>
+            <!-- CHAT AREA -->
+            <div id="chatArea" class="hidden md:flex flex-1 bg-wa-chatbg flex-col h-full relative chat-pattern">
+                
+                <!-- Welcome View when no chat selected -->
+                <div id="noChatSelectedView" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <div class="w-24 h-24 bg-wa-panel rounded-full flex items-center justify-center text-wa-green text-5xl mb-4 border border-gray-800">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2">WhatsApp Web for Windows / Mobile</h2>
+                    <p class="text-wa-muted max-w-md text-sm">যে কারো সাথে কথা বলতে বামপাশের তালিকা থেকে চ্যাট নির্বাচন করুন অথবা নতুন নম্বর সার্চ করে চ্যাট শুরু করুন।</p>
+                    <div class="mt-6 flex items-center text-xs text-wa-muted gap-2">
+                        <i class="fa-solid fa-lock text-wa-green"></i> এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট
                     </div>
                 </div>
-            </div>
 
-            <!-- TAB 5: MENU / PROFILE -->
-            <div id="view-menu" class="tab-view hidden space-y-4">
-                <div class="bg-white dark:bg-fb-darkcard p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 text-center">
-                    <img id="menuAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" class="w-20 h-20 rounded-full mx-auto border-4 border-fb-blue object-cover">
-                    <h2 id="menuUserName" class="text-xl font-bold mt-2">Md Safin Ahmed</h2>
-                    <p id="menuUserBio" class="text-xs text-gray-600 dark:text-gray-300 italic my-1">SafinBook-এ সক্রিয় ইউজার</p>
-                    <p id="menuUserEmail" class="text-xs text-gray-500">safin@safinbook.com</p>
+                <!-- Active Chat Panel -->
+                <div id="activeChatView" class="hidden flex-1 flex flex-col h-full">
                     
-                    <div class="flex justify-center items-center gap-2 mt-2">
-                        <span class="inline-block bg-fb-blue/10 text-fb-blue text-xs font-bold px-3 py-1 rounded-full">
-                            <i class="fa-solid fa-shield-halved mr-1"></i> Verified App Owner
-                        </span>
-                    </div>
-                    <!-- Profile Analytics Stats Box -->
-<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm mb-4 flex justify-around text-center border border-slate-200 dark:border-slate-700">
-    <div>
-        <span id="user-total-posts" class="block font-bold text-xl text-blue-600 dark:text-blue-400">0</span>
-        <span class="text-xs text-slate-500 dark:text-slate-400">মোট পোস্ট</span>
-    </div>
-    <div class="border-x border-slate-200 dark:border-slate-700 px-6">
-        <span id="user-total-likes" class="block font-bold text-xl text-red-500">0</span>
-        <span class="text-xs text-slate-500 dark:text-slate-400">মোট লাইক</span>
-    </div>
-    <div>
-        <span id="user-total-views" class="block font-bold text-xl text-emerald-500">0</span>
-        <span class="text-xs text-slate-500 dark:text-slate-400">মোট ভিউ</span>
-    </div>
-</div>
+                    <!-- Chat Header -->
+                    <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800 z-10">
+                        <div class="flex items-center gap-3">
+                            <button id="backToChatListBtn" class="md:hidden text-wa-muted hover:text-white mr-1">
+                                <i class="fa-solid fa-arrow-left text-lg"></i>
+                            </button>
+                            <img id="activeChatAvatar" src="https://placehold.co/100" class="w-10 h-10 rounded-full object-cover border border-gray-700">
+                            <div>
+                                <h3 id="activeChatName" class="font-semibold text-white leading-tight text-base">ব্যবহারকারীর নাম</h3>
+                                <p id="activeChatStatus" class="text-xs text-wa-green">অনলাইন</p>
+                            </div>
+                        </div>
 
-<!-- Filtered User Posts Feed -->
-<div id="user-posts-feed" class="space-y-4">
-    <!-- ইউজারের নিজস্ব পোস্টগুলো এখানে রেন্ডার হবে -->
-</div>
-                    <!-- Edit Profile Action Button -->
-                    <button onclick="openEditProfileModal()" class="w-full mt-3 bg-fb-blue/10 hover:bg-fb-blue/20 text-fb-blue font-bold py-2.5 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2 border border-fb-blue/30">
-                        <i class="fa-solid fa-user-pen text-sm"></i> প্রোফাইল এডিট করুন (Edit Profile)
-                    </button>
-
-                    <div id="profileDetailsInfo" class="mt-4 p-3 bg-gray-50 dark:bg-fb-darkhover rounded-xl text-left text-xs space-y-2">
-                        <p id="menuUserWork" class="text-gray-700 dark:text-gray-300 flex items-center gap-2"><i class="fa-solid fa-briefcase text-fb-blue w-4"></i> <span>SafinBook Owner & Founder</span></p>
-                        <p id="menuUserLocation" class="text-gray-700 dark:text-gray-300 flex items-center gap-2"><i class="fa-solid fa-location-dot text-red-500 w-4"></i> <span>Dhaka, Bangladesh</span></p>
+                        <!-- Audio and Video call triggers -->
+                        <div class="flex items-center gap-5 text-wa-muted">
+                            <button id="startAudioCallBtn" title="অডিও কল" class="hover:text-wa-green text-lg transition"><i class="fa-solid fa-phone"></i></button>
+                            <button id="startVideoCallBtn" title="ভিডিও কল" class="hover:text-wa-green text-lg transition"><i class="fa-solid fa-video"></i></button>
+                        </div>
                     </div>
 
-                    <!-- Quick Tools & Feature Options (Mobile Quick Menu Controls) -->
-                    <div class="mt-5 text-left border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">কুইক একসেস ও সেটিংস</h3>
+                    <!-- Messages Feed Container -->
+                    <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <!-- Dynamic Messages will be injected here -->
+                    </div>
+
+                    <!-- Input Footer Bar -->
+                    <div class="bg-wa-header p-3 flex items-center gap-2 border-t border-gray-800 relative">
                         
-                        <div class="space-y-2.5">
-                            <!-- Messenger Shortcut -->
-                            <div onclick="toggleMessenger()" class="flex items-center justify-between p-3 bg-blue-50 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-blue-100 dark:hover:bg-gray-700 transition border border-blue-100 dark:border-gray-700">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-fb-blue text-white flex items-center justify-center">
-                                        <i class="fa-brands fa-facebook-messenger text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-sm text-fb-blue dark:text-blue-400">মেসেঞ্জার (Messenger)</p>
-                                        <p class="text-[11px] text-gray-500 dark:text-gray-400">মেসেজ ও চ্যাট চালু করুন</p>
-                                    </div>
-                                </div>
-                                <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">2</span>
-                            </div>
-
-                            <!-- Dark Mode Toggle Shortcut -->
-                            <div onclick="toggleDarkMode()" class="flex items-center justify-between p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center">
-                                        <i id="menuDarkModeIcon" class="fa-solid fa-moon text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-sm">ডার্ক / লাইট মোড (Dark Mode)</p>
-                                        <p class="text-[11px] text-gray-500 dark:text-gray-400" id="darkModeStatusText">থিম পরিবর্তন করতে টগল করুন</p>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-toggle-on text-2xl text-fb-blue"></i>
-                            </div>
-
-                            <!-- Search Shortcut -->
-                            <div class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl">
-                                <div class="relative">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
-                                    <input type="text" placeholder="SafinBook-এ পোস্ট বা বন্ধু খুঁজুন..." class="w-full pl-8 pr-3 py-2 bg-white dark:bg-fb-darkcard text-xs rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-fb-blue">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 mt-4 text-left">
-                        <div onclick="alert('গ্রুপসমূহ লোড হচ্ছে...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                            <i class="fa-solid fa-users text-blue-500 text-lg"></i>
-                            <p class="font-bold text-xs mt-1">গ্রুপসমূহ</p>
-                        </div>
-                        <div onclick="alert('পেজেস লোড হচ্ছে...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                            <i class="fa-solid fa-flag text-orange-500 text-lg"></i>
-                            <p class="font-bold text-xs mt-1">পেজেস (Pages)</p>
-                        </div>
-                        <div onclick="alert('জন্মদিনের তালিকা...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                            <i class="fa-solid fa-cake-candles text-pink-500 text-lg"></i>
-                            <p class="font-bold text-xs mt-1">জন্মদিন (Birthdays)</p>
-                        </div>
-                        <div onclick="alert('সেটিংস অপশন ওপেন হচ্ছে...')" class="p-3 bg-gray-100 dark:bg-fb-darkhover rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                            <i class="fa-solid fa-gear text-gray-500 text-lg"></i>
-                            <p class="font-bold text-xs mt-1">সেটিংস</p>
-                        </div>
-                    </div>
-
-                    <button onclick="handleLogout()" class="w-full mt-6 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl shadow transition text-sm">
-                        <i class="fa-solid fa-right-from-bracket mr-2"></i> লগআউট করুন
-                    </button>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- RIGHT SIDEBAR (Contacts & Online Chat List) -->
-        <aside class="hidden lg:block lg:col-span-3 space-y-3 sticky top-16 h-fit">
-            <div class="bg-white dark:bg-fb-darkcard p-3 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
-                <div class="flex items-center justify-between mb-3 text-gray-500">
-                    <span class="font-bold text-xs uppercase tracking-wider">অনলাইন যোগাযোগ (Contacts)</span>
-                    <i class="fa-solid fa-ellipsis hover:text-gray-700 cursor-pointer"></i>
-                </div>
-                <div class="space-y-2">
-                    <div onclick="openChatWith('Md Safin Ahmed')" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-fb-darkhover cursor-pointer">
+                        <!-- Attachments menu -->
                         <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full object-cover">
-                            <span class="w-2.5 h-2.5 bg-green-500 rounded-full absolute bottom-0 right-0 border border-white"></span>
+                            <label title="ছবি বা ভিডিও সংযুক্ত করুন" class="cursor-pointer text-wa-muted hover:text-white text-xl p-2 rounded-full hover:bg-gray-800 transition block">
+                                <i class="fa-solid fa-paperclip"></i>
+                                <input type="file" id="mediaFileInput" accept="image/*,video/*" class="hidden">
+                            </label>
                         </div>
-                        <span class="text-xs font-bold">Md Safin Ahmed</span>
-                    </div>
-                    <div onclick="openChatWith('আরিফ হোসেন')" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-fb-darkhover cursor-pointer">
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full object-cover">
-                            <span class="w-2.5 h-2.5 bg-green-500 rounded-full absolute bottom-0 right-0 border border-white"></span>
+
+                        <!-- Message Text Area -->
+                        <div class="flex-1 relative">
+                            <input type="text" id="messageTextInput" placeholder="একটি বার্তা লিখুন..." class="w-full bg-wa-panel text-white placeholder-wa-muted rounded-xl px-4 py-3 text-sm focus:outline-none">
                         </div>
-                        <span class="text-xs font-bold">আরিফ হোসেন</span>
-                    </div>
-                    <div onclick="openChatWith('নাবিলা খান')" class="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-fb-darkhover cursor-pointer">
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full object-cover">
-                            <span class="w-2.5 h-2.5 bg-green-500 rounded-full absolute bottom-0 right-0 border border-white"></span>
+
+                        <!-- Voice Record Button / Send Button -->
+                        <div class="flex items-center gap-1">
+                            <button id="recordVoiceBtn" title="ভয়েস রেকর্ড করুন" class="text-wa-muted hover:text-wa-green text-xl p-2 rounded-full hover:bg-gray-800 transition">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                            
+                            <button id="sendMessageBtn" title="পাঠান" class="bg-wa-green hover:bg-opacity-90 text-white rounded-full w-10 h-10 flex items-center justify-center shadow transition">
+                                <i class="fa-solid fa-paper-plane text-sm"></i>
+                            </button>
                         </div>
-                        <span class="text-xs font-bold">নাবিলা খান</span>
+
+                        <!-- Voice Recording Active UI Overlay -->
+                        <div id="voiceRecordingOverlay" class="absolute inset-0 bg-wa-header px-4 flex items-center justify-between hidden z-20">
+                            <div class="flex items-center gap-3 text-red-500 animate-pulse">
+                                <i class="fa-solid fa-circle text-xs"></i>
+                                <span class="font-medium text-sm text-white">ভয়েস মেসেজ রেকর্ড হচ্ছে...</span>
+                                <span id="recordTimer" class="font-mono text-sm text-wa-muted">00:00</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button id="cancelRecordBtn" class="text-gray-400 hover:text-red-400 p-2"><i class="fa-solid fa-trash-can text-lg"></i></button>
+                                <button id="sendVoiceRecordBtn" class="bg-wa-green text-white p-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2">
+                                    <span>পাঠান</span>
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-            </div>
-        </aside>
 
-    </main>
-
-    <!-- REAL-TIME MESSENGER MODAL / CHAT BOX -->
-    <div id="messengerModal" class="fixed bottom-0 right-4 z-50 w-80 md:w-96 bg-white dark:bg-fb-darkcard shadow-2xl rounded-t-2xl border border-gray-300 dark:border-gray-700 hidden flex-col h-[450px]">
-        <!-- Chat Header -->
-        <div class="p-3 bg-fb-blue text-white rounded-t-2xl flex items-center justify-between shadow">
-            <div class="flex items-center gap-2">
-                <img id="chatUserAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-7 h-7 rounded-full object-cover border">
-                <div>
-                    <p id="chatUserName" class="font-bold text-xs">Md Safin Ahmed</p>
-                    <p class="text-[10px] text-green-200">অনলাইনে আছেন</p>
-                </div>
-            </div>
-            <button onclick="toggleMessenger()" class="hover:bg-white/20 rounded-full w-6 h-6 flex items-center justify-center">
-                <i class="fa-solid fa-xmark text-sm"></i>
-            </button>
-        </div>
-
-        <!-- Chat Messages Body -->
-        <div id="chatMessages" class="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
-            <div class="text-center text-[10px] text-gray-400 my-1">আজকে ১২:৩০ PM</div>
-            <div class="flex items-end gap-2">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-6 h-6 rounded-full">
-                <div class="bg-gray-200 dark:bg-fb-darkhover p-2.5 rounded-2xl rounded-bl-none max-w-[80%]">
-                    হ্যালো! SafinBook-এ আপনাকে স্বাগতম।
-                </div>
             </div>
         </div>
 
-        <!-- Chat Input Footer -->
-        <form onsubmit="sendChatMessage(event)" class="p-2 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
-            <input type="text" id="chatInput" placeholder="মেসেজ লিখুন..." class="flex-1 bg-gray-100 dark:bg-fb-darkhover text-xs px-3 py-2 rounded-full focus:outline-none dark:text-white">
-            <button type="submit" class="bg-fb-blue text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-fb-hover transition">
-                <i class="fa-solid fa-paper-plane text-xs"></i>
-            </button>
-        </form>
     </div>
 
-    <!-- SHARE DIALOG MODAL -->
-    <div id="shareModal" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-fb-darkcard w-full max-w-sm rounded-2xl p-5 border border-gray-200 dark:border-gray-700 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-sm">পোস্ট শেয়ার করুন (SafinBook Share)</h3>
-                <button onclick="closeShareModal()" class="text-gray-500 hover:text-black dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <p class="text-xs text-gray-500">আপনার বন্ধুদের সাথে এই পোস্টের ডাইরেক্ট লিংক শেয়ার করতে নিচের লিংকটি কপি করুন:</p>
-            <div class="flex items-center gap-2">
-                <input type="text" id="shareLinkInput" readonly class="w-full text-xs p-2.5 bg-gray-100 dark:bg-fb-darkhover rounded-xl border border-gray-300 dark:border-gray-600 select-all">
-                <button onclick="copyShareLink()" class="bg-fb-blue text-white text-xs font-bold px-3 py-2.5 rounded-xl whitespace-nowrap">কপি করুন</button>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="alert('SafinBook Feed-এ সফলভাবে শেয়ার হয়েছে!')" class="w-full bg-green-600 text-white text-xs font-bold py-2 rounded-xl">নিজের ফিডে শেয়ার করুন</button>
-            </div>
-        </div>
-    </div>
+    <!-- Firebase Libraries -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { 
+            getAuth, 
+            RecaptchaVerifier, 
+            signInWithPhoneNumber, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { 
+            getDatabase, 
+            ref, 
+            set, 
+            push, 
+            onValue, 
+            get, 
+            child, 
+            update, 
+            off, 
+            remove 
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    <!-- EDIT PROFILE MODAL -->
-    <div id="editProfileModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-fb-darkcard w-full max-w-md rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                <h3 class="font-bold text-base flex items-center gap-2 text-fb-blue">
-                    <i class="fa-solid fa-user-gear"></i> প্রোফাইল এডিট করুন (Edit Profile)
-                </h3>
-                <button onclick="closeEditProfileModal()" class="text-gray-500 hover:text-black dark:hover:text-white rounded-full w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-fb-darkhover">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <form onsubmit="saveProfileChanges(event)" class="space-y-4">
-                <!-- Avatar Upload Section -->
-                <div class="flex flex-col items-center gap-2">
-                    <div class="relative group cursor-pointer" onclick="document.getElementById('editAvatarInput').click()">
-                        <img id="editAvatarPreview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" class="w-24 h-24 rounded-full object-cover border-4 border-fb-blue shadow-md">
-                        <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                            <i class="fa-solid fa-camera text-xl"></i>
-                        </div>
-                    </div>
-                    <label class="text-xs text-fb-blue font-bold cursor-pointer hover:underline" onclick="document.getElementById('editAvatarInput').click()">
-                        <i class="fa-solid fa-image mr-1"></i> গ্যালারি থেকে প্রোফাইল ছবি পরিবর্তন করুন
-                    </label>
-                    <input type="file" id="editAvatarInput" accept="image/*" class="hidden" onchange="handleProfileAvatarSelect(event)">
-                </div>
-
-                <!-- Name Input -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">আপনার নাম (Display Name)</label>
-                    <input type="text" id="editDisplayName" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-fb-darkhover text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue dark:text-white">
-                </div>
-
-                <!-- Bio Input -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">বায়ো / উক্তি (Bio)</label>
-                    <textarea id="editBio" rows="2" placeholder="আপনার সম্পর্কে সংক্ষিপ্ত তথ্য লিখুন..." class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-fb-darkhover text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue dark:text-white"></textarea>
-                </div>
-
-                <!-- Work / Profession -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">পেশা / কাজ (Work / Profession)</label>
-                    <input type="text" id="editWork" placeholder="e.g. SafinBook Owner & Web Developer" class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-fb-darkhover text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue dark:text-white">
-                </div>
-
-                <!-- Location -->
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 mb-1">বাসস্থান / শহর (Location)</label>
-                    <input type="text" id="editLocation" placeholder="e.g. Dhaka, Bangladesh" class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-fb-darkhover text-sm focus:outline-none focus:ring-2 focus:ring-fb-blue dark:text-white">
-                </div>
-
-                <!-- Save & Cancel Buttons -->
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeEditProfileModal()" class="w-1/2 bg-gray-200 dark:bg-fb-darkhover hover:bg-gray-300 text-gray-800 dark:text-white font-bold py-2.5 rounded-xl text-xs transition">
-                        বাতিল
-                    </button>
-                    <button type="submit" class="w-1/2 bg-fb-blue hover:bg-fb-hover text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition">
-                        <i class="fa-solid fa-floppy-disk mr-1"></i> সেভ করুন
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MAIN JAVASCRIPT APP LOGIC -->
-    <script>
-        // Global error boundary to catch cross-origin CDN and runtime script errors
-        window.onerror = function(message, source, lineno, colno, error) {
-            console.warn("Handled runtime warning:", message, "at", source, ":", lineno);
-            return true; // Suppress error propagation
-        };
-
-        window.addEventListener('unhandledrejection', function(event) {
-            console.warn("Handled unhandled promise rejection:", event.reason);
-            if (event.preventDefault) event.preventDefault();
-        });
-
-        // --- 1. FIREBASE CONFIGURATION & INITIALIZATION ---
+        // Provided User Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
             authDomain: "ern-93752.firebaseapp.com",
@@ -712,771 +385,710 @@
             measurementId: "G-S8FXSQMLR3"
         };
 
-        // Initialize Firebase with fallback guard
-        let auth = null;
-        let database = null;
-        let storage = null;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-        try {
-            if (typeof firebase !== 'undefined' && firebase.apps) {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                auth = firebase.auth ? firebase.auth() : null;
-                database = firebase.database ? firebase.database() : null;
-                storage = firebase.storage ? firebase.storage() : null;
-            }
-        } catch (err) {
-            console.warn("Firebase initialization skipped (running in offline mode):", err);
-        }
-
-        // --- APP STATE ---
+        // App Global State Variable
         let currentUser = null;
-        let selectedFile = null;
-        let isSignUpMode = false;
-        let editAvatarDataUrl = null;
-        let samplePosts = [
-            {
-                id: 'p1',
-                userName: 'Md Safin Ahmed',
-                userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-                time: '১০ মিনিট আগে',
-                text: 'স্বাগতম SafinBook-এ! এটি আমাদের নিজস্ব সামাজিক যোগাযোগ মাধ্যম। সবাই বন্ধু ও পোস্ট শেয়ার করুন। 😊',
-                mediaUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80',
-                mediaType: 'image',
-                likes: 42,
-                comments: ['অনেক সুন্দর একটি প্ল্যাটফর্ম!', 'অভিনন্দন সাফিন ভাই!']
-            },
-            {
-                id: 'p2',
-                userName: 'নাবিলা খান',
-                userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
-                time: '১ ঘণ্টা আগে',
-                text: 'SafinBook Reels দেখে সত্যিই খুব ভালো লাগছে! চমৎকার ডিজাইন।',
-                mediaUrl: null,
-                mediaType: null,
-                likes: 18,
-                comments: ['হ্যাঁ একদম ফেসবুকের মতো অভিজ্ঞতা!']
+        let currentUserData = null;
+        let activeChatUser = null;
+        let confirmationResult = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordTimerInterval = null;
+        let localStream = null;
+        let peerConnection = null;
+        let activeCallId = null;
+
+        // WebRTC Config
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Setup Recaptcha for Phone auth
+        window.setupRecaptcha = () => {
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                    'size': 'normal',
+                    'callback': (response) => {
+                        console.log("reCAPTCHA solved");
+                    }
+                });
             }
-        ];// ১. পোস্ট ভিউ কাউন্ট বাড়ানোর ফাংশন (Firebase Database এ ভিউ সেভ করবে)
-function incrementPostView(postId) {
-    if (!postId || !window.db) return;
-    const viewRef = firebase.database().ref('posts/' + postId + '/views');
-    viewRef.transaction((currentViews) => {
-        return (currentViews || 0) + 1;
-    });
-}
+        };
 
-// ২. প্রোফাইল পেজে ইউজারের পোস্ট ও ভিউ স্ট্যাটাস ফিল্টার করার ফাংশন
-function loadUserProfileData(userId) {
-    if (!window.db) return;
-    
-    // রিয়েলটাইম ডেটাবেস থেকে সব পোস্ট এনে ফিল্টার করা
-    firebase.database().ref('posts').on('value', (snapshot) => {
-        const posts = snapshot.val();
-        const userFeed = document.getElementById('user-posts-feed');
-        if (!userFeed) return;
-        
-        userFeed.innerHTML = '';
-        let totalLikes = 0;
-        let totalViews = 0;
-        let postCount = 0;
+        // DOM elements reference
+        const authScreen = document.getElementById('authScreen');
+        const phoneTabBtn = document.getElementById('phoneTabBtn');
+        const googleTabBtn = document.getElementById('googleTabBtn');
+        const phoneAuthForm = document.getElementById('phoneAuthForm');
+        const googleAuthForm = document.getElementById('googleAuthForm');
+        const phoneInputGroup = document.getElementById('phoneInputGroup');
+        const otpInputGroup = document.getElementById('otpInputGroup');
+        const phoneNumberInput = document.getElementById('phoneNumberInput');
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const otpCodeInput = document.getElementById('otpCodeInput');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
 
-        if (posts) {
-            Object.keys(posts).forEach(key => {
-                const post = posts[key];
-                post.id = key;
-                
-                // শুধুমাত্র বর্তমান ইউজারের পোস্ট ফিল্টার
-                if (post.userId === userId || post.author === currentUser.name) {
-                    postCount++;
-                    totalLikes += (post.likes || 0);
-                    totalViews += (post.views || 0);
-                    
-                    // পোস্ট ভিউ সেকশনে অটোমেটিক ভিউ ১ বাড়িয়ে দেওয়া
-                    incrementPostView(post.id);
-                    
-                    // ইউজারের টাইমলাইনে পোস্ট যোগ করা
-                    userFeed.innerHTML += renderSinglePostHTML(post);
-                }
-            });
-        }
-
-        // প্রোফাইল কাউন্টার আপডেট
-        document.getElementById('user-total-posts').innerText = postCount;
-        document.getElementById('user-total-likes').innerText = totalLikes;
-        document.getElementById('user-total-views').innerText = totalViews;
-    });
-}
-
-        // --- ON LOAD INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', () => {
-            initLiveUserCounters();
-            listenToAuth();
-            renderPosts();
-            listenToRealtimeDatabase();
+        // Toggle Auth tabs
+        phoneTabBtn.addEventListener('click', () => {
+            phoneTabBtn.className = "flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition";
+            googleTabBtn.className = "flex-1 py-2 text-wa-muted hover:text-white font-semibold transition";
+            phoneAuthForm.classList.remove('hidden');
+            googleAuthForm.classList.add('hidden');
         });
 
-        // Dynamic Counters (14000+ Users & 100+ Online)
-        function initLiveUserCounters() {
-            let total = 14258;
-            let online = 124;
-            setInterval(() => {
-                total += Math.floor(Math.random() * 2);
-                online = 120 + Math.floor(Math.random() * 15);
-                const liveEl = document.getElementById('liveUsersCount');
-                const onlineEl = document.getElementById('onlineUsersCount');
-                if (liveEl) liveEl.innerText = `${total.toLocaleString('bn-BD')} জন মোট ইউজার`;
-                if (onlineEl) onlineEl.innerText = `${online.toLocaleString('bn-BD')} জন অনলাইনে এক্টিভ`;
-            }, 4000);
-        }
+        googleTabBtn.addEventListener('click', () => {
+            googleTabBtn.className = "flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition";
+            phoneTabBtn.className = "flex-1 py-2 text-wa-muted hover:text-white font-semibold transition";
+            googleAuthForm.classList.remove('hidden');
+            phoneAuthForm.classList.add('hidden');
+        });
 
-        // --- AUTHENTICATION HANDLERS ---
-        function listenToAuth() {
-            if (!auth) return;
+        // Phone Login Send OTP
+        sendOtpBtn.addEventListener('click', async () => {
+            const phoneNumber = phoneNumberInput.value.trim();
+            if (!phoneNumber || phoneNumber.length < 10) {
+                alert("দয়া করে একটি সঠিক ফোন নম্বর লিখুন (যেমন: +8801700000000)");
+                return;
+            }
+
             try {
-                auth.onAuthStateChanged((user) => {
-                    if (user) {
-                        currentUser = {
-                            uid: user.uid,
-                            displayName: user.displayName || user.email.split('@')[0] || "Md Safin Ahmed",
-                            email: user.email,
-                            photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-                        };
-                        const modal = document.getElementById('authModal');
-                        if (modal) modal.classList.add('hidden');
-                        updateUserUI();
-                    } else {
-                        currentUser = null;
-                        const modal = document.getElementById('authModal');
-                        if (modal) modal.classList.remove('hidden');
-                    }
-                });
-            } catch (err) {
-                console.warn("Auth state change error:", err);
+                window.setupRecaptcha();
+                const appVerifier = window.recaptchaVerifier;
+                sendOtpBtn.disabled = true;
+                sendOtpBtn.innerText = "পাঠানো হচ্ছে...";
+
+                confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+                alert("আপনার ফোনে OTP পাঠানো হয়েছে।");
+                phoneInputGroup.classList.add('hidden');
+                otpInputGroup.classList.remove('hidden');
+            } catch (error) {
+                console.error("Phone Auth Error:", error);
+                alert("OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message);
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.innerText = "OTP কোড পাঠান";
             }
-        }
+        });
 
-        function toggleAuthMode() {
-            isSignUpMode = !isSignUpMode;
-            const subtitle = document.getElementById('authSubtitle');
-            const submitBtn = document.getElementById('authSubmitBtn');
-            const switchBtn = document.getElementById('switchAuthBtn');
-
-            if (isSignUpMode) {
-                if (subtitle) subtitle.innerText = "নতুন SafinBook অ্যাকাউন্ট রেজিস্টার করুন";
-                if (submitBtn) submitBtn.innerHTML = "<span>রেজিস্টার করুন</span>";
-                if (switchBtn) switchBtn.innerText = "ইতিমধ্যে অ্যাকাউন্ট আছে? লগইন করুন";
-            } else {
-                if (subtitle) subtitle.innerText = "অ্যাকাউন্টে লগইন করুন";
-                if (submitBtn) submitBtn.innerHTML = "<span>লগইন করুন</span>";
-                if (switchBtn) switchBtn.innerText = "নতুন SafinBook অ্যাকাউন্ট তৈরি করুন";
-            }
-        }
-
-        function handleAuth(e, mode) {
-            e.preventDefault();
-            const emailInputEl = document.getElementById('authEmail');
-            const passwordInputEl = document.getElementById('authPassword');
-            const errDiv = document.getElementById('authError');
-            if (errDiv) errDiv.classList.add('hidden');
-
-            const emailInput = emailInputEl ? emailInputEl.value.trim() : '';
-            const passwordInput = passwordInputEl ? passwordInputEl.value : '';
-
-            // Format Phone/Email input
-            let email = emailInput;
-            if (email && !email.includes('@')) {
-                email = `${email.replace(/[^0-9]/g, '')}@safinbook.com`;
-            }
-
-            if (!auth) {
-                guestLogin();
+        // Verify OTP
+        verifyOtpBtn.addEventListener('click', async () => {
+            const code = otpCodeInput.value.trim();
+            if (!code || code.length < 6) {
+                alert("দয়া করে ৬ ডিজিটের কোড প্রদান করুন");
                 return;
             }
 
-            if (isSignUpMode) {
-                auth.createUserWithEmailAndPassword(email, passwordInput)
-                    .then((res) => {
-                        if (res.user) {
-                            res.user.updateProfile({ displayName: "SafinBook User" }).catch(() => {});
-                        }
-                        alert("SafinBook-এ সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে!");
-                    })
-                    .catch((err) => {
-                        if (errDiv) {
-                            errDiv.innerText = "ত্রুটি: " + (err.message || err);
-                            errDiv.classList.remove('hidden');
-                        }
-                    });
-            } else {
-                auth.signInWithEmailAndPassword(email, passwordInput)
-                    .catch((err) => {
-                        if (errDiv) {
-                            errDiv.innerText = "লগইন ত্রুটি: " + (err.message || err);
-                            errDiv.classList.remove('hidden');
-                        }
-                    });
+            try {
+                const result = await confirmationResult.confirm(code);
+                currentUser = result.user;
+                checkAndSetupUserProfile(currentUser);
+            } catch (error) {
+                alert("ভুল OTP কোড: " + error.message);
             }
-        }
+        });
 
-        function guestLogin() {
-            currentUser = {
-                uid: 'guest_123',
-                displayName: 'Md Safin Ahmed',
-                email: 'safin@safinbook.com',
-                photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'
-            };
-            const modal = document.getElementById('authModal');
-            if (modal) modal.classList.add('hidden');
-            updateUserUI();
-        }
-
-        function handleLogout() {
-            if (auth) {
-                auth.signOut().then(() => {
-                    location.reload();
-                }).catch(() => {
-                    location.reload();
-                });
-            } else {
-                currentUser = null;
-                const modal = document.getElementById('authModal');
-                if (modal) modal.classList.remove('hidden');
+        // Google Sign-In
+        googleSignInBtn.addEventListener('click', async () => {
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                currentUser = result.user;
+                checkAndSetupUserProfile(currentUser);
+            } catch (error) {
+                console.error("Google Signin Error:", error);
+                alert("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message);
             }
-        }
+        });
 
-        function updateUserUI() {
-            if (!currentUser) return;
-            const name = currentUser.displayName || "Md Safin Ahmed";
-            const img = currentUser.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80";
+        // Check and fetch user profile from Realtime DB
+        async function checkAndSetupUserProfile(user) {
+            authScreen.classList.add('hidden');
+            const userRef = ref(db, 'users/' + user.uid);
+            const snapshot = await get(userRef);
 
-            const sideName = document.getElementById('sideUserName');
-            const menuName = document.getElementById('menuUserName');
-            const menuEmail = document.getElementById('menuUserEmail');
-
-            if (sideName) sideName.innerText = name;
-            if (menuName) menuName.innerText = name;
-            if (menuEmail) menuEmail.innerText = currentUser.email || 'safinbook@app.com';
-
-            ['headerAvatar', 'sideAvatar', 'postCreatorAvatar', 'storyUserAvatar', 'menuAvatar'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.src = img;
-            });
-
-            if (document.getElementById('menuUserBio')) {
-                document.getElementById('menuUserBio').innerText = currentUser.bio || 'SafinBook-এ সক্রিয় ইউজার';
-            }
-            if (document.getElementById('menuUserWork')) {
-                const workSpan = document.getElementById('menuUserWork').querySelector('span');
-                if (workSpan) workSpan.innerText = currentUser.work || 'SafinBook Owner & Founder';
-            }
-            if (document.getElementById('menuUserLocation')) {
-                const locSpan = document.getElementById('menuUserLocation').querySelector('span');
-                if (locSpan) locSpan.innerText = currentUser.location || 'Dhaka, Bangladesh';
-            }
-        }
-
-        // --- EDIT PROFILE HANDLERS ---
-        function openEditProfileModal() {
-            if (!currentUser) {
-                currentUser = {
-                    displayName: 'Md Safin Ahmed',
-                    email: 'safin@safinbook.com',
-                    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-                    bio: 'SafinBook-এ সক্রিয় ইউজার',
-                    work: 'SafinBook Owner & Founder',
-                    location: 'Dhaka, Bangladesh'
-                };
-            }
-            document.getElementById('editDisplayName').value = currentUser.displayName || '';
-            document.getElementById('editBio').value = currentUser.bio || 'SafinBook-এ সক্রিয় ইউজার';
-            document.getElementById('editWork').value = currentUser.work || 'SafinBook Owner & Founder';
-            document.getElementById('editLocation').value = currentUser.location || 'Dhaka, Bangladesh';
-            document.getElementById('editAvatarPreview').src = currentUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80';
-            editAvatarDataUrl = null;
-            document.getElementById('editProfileModal').classList.remove('hidden');
-        }
-
-        function closeEditProfileModal() {
-            document.getElementById('editProfileModal').classList.add('hidden');
-        }
-
-        function handleProfileAvatarSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                editAvatarDataUrl = ev.target.result;
-                document.getElementById('editAvatarPreview').src = editAvatarDataUrl;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function saveProfileChanges(e) {
-            e.preventDefault();
-            const newName = document.getElementById('editDisplayName').value.trim();
-            const newBio = document.getElementById('editBio').value.trim();
-            const newWork = document.getElementById('editWork').value.trim();
-            const newLocation = document.getElementById('editLocation').value.trim();
-
-            if (!newName) {
-                alert('অনুগ্রহ করে আপনার নাম প্রদান করুন!');
-                return;
-            }
-
-            if (currentUser) {
-                currentUser.displayName = newName;
-                currentUser.bio = newBio;
-                currentUser.work = newWork;
-                currentUser.location = newLocation;
-
-                if (editAvatarDataUrl) {
-                    currentUser.photoURL = editAvatarDataUrl;
-                }
-
-                // Update Firebase Auth user profile if signed in
-                const user = auth.currentUser;
-                if (user) {
-                    user.updateProfile({
-                        displayName: newName,
-                        photoURL: currentUser.photoURL
-                    }).catch(err => console.log('Auth profile update:', err));
-                }
-
-                // Sync UI elements across the app
+            if (snapshot.exists()) {
+                currentUserData = snapshot.val();
                 updateUserUI();
-                closeEditProfileModal();
-                alert('আপনার প্রোফাইল সফলভাবে আপডেট করা হয়েছে!');
+            } else {
+                // Initialize default profile
+                currentUserData = {
+                    uid: user.uid,
+                    name: user.displayName || "ইউজার " + user.uid.substring(0, 4),
+                    phone: user.phoneNumber || "+8801...",
+                    photo: user.photoURL || "https://placehold.co/150x150/202c33/00a884?text=User",
+                    status: "Hey there! I am using WhatsApp."
+                };
+                await set(userRef, currentUserData);
+                updateUserUI();
+                openProfileModal();
             }
+            
+            listenForIncomingCalls();
+            loadRecentChats();
         }
 
-        // --- NAVIGATION / TAB SWITCHING ---
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('text-fb-blue', 'border-b-4', 'border-fb-blue');
-                btn.classList.add('text-gray-500');
-            });
+        // Update UI header with user details
+        function updateUserUI() {
+            document.getElementById('myNameTxt').innerText = currentUserData.name || "আমার নাম";
+            document.getElementById('myPhoneTxt').innerText = currentUserData.phone || "";
+            document.getElementById('myAvatarImg').src = currentUserData.photo || "https://placehold.co/100";
+        }
 
-            const activeView = document.getElementById(`view-${tabName}`);
-            const activeBtn = document.getElementById(`tab-${tabName}`);
-            if (activeView) activeView.classList.remove('hidden');
-            if (activeBtn) {
-                activeBtn.classList.add('text-fb-blue', 'border-b-4', 'border-fb-blue');
-                activeBtn.classList.remove('text-gray-500');
+        // Profile Modal Logic
+        const profileModal = document.getElementById('profileModal');
+        const openProfileModal = () => {
+            document.getElementById('profileNameInput').value = currentUserData.name || "";
+            document.getElementById('profilePhoneInput').value = currentUserData.phone || "";
+            document.getElementById('profileStatusInput').value = currentUserData.status || "";
+            document.getElementById('profileAvatarPreview').src = currentUserData.photo || "https://placehold.co/150";
+            profileModal.classList.remove('hidden');
+        };
+
+        document.getElementById('editProfileBtn').addEventListener('click', openProfileModal);
+        document.getElementById('myProfileTrigger').addEventListener('click', openProfileModal);
+        document.getElementById('closeProfileBtn').addEventListener('click', () => profileModal.classList.add('hidden'));
+
+        // Profile Avatar Upload conversion to Base64
+        document.getElementById('avatarFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    document.getElementById('profileAvatarPreview').src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
             }
-        }
+        });
 
-        // --- LOCAL GALLERY PHOTO/VIDEO PICKER ---
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Save Profile
+        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+            const name = document.getElementById('profileNameInput').value.trim();
+            const phone = document.getElementById('profilePhoneInput').value.trim();
+            const status = document.getElementById('profileStatusInput').value.trim();
+            const photo = document.getElementById('profileAvatarPreview').src;
 
-            selectedFile = file;
-            const previewContainer = document.getElementById('filePreviewContainer');
-            const previewContent = document.getElementById('filePreviewContent');
-            previewContainer.classList.remove('hidden');
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                if (file.type.startsWith('video/')) {
-                    previewContent.innerHTML = `<video src="${e.target.result}" controls class="w-full max-h-56 object-contain"></video>`;
-                } else {
-                    previewContent.innerHTML = `<img src="${e.target.result}" class="w-full max-h-56 object-cover rounded-xl">`;
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function clearSelectedFile() {
-            selectedFile = null;
-            document.getElementById('postFileInput').value = '';
-            document.getElementById('filePreviewContainer').classList.add('hidden');
-        }
-
-        function addEmojiToPost(emoji) {
-            const input = document.getElementById('postInputText');
-            input.value += ' ' + emoji;
-            input.focus();
-        }
-
-        // --- CREATE POST & REALTIME DB ---
-        function createNewPost() {
-            const textInput = document.getElementById('postInputText');
-            const text = textInput ? textInput.value.trim() : '';
-            if (!text && !selectedFile) {
-                alert("অনুগ্রহ করে কিছু লিখুন অথবা গ্যালারি থেকে ছবি/ভিডিও সিলেক্ট করুন!");
+            if (!name) {
+                alert("দয়া করে নাম প্রদান করুন");
                 return;
             }
 
-            const postId = 'post_' + Date.now();
-            const newPost = {
-                id: postId,
-                userName: currentUser ? currentUser.displayName : 'Md Safin Ahmed',
-                userAvatar: currentUser ? currentUser.photoURL : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-                time: 'এখনই',
-                text: text,
-                mediaUrl: null,
-                mediaType: null,
-                likes: 0,
-                comments: []
+            currentUserData = {
+                ...currentUserData,
+                name: name,
+                phone: phone,
+                status: status,
+                photo: photo
             };
 
-            const finalizePost = (mediaUrl = null, mediaType = null) => {
-                newPost.mediaUrl = mediaUrl;
-                newPost.mediaType = mediaType;
-                
-                // Save directly to Firebase Realtime Database
-                if (database) {
-                    database.ref('posts/' + newPost.id).set(newPost)
-                        .then(() => {
-                            console.log("Firebase-এ ডেটা সফলভাবে যুক্ত হয়েছে!");
-                        })
-                        .catch((error) => {
-                            console.error("Firebase Permission Error:", error);
-                            alert("Firebase Rules ব্লকড! অনুগ্রহ করে Firebase Console-এ Rules সেকশনে .write true করুন।");
-                        });
+            await set(ref(db, 'users/' + currentUser.uid), currentUserData);
+            updateUserUI();
+            profileModal.classList.add('hidden');
+            alert("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (confirm("আপনি কি লগআউট করতে চান?")) {
+                await signOut(auth);
+                location.reload();
+            }
+        });
+
+        // Search Contacts Modal
+        const searchModal = document.getElementById('searchModal');
+        const userSearchInput = document.getElementById('userSearchInput');
+        const searchResultsList = document.getElementById('searchResultsList');
+
+        document.getElementById('openSearchBtn').addEventListener('click', () => {
+            searchModal.classList.remove('hidden');
+            userSearchInput.focus();
+        });
+
+        document.getElementById('closeSearchBtn').addEventListener('click', () => searchModal.classList.add('hidden'));
+
+        // Live User Search Logic
+        userSearchInput.addEventListener('input', async () => {
+            const queryText = userSearchInput.value.trim().toLowerCase();
+            if (!queryText) {
+                searchResultsList.innerHTML = `<p class="text-center text-wa-muted text-sm py-4">সার্চ করার জন্য উপরে ফোন নম্বর বা নাম লিখুন</p>`;
+                return;
+            }
+
+            const usersRef = ref(db, 'users');
+            const snapshot = await get(usersRef);
+            if (snapshot.exists()) {
+                const users = snapshot.val();
+                searchResultsList.innerHTML = '';
+                let count = 0;
+
+                Object.keys(users).forEach(uid => {
+                    if (uid !== currentUser.uid) {
+                        const u = users[uid];
+                        const nameMatch = u.name && u.name.toLowerCase().includes(queryText);
+                        const phoneMatch = u.phone && u.phone.includes(queryText);
+
+                        if (nameMatch || phoneMatch) {
+                            count++;
+                            const item = document.createElement('div');
+                            item.className = "flex items-center justify-between p-3 hover:bg-wa-dark rounded-xl cursor-pointer transition border border-transparent hover:border-gray-800";
+                            item.innerHTML = `
+                                <div class="flex items-center gap-3">
+                                    <img src="${u.photo || 'https://placehold.co/100'}" class="w-10 h-10 rounded-full object-cover">
+                                    <div>
+                                        <h4 class="font-semibold text-white text-sm">${u.name}</h4>
+                                        <p class="text-xs text-wa-muted">${u.phone || 'নম্বর নেই'}</p>
+                                    </div>
+                                </div>
+                                <button class="bg-wa-green text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-opacity-90">চ্যাট করুন</button>
+                            `;
+                            item.addEventListener('click', () => {
+                                selectChatUser(u);
+                                searchModal.classList.add('hidden');
+                            });
+                            searchResultsList.appendChild(item);
+                        }
+                    }
+                });
+
+                if (count === 0) {
+                    searchResultsList.innerHTML = `<p class="text-center text-wa-muted text-sm py-4">কোনো ব্যবহারকারী পাওয়া যায়নি</p>`;
+                }
+            }
+        });
+
+        // Load Recent Chats List
+        function loadRecentChats() {
+            const userChatsRef = ref(db, `user_chats/${currentUser.uid}`);
+            onValue(userChatsRef, async (snapshot) => {
+                const chatList = document.getElementById('chatList');
+                chatList.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    chatList.innerHTML = `<p class="text-center text-wa-muted text-sm p-6">আপনার কোনো চ্যাট নেই। নতুন চ্যাট চালু করুন!</p>`;
+                    return;
                 }
 
-                samplePosts.unshift(newPost);
-                renderPosts();
+                const chatsData = snapshot.val();
+                const uids = Object.keys(chatsData);
 
-                if (textInput) textInput.value = '';
-                clearSelectedFile();
-                alert("পোস্টটি সফলভাবে প্রকাশিত হয়েছে!");
-            };
+                for (let peerUid of uids) {
+                    const peerUserSnap = await get(ref(db, `users/${peerUid}`));
+                    if (peerUserSnap.exists()) {
+                        const peer = peerUserSnap.val();
+                        const lastMsg = chatsData[peerUid].lastMessage || "নতুন বার্তা";
+                        const timestamp = chatsData[peerUid].timestamp ? new Date(chatsData[peerUid].timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
 
-            if (selectedFile) {
-                const isVideo = selectedFile.type.startsWith('video/');
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    finalizePost(e.target.result, isVideo ? 'video' : 'image');
-                };
-                reader.readAsDataURL(selectedFile);
-            } else {
-                finalizePost();
-            }
-        }
-
-        function listenToRealtimeDatabase() {
-            if (!database) return;
-            try {
-                database.ref('posts').on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const dbPosts = Object.values(data).reverse();
-                        samplePosts = dbPosts;
-                        renderPosts();
-                    }
-                }, (error) => {
-                    console.warn("Database listener error:", error);
-                });
-            } catch(e) {
-                console.warn("Firebase DB offline fallback", e);
-            }
-        }
-
-        function renderPosts() {// পোস্ট রেন্ডার করার সময় লাইক সংখ্যা বের করা
-const likesObject = post.likes || {};
-const totalLikes = Object.keys(likesObject).length; // মোট লাইক সংখ্যা
-
-// বর্তমান ইউজার কি লাইক দিয়েছে?
-const currentUserId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : currentUser.id;
-const isLikedByMe = likesObject[currentUserId] ? true : false;
-
-// UI-তে দেখানোর জন্য:
-// isLikedByMe যদি true হয়, তবে লাইক বাটন নীল/লাল কালার হবে।
-            const container = document.getElementById('feedPosts');
-            if (!container) return;
-            container.innerHTML = '';
-
-            samplePosts.forEach((post) => {
-                const mediaMarkup = post.mediaUrl ? (
-                    post.mediaType === 'video' ? 
-                    `<video src="${post.mediaUrl}" controls class="w-full max-h-96 rounded-xl mt-2 bg-black"></video>` : 
-                    `<img src="${post.mediaUrl}" class="w-full rounded-xl mt-2 max-h-96 object-cover border border-gray-100 dark:border-gray-800">`
-                ) : '';
-
-                const commentsMarkup = (post.comments || []).map(c => `
-                    <div class="bg-gray-100 dark:bg-fb-darkhover px-3 py-1.5 rounded-2xl text-xs font-medium w-fit">
-                        ${c}
-                    </div>
-                `).join('');
-
-                const postHtml = `
-                    <div class="bg-white dark:bg-fb-darkcard p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <img src="${post.userAvatar}" class="w-10 h-10 rounded-full object-cover">
-                                <div>
-                                    <h4 class="font-bold text-sm flex items-center gap-1">${post.userName} <i class="fa-solid fa-circle-check text-fb-blue text-xs"></i></h4>
-                                    <p class="text-[11px] text-gray-400">${post.time} • <i class="fa-solid fa-earth-americas text-[10px]"></i></p>
+                        const div = document.createElement('div');
+                        div.className = `p-3 flex items-center gap-3 cursor-pointer hover:bg-wa-dark transition ${activeChatUser && activeChatUser.uid === peer.uid ? 'bg-wa-dark border-l-4 border-wa-green' : ''}`;
+                        div.innerHTML = `
+                            <img src="${peer.photo || 'https://placehold.co/100'}" class="w-12 h-12 rounded-full object-cover">
+                            <div class="flex-1 overflow-hidden">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <h4 class="font-semibold text-white text-sm truncate">${peer.name}</h4>
+                                    <span class="text-[10px] text-wa-muted">${timestamp}</span>
                                 </div>
+                                <p class="text-xs text-wa-muted truncate">${lastMsg}</p>
                             </div>
-                            <i class="fa-solid fa-ellipsis text-gray-400 hover:text-black cursor-pointer"></i>
-                        </div>
-
-                        <p class="text-xs sm:text-sm whitespace-pre-line leading-relaxed">${post.text}</p>
-                        ${mediaMarkup}
-
-                        <div class="flex items-center justify-between text-xs text-gray-500 pt-1">
-                            <span class="flex items-center gap-1"><i class="fa-solid fa-thumbs-up text-fb-blue"></i> ${post.likes || 0}</span>
-                            <span>${(post.comments || []).length}টি কমেন্ট</span><!-- পোস্ট কার্ডের ফুটারে লাইক ও ভিউ কাউন্ট -->
-<div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 py-2 border-b border-slate-100 dark:border-slate-700">
-    <div class="flex items-center gap-1">
-        <span class="bg-blue-500 text-white p-1 rounded-full text-[10px]">👍</span>
-        <span id="like-count-${post.id}">${post.likes || 0}</span>
-    </div>
-    <div class="flex items-center gap-3">
-        <span>${post.comments ? Object.keys(post.comments).length : 0} কমেন্ট</span>
-        <!-- ভিউ কাউন্টার -->
-        <span class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-            👁️ <span id="view-count-${post.id}">${post.views || 0}</span> ভিউ
-        </span>
-    </div>
-</div>
-                        </div>
-
-                        <hr class="border-gray-200 dark:border-gray-700">
-
-                        <div class="flex items-center justify-around text-xs font-semibold text-gray-600 dark:text-gray-300">
-                            <button onclick="likePost('${post.id}')" class="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-fb-darkhover py-2 px-4 rounded-xl transition flex-1 justify-center">
-                                <i class="fa-regular fa-thumbs-up text-base"></i> লাইক
-                            </button>
-                            <button onclick="focusComment('${post.id}')" class="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-fb-darkhover py-2 px-4 rounded-xl transition flex-1 justify-center">
-                                <i class="fa-regular fa-message text-base"></i> কমেন্ট
-                            </button>
-                            <button onclick="openShareModal('${post.id}')" class="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-fb-darkhover py-2 px-4 rounded-xl transition flex-1 justify-center">
-                                <i class="fa-regular fa-share-from-square text-base"></i> শেয়ার
-                            </button>
-                        </div>
-
-                        <!-- Comments Section -->
-                        <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                            <div class="space-y-1.5" id="comments-list-${post.id}">
-                                ${commentsMarkup}
-                            </div>
-                            <form onsubmit="addComment(event, '${post.id}')" class="flex items-center gap-2 pt-1">
-                                <input type="text" id="comment-input-${post.id}" placeholder="একটি প্রতিক্রিয়া লিখুন..." class="w-full bg-gray-100 dark:bg-fb-darkhover text-xs px-3 py-2 rounded-full focus:outline-none dark:text-white">
-                                <button type="submit" class="bg-fb-blue text-white px-3 py-1.5 rounded-full text-xs font-bold">প্রেরণ</button>
-                            </form>
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', postHtml);
+                        `;
+                        div.addEventListener('click', () => selectChatUser(peer));
+                        chatList.appendChild(div);
+                    }
+                }
             });
         }
 
-        // ১টি পোস্টে ১ ইউজার ১টিই লাইক দিতে পারবে (Toggle Like System)
-function toggleLike(postId) {
-    // বর্তমান লগইন করা ইউজারের আইডি বা নাম
-    const currentUserId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : currentUser.id;
-    
-    if (!currentUserId) {
-        alert("লাইক দিতে প্রথমে লগইন করুন!");
-        return;
-    }
+        // Select Active Chat User
+        function selectChatUser(peerUser) {
+            activeChatUser = peerUser;
+            document.getElementById('noChatSelectedView').classList.add('hidden');
+            document.getElementById('activeChatView').classList.remove('hidden');
 
-    const postLikesRef = firebase.database().ref('posts/' + postId + '/likes');
+            document.getElementById('activeChatName').innerText = peerUser.name;
+            document.getElementById('activeChatAvatar').src = peerUser.photo || 'https://placehold.co/100';
+            document.getElementById('activeChatStatus').innerText = peerUser.status || "অনলাইন";
 
-    // ট্রান্সঅ্যাকশন ব্যবহার করে রিয়েলটাইমে চেক ও আপডেট করা
-    postLikesRef.transaction((likes) => {
-        if (!likes) {
-            likes = {};
+            // Mobile switch screen view
+            document.getElementById('sidebar').classList.add('hidden', 'md:flex');
+            document.getElementById('chatArea').classList.remove('hidden');
+
+            loadMessages();
         }
 
-        // ইউজার কি আগে লাইক দিয়েছে?
-        if (likes[currentUserId]) {
-            // আগে থেকে লাইক দেওয়া থাকলে লাইক উঠে যাবে (Unlike)
-            delete likes[currentUserId];
-        } else {
-            // লাইক না দেওয়া থাকলে নতুন লাইক যোগ হবে
-            likes[currentUserId] = true;
+        document.getElementById('backToChatListBtn').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('chatArea').classList.add('hidden');
+        });
+
+        // Helper to get Unique Chat ID between 2 users
+        function getChatRoomId(uid1, uid2) {
+            return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
         }
 
-        return likes;
-    }, (error, committed, snapshot) => {
-        if (error) {
-            console.error("Like update failed: ", error);
-        } else {
-            console.log("Like updated successfully!");
-        }
-    });
-}
+        // Load Realtime Messages for current active chat
+        function loadMessages() {
+            if (!currentUser || !activeChatUser) return;
+            const roomId = getChatRoomId(currentUser.uid, activeChatUser.uid);
+            const messagesRef = ref(db, `messages/${roomId}`);
 
-        function addComment(e, postId) {
-            e.preventDefault();
-            const input = document.getElementById(`comment-input-${postId}`);
-            const val = input ? input.value.trim() : '';
-            if (!val) return;
+            onValue(messagesRef, (snapshot) => {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
 
-            const post = samplePosts.find(p => p.id === postId);
-            if (post) {
-                if (!post.comments) post.comments = [];
-                const commentText = `${currentUser ? currentUser.displayName : 'Md Safin Ahmed'}: ${val}`;
-                post.comments.push(commentText);
-                if (database) {
-                    database.ref('posts/' + postId + '/comments').set(post.comments).catch(() => {});
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    Object.keys(data).forEach(msgKey => {
+                        const msg = data[msgKey];
+                        const isMe = msg.senderId === currentUser.uid;
+                        const msgEl = createMessageElement(msg, isMe);
+                        container.appendChild(msgEl);
+                    });
+                    container.scrollTop = container.scrollHeight;
                 }
-                if (input) input.value = '';
-                renderPosts();
+            });
+        }
+
+        // Build HTML Element for single message
+        function createMessageElement(msg, isMe) {
+            const wrap = document.createElement('div');
+            wrap.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[75%] rounded-2xl px-4 py-2 shadow-sm text-sm relative ${isMe ? 'bg-wa-bubbleOut text-white rounded-tr-none' : 'bg-wa-bubbleIn text-white rounded-tl-none'}`;
+
+            let contentHtml = '';
+            if (msg.type === 'text') {
+                contentHtml = `<p class="break-words leading-relaxed">${msg.content}</p>`;
+            } else if (msg.type === 'image') {
+                contentHtml = `<img src="${msg.content}" class="max-w-xs max-h-60 rounded-lg object-cover cursor-pointer mb-1" onclick="window.open('${msg.content}')">`;
+            } else if (msg.type === 'video') {
+                contentHtml = `<video src="${msg.content}" controls class="max-w-xs rounded-lg mb-1"></video>`;
+            } else if (msg.type === 'audio') {
+                contentHtml = `
+                    <div class="flex items-center gap-2 py-1">
+                        <i class="fa-solid fa-microphone text-wa-green text-lg"></i>
+                        <audio src="${msg.content}" controls class="h-8 max-w-[200px]"></audio>
+                    </div>
+                `;
             }
-        }
 
-        function focusComment(postId) {
-            const input = document.getElementById(`comment-input-${postId}`);
-            if (input) input.focus();
-        }
-
-        // --- STORIES & REELS UPLOAD ---
-        function triggerStoryUpload() {
-            document.getElementById('storyFileInput').click();
-        }
-
-        function uploadStoryFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const storyHtml = `
-                    <div class="relative min-w-[100px] h-40 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer group border-2 border-fb-blue">
-                        <img src="${e.target.result}" class="w-full h-full object-cover">
-                        <div class="absolute top-2 left-2 border-2 border-fb-blue rounded-full">
-                            <img src="${currentUser ? currentUser.photoURL : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}" class="w-7 h-7 rounded-full object-cover">
-                        </div>
-                        <span class="absolute bottom-2 left-2 text-white text-[10px] font-bold drop-shadow">আপনার স্টোরি</span>
-                    </div>
-                `;
-                document.getElementById('storiesContainer').insertAdjacentHTML('afterbegin', storyHtml);
-                alert("আপনার স্টোরি সফলভাবে আপলোড হয়েছে!");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function uploadReelVideo(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                const reelHtml = `
-                    <div class="bg-black rounded-3xl overflow-hidden shadow-xl relative aspect-[9/16] flex items-center justify-center">
-                        <video controls loop autoplay class="w-full h-full object-cover">
-                            <source src="${ev.target.result}">
-                        </video>
-                        <div class="absolute bottom-4 left-4 text-white z-10 space-y-1">
-                            <p class="font-bold text-sm">@${currentUser ? currentUser.displayName : 'Md Safin Ahmed'}</p>
-                            <p class="text-xs text-gray-200">SafinBook রিল পোস্ট!</p>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('reelsContainer').insertAdjacentHTML('afterbegin', reelHtml);
-                alert("আপনার নতুন রিল ভিডিও যোগ করা হয়েছে!");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // --- FRIENDS TAB ACTIONS ---
-        function acceptFriend(btn) {
-            const parent = btn.closest('.flex.items-center');
-            parent.innerHTML = `<p class="text-xs text-green-600 font-bold p-2"><i class="fa-solid fa-circle-check"></i> বন্ধু হিসেবে গ্রহণ করা হয়েছে!</p>`;
-        }
-
-        function deleteFriend(btn) {
-            const parent = btn.closest('.flex.items-center');
-            parent.remove();
-        }
-
-        // --- MESSENGER ACTIONS ---
-        function toggleMessenger() {
-            const modal = document.getElementById('messengerModal');
-            modal.classList.toggle('hidden');
-        }
-
-        function openChatWith(name) {
-            document.getElementById('chatUserName').innerText = name;
-            const modal = document.getElementById('messengerModal');
-            modal.classList.remove('hidden');
-        }
-
-        function sendChatMessage(e) {
-            e.preventDefault();
-            const input = document.getElementById('chatInput');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            const chatMessages = document.getElementById('chatMessages');
-            const myMsgHtml = `
-                <div class="flex items-end justify-end gap-2">
-                    <div class="bg-fb-blue text-white p-2.5 rounded-2xl rounded-br-none max-w-[80%]">
-                        ${msg}
-                    </div>
+            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            bubble.innerHTML = `
+                ${contentHtml}
+                <div class="text-[10px] text-wa-muted text-right mt-1 flex items-center justify-end gap-1">
+                    <span>${timeStr}</span>
+                    ${isMe ? '<i class="fa-solid fa-check-double text-blue-400"></i>' : ''}
                 </div>
             `;
-            chatMessages.insertAdjacentHTML('beforeend', myMsgHtml);
-            input.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Simulated response from admin/friend
-            setTimeout(() => {
-                const replyHtml = `
-                    <div class="flex items-end gap-2">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-6 h-6 rounded-full">
-                        <div class="bg-gray-200 dark:bg-fb-darkhover p-2.5 rounded-2xl rounded-bl-none max-w-[80%]">
-                            SafinBook-এ মেসেজ পাঠাবার জন্য ধন্যবাদ! 😊
-                        </div>
-                    </div>
-                `;
-                chatMessages.insertAdjacentHTML('beforeend', replyHtml);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 1000);
+            wrap.appendChild(bubble);
+            return wrap;
         }
 
-        // --- SHARE LINK GENERATOR ---
-        function openShareModal(postId) {
-            const url = window.location.href.split('#')[0] + '?post=' + postId;
-            document.getElementById('shareLinkInput').value = url;
-            document.getElementById('shareModal').classList.remove('hidden');
+        // Send Text Message
+        async function sendMessage(content, type = 'text') {
+            if (!currentUser || !activeChatUser) return;
+            const roomId = getChatRoomId(currentUser.uid, activeChatUser.uid);
+            const messagesRef = ref(db, `messages/${roomId}`);
+
+            const newMsg = {
+                senderId: currentUser.uid,
+                receiverId: activeChatUser.uid,
+                content: content,
+                type: type,
+                timestamp: Date.now()
+            };
+
+            await push(messagesRef, newMsg);
+
+            // Update user chats node
+            const summary = type === 'text' ? content : `[${type.toUpperCase()} বার্তা]`;
+            await set(ref(db, `user_chats/${currentUser.uid}/${activeChatUser.uid}`), { lastMessage: summary, timestamp: Date.now() });
+            await set(ref(db, `user_chats/${activeChatUser.uid}/${currentUser.uid}`), { lastMessage: summary, timestamp: Date.now() });
         }
 
-        function closeShareModal() {
-            document.getElementById('shareModal').classList.add('hidden');
-        }
+        document.getElementById('sendMessageBtn').addEventListener('click', () => {
+            const input = document.getElementById('messageTextInput');
+            const text = input.value.trim();
+            if (text) {
+                sendMessage(text, 'text');
+                input.value = '';
+            }
+        });
 
-        function copyShareLink() {
-            const input = document.getElementById('shareLinkInput');
-            if (!input) return;
-            input.select();
+        document.getElementById('messageTextInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('sendMessageBtn').click();
+            }
+        });
+
+        // Send Image / Video Files
+        document.getElementById('mediaFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+
+            if (!isImage && !isVideo) {
+                alert("শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const base64Data = evt.target.result;
+                sendMessage(base64Data, isImage ? 'image' : 'video');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Voice Recording Logic
+        const recordVoiceBtn = document.getElementById('recordVoiceBtn');
+        const voiceRecordingOverlay = document.getElementById('voiceRecordingOverlay');
+        const cancelRecordBtn = document.getElementById('cancelRecordBtn');
+        const sendVoiceRecordBtn = document.getElementById('sendVoiceRecordBtn');
+        const recordTimer = document.getElementById('recordTimer');
+
+        recordVoiceBtn.addEventListener('click', async () => {
             try {
-                document.execCommand('copy');
-                alert('পোস্ট লিংক ক্লিপবোর্ডে কপি করা হয়েছে:\n' + input.value);
-            } catch(e) {
-                alert('পোস্ট লিংক:\n' + input.value);
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.start();
+
+                voiceRecordingOverlay.classList.remove('hidden');
+
+                let seconds = 0;
+                recordTimerInterval = setInterval(() => {
+                    seconds++;
+                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const secs = String(seconds % 60).padStart(2, '0');
+                    recordTimer.innerText = `${mins}:${secs}`;
+                }, 1000);
+
+            } catch (err) {
+                alert("মাইক্রোফোন সংযোগ করা যায়নি: " + err.message);
             }
-            closeShareModal();
+        });
+
+        cancelRecordBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            clearInterval(recordTimerInterval);
+            voiceRecordingOverlay.classList.add('hidden');
+        });
+
+        sendVoiceRecordBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        sendMessage(e.target.result, 'audio');
+                    };
+                    reader.readAsDataURL(audioBlob);
+                };
+                mediaRecorder.stop();
+            }
+            clearInterval(recordTimerInterval);
+            voiceRecordingOverlay.classList.add('hidden');
+        });
+
+        // Calling System (Audio / Video Call via WebRTC)
+        const callOverlay = document.getElementById('callOverlay');
+        const videoContainer = document.getElementById('videoContainer');
+        const startAudioCallBtn = document.getElementById('startAudioCallBtn');
+        const startVideoCallBtn = document.getElementById('startVideoCallBtn');
+        const endCallBtn = document.getElementById('endCallBtn');
+        const acceptCallBtn = document.getElementById('acceptCallBtn');
+        const rejectCallBtn = document.getElementById('rejectCallBtn');
+
+        startAudioCallBtn.addEventListener('click', () => initiateCall('audio'));
+        startVideoCallBtn.addEventListener('click', () => initiateCall('video'));
+
+        async function initiateCall(type) {
+            if (!activeChatUser) return;
+
+            activeCallId = currentUser.uid;
+            callOverlay.classList.remove('hidden');
+            document.getElementById('callUserName').innerText = activeChatUser.name;
+            document.getElementById('callUserAvatar').src = activeChatUser.photo || 'https://placehold.co/100';
+            document.getElementById('callStatusText').innerText = "কল দেওয়া হচ্ছে...";
+            document.getElementById('incomingCallControls').classList.add('hidden');
+            document.getElementById('ongoingCallControls').classList.remove('hidden');
+
+            if (type === 'video') {
+                videoContainer.classList.remove('hidden');
+            } else {
+                videoContainer.classList.add('hidden');
+            }
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: type === 'video'
+                });
+
+                if (type === 'video') {
+                    document.getElementById('localVideo').srcObject = localStream;
+                }
+
+                peerConnection = new RTCPeerConnection(rtcConfig);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = (e) => {
+                    if (type === 'video') {
+                        document.getElementById('remoteVideo').srcObject = e.streams[0];
+                    } else {
+                        document.getElementById('remoteAudio').srcObject = e.streams[0];
+                    }
+                };
+
+                const callRef = ref(db, `calls/${activeChatUser.uid}`);
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                await set(callRef, {
+                    callerId: currentUser.uid,
+                    callerName: currentUserData.name,
+                    callerPhoto: currentUserData.photo,
+                    type: type,
+                    offer: { sdp: offer.sdp, type: offer.type },
+                    status: 'calling'
+                });
+
+                // Listen for Call Answer
+                onValue(callRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.answer && !peerConnection.currentRemoteDescription) {
+                        const rtcSessionDescription = new RTCSessionDescription(data.answer);
+                        peerConnection.setRemoteDescription(rtcSessionDescription);
+                        document.getElementById('callStatusText').innerText = "সংযুক্ত হয়েছে";
+                    }
+                    if (!data) {
+                        closeCallUI();
+                    }
+                });
+
+            } catch (err) {
+                alert("ক্যামেরা/মাইক্রোফোন এক্সেস পাওয়া যায়নি: " + err.message);
+                closeCallUI();
+            }
         }
 
-        // --- DARK MODE TOGGLE ---
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            const icon = document.getElementById('darkModeIcon');
-            const menuIcon = document.getElementById('menuDarkModeIcon');
-            const statusText = document.getElementById('darkModeStatusText');
-            
-            if (icon) {
-                icon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
-            }
-            if (menuIcon) {
-                menuIcon.className = isDark ? 'fa-solid fa-sun text-amber-300' : 'fa-solid fa-moon text-lg';
-            }
-            if (statusText) {
-                statusText.innerText = isDark ? 'ডার্ক মোড সক্রিয়' : 'লাইট মোড সক্রিয়';
+        // Listen for Incoming Calls
+        function listenForIncomingCalls() {
+            const myCallRef = ref(db, `calls/${currentUser.uid}`);
+            onValue(myCallRef, async (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.status === 'calling') {
+                    callOverlay.classList.remove('hidden');
+                    document.getElementById('callUserName').innerText = data.callerName;
+                    document.getElementById('callUserAvatar').src = data.callerPhoto || 'https://placehold.co/100';
+                    document.getElementById('callStatusText').innerText = `ইনকামিং ${data.type === 'video' ? 'ভিডিও' : 'অডিও'} কল...`;
+
+                    document.getElementById('incomingCallControls').classList.remove('hidden');
+                    document.getElementById('ongoingCallControls').classList.add('hidden');
+
+                    if (data.type === 'video') {
+                        videoContainer.classList.remove('hidden');
+                    } else {
+                        videoContainer.classList.add('hidden');
+                    }
+
+                    acceptCallBtn.onclick = () => acceptIncomingCall(data);
+                    rejectCallBtn.onclick = () => {
+                        remove(myCallRef);
+                        closeCallUI();
+                    };
+                }
+            });
+        }
+
+        // Accept Call
+        async function acceptIncomingCall(callData) {
+            document.getElementById('incomingCallControls').classList.add('hidden');
+            document.getElementById('ongoingCallControls').classList.remove('hidden');
+            document.getElementById('callStatusText').innerText = "সংযুক্ত হচ্ছে...";
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: callData.type === 'video'
+                });
+
+                if (callData.type === 'video') {
+                    document.getElementById('localVideo').srcObject = localStream;
+                }
+
+                peerConnection = new RTCPeerConnection(rtcConfig);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = (e) => {
+                    if (callData.type === 'video') {
+                        document.getElementById('remoteVideo').srcObject = e.streams[0];
+                    } else {
+                        document.getElementById('remoteAudio').srcObject = e.streams[0];
+                    }
+                };
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                await update(ref(db, `calls/${currentUser.uid}`), {
+                    answer: { sdp: answer.sdp, type: answer.type },
+                    status: 'connected'
+                });
+
+                document.getElementById('callStatusText').innerText = "সংযুক্ত হয়েছে";
+
+            } catch (err) {
+                alert("কল ধরতে সমস্যা হয়েছে: " + err.message);
+                closeCallUI();
             }
         }
+
+        // End / Close Call
+        endCallBtn.addEventListener('click', () => {
+            if (currentUser) {
+                remove(ref(db, `calls/${currentUser.uid}`));
+            }
+            if (activeChatUser) {
+                remove(ref(db, `calls/${activeChatUser.uid}`));
+            }
+            closeCallUI();
+        });
+
+        function closeCallUI() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            if (peerConnection) {
+                peerConnection.close();
+            }
+            callOverlay.classList.add('hidden');
+        }
+
+        // Auth state observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                checkAndSetupUserProfile(user);
+            } else {
+                authScreen.classList.remove('hidden');
+            }
+        });
+
     </script>
 </body>
 </html>
