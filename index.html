@@ -909,84 +909,6 @@
             }
         }
 
-        function handleAuth(e, mode) {
-            e.preventDefault();
-            const emailInput = document.getElementById('authEmail').value.trim();
-            const passwordInput = document.getElementById('authPassword').value;
-            const errDiv = document.getElementById('authError');
-            errDiv.classList.add('hidden');
-
-            // Format Phone/Email input
-            let email = emailInput;
-            if (!email.includes('@')) {
-                email = `${email.replace(/[^0-9]/g, '')}@safinbook.com`;
-            }
-
-            if (isSignUpMode) {
-                auth.createUserWithEmailAndPassword(email, passwordInput)
-                    .then((res) => {
-                        res.user.updateProfile({ displayName: "SafinBook User" });
-                        alert("SafinBook-এ সফলভাবে অ্যাকাউন্ট তৈরি হয়েছে!");
-                    })
-                    .catch((err) => {
-                        errDiv.innerText = "ত্রুটি: " + err.message;
-                        errDiv.classList.remove('hidden');
-                    });
-            } else {
-                auth.signInWithEmailAndPassword(email, passwordInput)
-                    .catch((err) => {
-                        errDiv.innerText = "লগইন ত্রুটি: " + err.message;
-                        errDiv.classList.remove('hidden');
-                    });
-            }
-        }
-
-        function guestLogin() {
-            currentUser = {
-                uid: 'guest_123',
-                displayName: 'Md Safin Ahmed',
-                email: 'safin@safinbook.com',
-                photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'
-            };
-            document.getElementById('authModal').classList.add('hidden');
-            updateUserUI();
-        }
-
-        function handleLogout() {
-            auth.signOut().then(() => {
-                location.reload();
-            }).catch(() => {
-                location.reload();
-            });
-        }
-
-        function updateUserUI() {
-            if (!currentUser) return;
-            const name = currentUser.displayName || "Md Safin Ahmed";
-            const img = currentUser.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80";
-
-            document.getElementById('sideUserName').innerText = name;
-            document.getElementById('menuUserName').innerText = name;
-            document.getElementById('menuUserEmail').innerText = currentUser.email || 'safinbook@app.com';
-            
-            document.getElementById('headerAvatar').src = img;
-            document.getElementById('sideAvatar').src = img;
-            document.getElementById('postCreatorAvatar').src = img;
-            document.getElementById('storyUserAvatar').src = img;
-            document.getElementById('menuAvatar').src = img;
-
-            // Updated Profile Info
-            if (document.getElementById('menuUserBio')) {
-                document.getElementById('menuUserBio').innerText = currentUser.bio || 'SafinBook-এ সক্রিয় ইউজার';
-            }
-            if (document.getElementById('menuUserWork')) {
-                document.getElementById('menuUserWork').querySelector('span').innerText = currentUser.work || 'SafinBook Owner & Founder';
-            }
-            if (document.getElementById('menuUserLocation')) {
-                document.getElementById('menuUserLocation').querySelector('span').innerText = currentUser.location || 'Dhaka, Bangladesh';
-            }
-        }
-
         // --- EDIT PROFILE HANDLERS ---
         function openEditProfileModal() {
             if (!currentUser) {
@@ -1121,8 +1043,9 @@
                 return;
             }
 
+            const postId = 'post_' + Date.now();
             const newPost = {
-                id: 'post_' + Date.now(),
+                id: postId,
                 userName: currentUser ? currentUser.displayName : 'Md Safin Ahmed',
                 userAvatar: currentUser ? currentUser.photoURL : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
                 time: 'এখনই',
@@ -1137,12 +1060,16 @@
                 newPost.mediaUrl = mediaUrl;
                 newPost.mediaType = mediaType;
                 
+                // Save directly to Firebase Realtime Database
                 if (database) {
-                    try {
-                        database.ref('posts/' + newPost.id).set(newPost);
-                    } catch(e) {
-                        console.warn("Saving post locally fallback");
-                    }
+                    database.ref('posts/' + newPost.id).set(newPost)
+                        .then(() => {
+                            console.log("Firebase-এ ডেটা সফলভাবে যুক্ত হয়েছে!");
+                        })
+                        .catch((error) => {
+                            console.error("Firebase Permission Error:", error);
+                            alert("Firebase Rules ব্লকড! অনুগ্রহ করে Firebase Console-এ Rules সেকশনে .write true করুন।");
+                        });
                 }
 
                 samplePosts.unshift(newPost);
@@ -1185,6 +1112,7 @@
 
         function renderPosts() {
             const container = document.getElementById('feedPosts');
+            if (!container) return;
             container.innerHTML = '';
 
             samplePosts.forEach((post) => {
@@ -1194,7 +1122,7 @@
                     `<img src="${post.mediaUrl}" class="w-full rounded-xl mt-2 max-h-96 object-cover border border-gray-100 dark:border-gray-800">`
                 ) : '';
 
-                const commentsMarkup = post.comments.map(c => `
+                const commentsMarkup = (post.comments || []).map(c => `
                     <div class="bg-gray-100 dark:bg-fb-darkhover px-3 py-1.5 rounded-2xl text-xs font-medium w-fit">
                         ${c}
                     </div>
@@ -1217,8 +1145,8 @@
                         ${mediaMarkup}
 
                         <div class="flex items-center justify-between text-xs text-gray-500 pt-1">
-                            <span class="flex items-center gap-1"><i class="fa-solid fa-thumbs-up text-fb-blue"></i> ${post.likes}</span>
-                            <span>${post.comments.length}টি কমেন্ট</span>
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-thumbs-up text-fb-blue"></i> ${post.likes || 0}</span>
+                            <span>${(post.comments || []).length}টি কমেন্ট</span>
                         </div>
 
                         <hr class="border-gray-200 dark:border-gray-700">
@@ -1254,7 +1182,10 @@
         function likePost(postId) {
             const post = samplePosts.find(p => p.id === postId);
             if (post) {
-                post.likes++;
+                post.likes = (post.likes || 0) + 1;
+                if (database) {
+                    database.ref('posts/' + postId + '/likes').set(post.likes).catch(() => {});
+                }
                 renderPosts();
             }
         }
@@ -1262,13 +1193,18 @@
         function addComment(e, postId) {
             e.preventDefault();
             const input = document.getElementById(`comment-input-${postId}`);
-            const val = input.value.trim();
+            const val = input ? input.value.trim() : '';
             if (!val) return;
 
             const post = samplePosts.find(p => p.id === postId);
             if (post) {
-                post.comments.push(`${currentUser ? currentUser.displayName : 'Md Safin Ahmed'}: ${val}`);
-                input.value = '';
+                if (!post.comments) post.comments = [];
+                const commentText = `${currentUser ? currentUser.displayName : 'Md Safin Ahmed'}: ${val}`;
+                post.comments.push(commentText);
+                if (database) {
+                    database.ref('posts/' + postId + '/comments').set(post.comments).catch(() => {});
+                }
+                if (input) input.value = '';
                 renderPosts();
             }
         }
@@ -1276,21 +1212,6 @@
         function focusComment(postId) {
             const input = document.getElementById(`comment-input-${postId}`);
             if (input) input.focus();
-        }
-
-        function listenToRealtimeDatabase() {
-            try {
-                database.ref('posts').on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const dbPosts = Object.values(data).reverse();
-                        samplePosts = dbPosts;
-                        renderPosts();
-                    }
-                });
-            } catch(e) {
-                console.log("Firebase DB offline fallback");
-            }
         }
 
         // --- STORIES & REELS UPLOAD ---
