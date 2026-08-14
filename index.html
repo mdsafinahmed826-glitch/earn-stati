@@ -1,3547 +1,1424 @@
 <!DOCTYPE html>
-<html lang="bn" class="h-full bg-gray-900">
+<html lang="bn" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Web Bangla</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        wa: {
-                            dark: '#111b21',
-                            panel: '#202c33',
-                            header: '#202c33',
-                            green: '#00a884',
-                            lightgreen: '#005c4b',
-                            chatbg: '#0b141a',
-                            bubbleIn: '#202c33',
-                            bubbleOut: '#005c4b',
-                            text: '#e9edef',
-                            muted: '#8696a0'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Hind Siliguri', 'sans-serif']
-                    }
-                }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>সাফিন ওয়েব - Safin Web Messaging</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#e6f7f4',
+              100: '#b3edd8',
+              500: '#00a884',
+              600: '#008f70',
+              700: '#128c7e',
+              800: '#075e54',
+              900: '#0b413a',
+            },
+            whatsapp: {
+              bg: '#0b141a',
+              sidebar: '#111b21',
+              chatBg: '#0b141a',
+              header: '#202c33',
+              card: '#111b21',
+              hover: '#2a3942',
+              outgoing: '#005c4b',
+              incoming: '#202c33',
+              input: '#2a3942'
             }
-        };
-    </script>
-
-    <style>
-        body {
-            font-family: 'Hind Siliguri', sans-serif;
+          },
+          fontFamily: {
+            bangla: ['Hind Siliguri', 'Inter', 'sans-serif']
+          }
         }
+      }
+    }
+  </script>
 
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
+  <!-- Firebase Compat Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 
-        ::-webkit-scrollbar-thumb {
-            background: #374045;
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4a555c;
-        }
-
-        .chat-pattern {
-            background-image: radial-gradient(#1e293b 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-    </style>
+  <style>
+    body {
+      font-family: 'Hind Siliguri', 'Inter', sans-serif;
+      background-color: #0b141a;
+      color: #e9edef;
+      overflow: hidden;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.16);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    /* WhatsApp Pattern Overlay */
+    .chat-pattern {
+      background-color: #0b141a;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+  </style>
 </head>
+<body class="h-screen w-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
-<body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
-
-<div id="app" class="h-full w-full flex flex-col relative">
-
-    <!-- =========================================================
-         AUTH / LOGIN SCREEN
-         ========================================================= -->
-    <div id="authScreen"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
-
-        <!-- IMPORTANT:
-             এখানে hidden রাখা হয়নি।
-             Firebase session restore হওয়া পর্যন্ত loading দেখাবে।
-        -->
-        <div id="authCard"
-             class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center">
-
-            <!-- Auth Loading -->
-            <div id="authLoadingState">
-                <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-5 text-white text-4xl shadow-lg">
-                    <i class="fa-brands fa-whatsapp"></i>
-                </div>
-
-                <h2 class="text-2xl font-bold text-white mb-2">
-                    সাফিন ওয়েব
-                </h2>
-
-                <div class="flex items-center justify-center gap-2 text-wa-muted text-sm">
-                    <i class="fa-solid fa-spinner fa-spin text-wa-green"></i>
-                    <span>সেশন যাচাই করা হচ্ছে...</span>
-                </div>
-            </div>
-
-            <!-- Login State -->
-            <div id="loginState" class="hidden">
-
-                <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-lg">
-                    <i class="fa-brands fa-whatsapp"></i>
-                </div>
-
-                <h2 class="text-2xl font-bold text-white mb-2">
-                    সাফিন ওয়েব
-                </h2>
-
-                <p class="text-wa-muted mb-6 text-sm">
-                    স্বাগতম! চ্যাট শুরু করতে লগইন করুন
-                </p>
-
-                <!-- Auth Tabs -->
-                <div class="flex border-b border-gray-700 mb-6">
-                    <button id="phoneTabBtn"
-                            class="flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition">
-                        ফোন নম্বর
-                    </button>
-
-                    <button id="googleTabBtn"
-                            class="flex-1 py-2 text-wa-muted hover:text-white font-semibold transition">
-                        Google দিয়ে
-                    </button>
-                </div>
-
-                <!-- Phone Auth -->
-                <div id="phoneAuthForm" class="space-y-4">
-
-                    <div id="recaptcha-container"
-                         class="flex justify-center my-2">
-                    </div>
-
-                    <div id="phoneInputGroup">
-
-                        <label class="block text-left text-xs text-wa-muted mb-1">
-                            আপনার ফোন নম্বর (দেশি কোডসহ)
-                        </label>
-
-                        <input type="tel"
-                               id="phoneNumberInput"
-                               placeholder="+8801700000000"
-                               class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-wa-green">
-
-                        <button id="sendOtpBtn"
-                                class="w-full mt-4 bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2">
-                            <span>OTP কোড পাঠান</span>
-                            <i class="fa-solid fa-paper-plane text-sm"></i>
-                        </button>
-                    </div>
-
-                    <!-- OTP -->
-                    <div id="otpInputGroup"
-                         class="hidden space-y-4">
-
-                        <div>
-                            <label class="block text-left text-xs text-wa-muted mb-1">
-                                OTP কোড লিখুন
-                            </label>
-
-                            <input type="text"
-                                   id="otpCodeInput"
-                                   placeholder="123456"
-                                   maxlength="6"
-                                   class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-3 text-center text-xl font-mono text-white tracking-widest focus:outline-none focus:border-wa-green">
-                        </div>
-
-                        <button id="verifyOtpBtn"
-                                class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition">
-                            যাচাই করুন ও লগইন করুন
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Google -->
-                <div id="googleAuthForm"
-                     class="hidden py-4">
-
-                    <button id="googleSignInBtn"
-                            class="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-3">
-
-                        <svg class="w-5 h-5" viewBox="0 0 24 24">
-                            <path fill="#4285F4"
-                                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853"
-                                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05"
-                                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                            <path fill="#EA4335"
-                                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                        </svg>
-
-                        Google অ্যাকাউন্টের মাধ্যমে সাইন ইন
-                    </button>
-                </div>
-
-                <p id="authErrorText"
-                   class="hidden text-red-400 text-xs mt-4 break-words">
-                </p>
-            </div>
-        </div>
+  <!-- 1. INITIAL SESSION LOADING SCREEN (Prevents Login Flash) -->
+  <div id="sessionLoadingScreen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-whatsapp-bg text-white">
+    <div class="relative flex items-center justify-center mb-6">
+      <div class="w-20 h-20 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      <i class="fa-solid font-bold text-2xl text-brand-500 fa-comments absolute"></i>
     </div>
+    <h2 class="text-2xl font-bold tracking-wide text-brand-500">সাফিন ওয়েব</h2>
+    <p class="text-gray-400 text-sm mt-2 flex items-center gap-2">
+      <span>সেশন ও ডেটা যাচাই করা হচ্ছে...</span>
+    </p>
+  </div>
 
-
-    <!-- =========================================================
-         PROFILE MODAL
-         ========================================================= -->
-    <div id="profileModal"
-         class="fixed inset-0 z-40 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
-
-        <div class="bg-wa-panel rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-800">
-
-            <div class="flex justify-between items-center mb-6">
-
-                <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-wa-green"></i>
-                    প্রোফাইল এডিটর
-                </h3>
-
-                <button id="closeProfileBtn"
-                        class="text-wa-muted hover:text-white">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-
-            </div>
-
-            <div class="space-y-4">
-
-                <div class="text-center relative">
-
-                    <img id="profileAvatarPreview"
-                         src="https://placehold.co/150x150/202c33/00a884?text=User"
-                         class="w-24 h-24 rounded-full object-cover mx-auto border-2 border-wa-green shadow">
-
-                    <label class="cursor-pointer bg-wa-green hover:bg-opacity-90 text-white rounded-full p-2 absolute bottom-0 right-1/2 translate-x-8 shadow-md">
-
-                        <i class="fa-solid fa-camera text-sm"></i>
-
-                        <input type="file"
-                               id="avatarFileInput"
-                               accept="image/*"
-                               class="hidden">
-                    </label>
-                </div>
-
-                <div>
-                    <label class="block text-xs text-wa-muted mb-1">
-                        আপনার নাম
-                    </label>
-
-                    <input type="text"
-                           id="profileNameInput"
-                           placeholder="যেমন: আব্দুর রহমান"
-                           class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                </div>
-
-                <div>
-                    <label class="block text-xs text-wa-muted mb-1">
-                        ফোন নম্বর
-                    </label>
-
-                    <input type="tel"
-                           id="profilePhoneInput"
-                           placeholder="+8801700000000"
-                           class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                </div>
-
-                <div>
-                    <label class="block text-xs text-wa-muted mb-1">
-                        স্ট্যাটাস / বায়ো
-                    </label>
-
-                    <input type="text"
-                           id="profileStatusInput"
-                           placeholder="Hey there! I am using WhatsApp."
-                           class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                </div>
-
-                <button id="saveProfileBtn"
-                        class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition mt-4">
-                    সেভ করুন
-                </button>
-
-            </div>
+  <!-- 2. AUTHENTICATION CONTAINER (Hidden by default until session checked) -->
+  <div id="authScreen" class="hidden fixed inset-0 z-40 flex items-center justify-center bg-whatsapp-bg p-4 overflow-y-auto">
+    <div class="w-full max-w-md bg-whatsapp-sidebar rounded-2xl shadow-2xl border border-gray-800 p-6 md:p-8 relative overflow-hidden">
+      
+      <!-- Brand Header -->
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-inner">
+          <i class="fa-solid fa-comments"></i>
         </div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">সাফিন ওয়েবে স্বাগতম</h1>
+        <p class="text-gray-400 text-sm mt-1">রিয়েলটাইম মেসেজিং ও যোগাযোগের বিশ্বস্ত স্থান</p>
+      </div>
+
+      <!-- Auth Method Tabs -->
+      <div class="flex border-b border-gray-800 mb-6 text-sm font-medium">
+        <button id="tabPhoneBtn" onclick="switchAuthTab('phone')" class="flex-1 pb-3 text-center border-b-2 border-brand-500 text-brand-500 font-semibold transition">
+          <i class="fa-solid fa-phone mr-2"></i>ফোন নম্বর
+        </button>
+        <button id="tabGoogleBtn" onclick="switchAuthTab('google')" class="flex-1 pb-3 text-center border-b-2 border-transparent text-gray-400 hover:text-white transition">
+          <i class="fa-brands fa-google mr-2"></i>গুগল অ্যাকাউন্ট
+        </button>
+      </div>
+
+      <!-- Phone Auth Section -->
+      <div id="phoneAuthSection" class="space-y-4">
+        <!-- Step 1: Input Phone Number -->
+        <div id="phoneStep1">
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">আপনার ফোন নম্বর প্রদান করুন</label>
+          <div class="flex items-center bg-whatsapp-input border border-gray-700 rounded-xl overflow-hidden focus-within:border-brand-500 transition">
+            <span class="px-3 py-3 bg-gray-800/50 text-gray-300 font-semibold text-sm border-r border-gray-700">+880</span>
+            <input type="tel" id="phoneNumberInput" placeholder="1700000000" class="w-full bg-transparent px-3 py-3 text-white focus:outline-none text-sm tracking-widest" />
+          </div>
+          <p class="text-xs text-gray-500 mt-2">আমরা একটি যাচাইকরণ OTP কোড পাঠাব।</p>
+          
+          <div id="recaptcha-container" class="my-4 flex justify-center"></div>
+
+          <button id="sendOtpBtn" onclick="sendOtpCode()" class="w-full mt-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
+            <span>OTP কোড পাঠান</span>
+            <i class="fa-solid fa-paper-plane text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Step 2: Input OTP -->
+        <div id="phoneStep2" class="hidden space-y-4">
+          <div class="bg-brand-500/10 border border-brand-500/20 rounded-xl p-3 text-xs text-brand-500 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>আমরা আপনার ফোনে ৬ সংখ্যার একটি কোড পাঠিয়েছি।</span>
+          </div>
+
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">OTP কোড বসান</label>
+          <input type="text" id="otpCodeInput" maxlength="6" placeholder="123456" class="w-full bg-whatsapp-input border border-gray-700 rounded-xl px-4 py-3 text-white text-center text-xl tracking-widest font-mono focus:outline-none focus:border-brand-500 transition" />
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="resetPhoneAuthStep()" class="w-1/3 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 rounded-xl text-sm font-medium transition">
+              পুনরায় চেষ্টা
+            </button>
+            <button id="verifyOtpBtn" onclick="verifyOtpCode()" class="w-2/3 bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-brand-500/20">
+              যাচাই করুন ও লগইন
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google Auth Section -->
+      <div id="googleAuthSection" class="hidden space-y-4 text-center py-4">
+        <p class="text-sm text-gray-300">একটি ক্লিকেই গুগল দিয়ে সরাসরি সুরক্ষিতভাবে প্রবেশ করুন।</p>
+        <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md">
+          <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>Google দিয়ে চালিয়ে যান</span>
+        </button>
+      </div>
+
+      <!-- System Message Alert -->
+      <div id="authAlert" class="hidden mt-4 p-3 rounded-xl text-xs font-medium border"></div>
     </div>
+  </div>
 
-
-    <!-- =========================================================
-         SEARCH MODAL
-         ========================================================= -->
-    <div id="searchModal"
-         class="fixed inset-0 z-40 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
-
-        <div class="bg-wa-panel rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-800">
-
-            <div class="flex justify-between items-center mb-4">
-
-                <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-user-plus text-wa-green"></i>
-                    নতুন চ্যাট / বন্ধু খুঁজুন
-                </h3>
-
-                <button id="closeSearchBtn"
-                        class="text-wa-muted hover:text-white">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-
-            </div>
-
-            <div class="relative mb-4">
-
-                <input type="text"
-                       id="userSearchInput"
-                       placeholder="নাম অথবা ফোন নম্বর লিখুন..."
-                       class="w-full bg-wa-dark border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-wa-green">
-
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-wa-muted"></i>
-            </div>
-
-            <div id="searchResultsList"
-                 class="max-h-60 overflow-y-auto space-y-2">
-
-                <p class="text-center text-wa-muted text-sm py-4">
-                    সার্চ করার জন্য উপরে ফোন নম্বর বা নাম লিখুন
-                </p>
-
-            </div>
+  <!-- 3. MAIN APPLICATION INTERFACE -->
+  <div id="mainApp" class="hidden flex-1 flex h-full w-full overflow-hidden relative">
+    
+    <!-- LEFT SIDEBAR: Chat List & Navigation -->
+    <aside id="leftSidebar" class="w-full md:w-[380px] lg:w-[420px] bg-whatsapp-sidebar border-r border-gray-800 flex flex-col h-full z-20 transition-all duration-300">
+      
+      <!-- User Profile Header -->
+      <div class="h-16 px-4 bg-whatsapp-header border-b border-gray-800 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="openProfileModal()">
+          <div class="relative">
+            <img id="myAvatarImg" src="https://placehold.co/100x100/128c7e/ffffff?text=User" class="w-10 h-10 rounded-full object-cover border border-gray-700 shadow" alt="User Avatar" />
+            <span id="myPresenceDot" class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-whatsapp-header rounded-full"></span>
+          </div>
+          <div>
+            <h3 id="myNameTxt" class="font-semibold text-sm text-white line-clamp-1">ইউজার</h3>
+            <p id="myStatusTxt" class="text-xs text-gray-400 line-clamp-1">অনলাইনে আছেন</p>
+          </div>
         </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-1 text-gray-400">
+          <button onclick="openNewChatModal()" class="w-9 h-9 hover:bg-whatsapp-hover hover:text-white rounded-full flex items-center justify-center transition" title="নতুন চ্যাট">
+            <i class="fa-solid fa-message"></i>
+          </button>
+          <button onclick="openProfileModal()" class="w-9 h-9 hover:bg-whatsapp-hover hover:text-white rounded-full flex items-center justify-center transition" title="প্রোফাইল সেটিংস">
+            <i class="fa-solid fa-user-gear"></i>
+          </button>
+          <button onclick="handleLogout()" class="w-9 h-9 hover:bg-red-500/20 hover:text-red-400 rounded-full flex items-center justify-center transition" title="লগআউট">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="p-2.5 bg-whatsapp-sidebar border-b border-gray-800/60 shrink-0">
+        <div class="flex items-center bg-whatsapp-input border border-gray-800 rounded-xl px-3 py-2 focus-within:border-brand-500 transition">
+          <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs mr-3"></i>
+          <input type="text" id="chatSearchInput" oninput="filterChatList()" placeholder="চ্যাট খোঁজুন বা নাম লিখুন..." class="w-full bg-transparent text-xs text-white focus:outline-none placeholder-gray-500" />
+        </div>
+      </div>
+
+      <!-- Active Conversation List -->
+      <div id="chatListContainer" class="flex-1 overflow-y-auto divide-y divide-gray-800/40">
+        <!-- Empty State Placeholder -->
+        <div id="emptyChatList" class="p-8 text-center text-gray-500 space-y-3">
+          <i class="fa-regular fa-comments text-4xl opacity-40"></i>
+          <p class="text-sm">কোনো চ্যাট পাওয়া যায়নি।<br>"নতুন চ্যাট" বাটন চেপে মেসেজ দেওয়া শুরু করুন।</p>
+          <button onclick="openNewChatModal()" class="mt-2 bg-brand-500/10 hover:bg-brand-500/20 text-brand-500 text-xs px-4 py-2 rounded-xl transition font-medium border border-brand-500/30">
+            + নতুন ইউজার দিয়ে চ্যাট শুরু
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: Chat Window & Canvas -->
+    <main id="chatMainArea" class="hidden md:flex flex-1 flex-col h-full bg-whatsapp-chatBg chat-pattern relative z-10">
+      
+      <!-- NO CHAT SELECTED WATERMARK -->
+      <div id="noChatSelected" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-24 h-24 bg-brand-500/10 text-brand-500 rounded-full flex items-center justify-center mb-4 text-4xl border border-brand-500/20">
+          <i class="fa-solid fa-paper-plane"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-200">সাফিন ওয়েব বার্তা সেবা</h2>
+        <p class="text-xs text-gray-400 max-w-sm mt-2 leading-relaxed">
+          যেকোনো মেসেজ পাঠাতে বা গ্রহণ করতে বামপাশের তালিকা থেকে কোনো চ্যাট নির্বাচন করুন অথবা নতুন ইউজার সার্চ করুন।
+        </p>
+        <div class="mt-6 flex items-center gap-2 text-xs text-gray-500 bg-whatsapp-header/60 px-4 py-2 rounded-full border border-gray-800">
+          <i class="fa-solid fa-lock text-brand-500"></i>
+          <span>আপনার বার্তা নিরাপদ এবং সংরক্ষিত।</span>
+        </div>
+      </div>
+
+      <!-- ACTIVE CHAT INTERFACE (Hidden by default) -->
+      <div id="activeChatBox" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Active Chat Header -->
+        <div class="h-16 px-4 bg-whatsapp-header border-b border-gray-800 flex items-center justify-between shrink-0 shadow-md">
+          <div class="flex items-center gap-3">
+            <button onclick="closeMobileChat()" class="md:hidden text-gray-400 hover:text-white mr-1 text-lg">
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="relative cursor-pointer" onclick="viewTargetUserProfile()">
+              <img id="targetAvatarImg" src="https://placehold.co/100x100/128c7e/ffffff?text=User" class="w-10 h-10 rounded-full object-cover border border-gray-700" alt="Peer Avatar" />
+              <span id="targetPresenceDot" class="absolute bottom-0 right-0 w-3 h-3 bg-gray-500 border-2 border-whatsapp-header rounded-full"></span>
+            </div>
+            <div>
+              <h3 id="targetNameTxt" class="font-semibold text-sm text-white">বন্ধুর নাম</h3>
+              <p id="targetStatusTxt" class="text-xs text-gray-400">অফলাইন</p>
+            </div>
+          </div>
+
+          <!-- Calling & Actions Toolbar -->
+          <div class="flex items-center gap-2">
+            <button onclick="initiateCall('audio')" class="w-9 h-9 hover:bg-whatsapp-hover text-brand-500 hover:text-brand-400 rounded-full flex items-center justify-center transition" title="অডিও কল">
+              <i class="fa-solid fa-phone"></i>
+            </button>
+            <button onclick="initiateCall('video')" class="w-9 h-9 hover:bg-whatsapp-hover text-brand-500 hover:text-brand-400 rounded-full flex items-center justify-center transition" title="ভিডিও কল">
+              <i class="fa-solid fa-video"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Message Scroll Stream -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <!-- Messages dynamically populated here -->
+        </div>
+
+        <!-- Voice Recording Toolbar (Overlay when active) -->
+        <div id="recordingBar" class="hidden h-14 bg-whatsapp-header border-t border-gray-800 px-4 flex items-center justify-between">
+          <div class="flex items-center gap-3 text-red-500 animate-pulse">
+            <i class="fa-solid fa-microphone text-lg"></i>
+            <span id="recordTimerTxt" class="font-mono text-sm text-white font-semibold">00:00</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="cancelVoiceRecording()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-xl font-medium transition">
+              ক্যানসেল
+            </button>
+            <button onclick="stopAndSendVoiceRecording()" class="px-4 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs rounded-xl font-semibold transition flex items-center gap-1.5 shadow">
+              <span>পাঠান</span>
+              <i class="fa-solid fa-paper-plane text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Input Bar -->
+        <div id="chatInputBar" class="p-3 bg-whatsapp-header border-t border-gray-800 flex items-center gap-2 shrink-0">
+          
+          <!-- Attachment Dropdown / Media Picker -->
+          <label class="w-10 h-10 hover:bg-whatsapp-hover text-gray-400 hover:text-white rounded-full flex items-center justify-center cursor-pointer transition" title="ছবি/ভিডিও সংযুক্তি">
+            <i class="fa-solid fa-paperclip text-lg"></i>
+            <input type="file" id="mediaFileInput" accept="image/*,video/*" onchange="handleFileUpload(event)" class="hidden" />
+          </label>
+
+          <!-- Text Input -->
+          <div class="flex-1 bg-whatsapp-input border border-gray-700 focus-within:border-brand-500 rounded-2xl px-4 py-2 transition flex items-center">
+            <input type="text" id="messageTextInput" onkeypress="handleMessageKeyPress(event)" placeholder="মেসেজ লিখুন..." class="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-500" />
+          </div>
+
+          <!-- Mic / Send Toggle -->
+          <button id="micRecordBtn" onclick="startVoiceRecording()" class="w-10 h-10 hover:bg-whatsapp-hover text-brand-500 rounded-full flex items-center justify-center transition" title="ভয়েস রেকর্ড করুন">
+            <i class="fa-solid fa-microphone text-lg"></i>
+          </button>
+          <button id="sendMsgBtn" onclick="sendTextMessage()" class="w-10 h-10 bg-brand-500 hover:bg-brand-600 text-white rounded-full flex items-center justify-center shadow transition" title="মেসেজ পাঠান">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- 4. PROFILE EDIT MODAL -->
+  <div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-whatsapp-sidebar border border-gray-800 rounded-2xl p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-id-card text-brand-500"></i>
+          <span>আপনার প্রোফাইল</span>
+        </h3>
+        <button onclick="closeProfileModal()" class="text-gray-400 hover:text-white text-xl">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="mt-6 space-y-4">
+        <!-- Photo Selector -->
+        <div class="text-center">
+          <div class="relative inline-block group">
+            <img id="editProfilePreview" src="https://placehold.co/120x120/128c7e/ffffff?text=User" class="w-24 h-24 rounded-full object-cover border-2 border-brand-500 shadow-md" />
+            <label class="absolute inset-0 bg-black/50 rounded-full flex flex-col items-center justify-center text-white text-xs opacity-0 group-hover:opacity-100 transition cursor-pointer">
+              <i class="fa-solid fa-camera text-lg mb-1"></i>
+              <span>ছবি পরির্বতন</span>
+              <input type="file" id="profileImageInput" accept="image/*" onchange="previewProfilePhoto(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Name Input -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">আপনার নাম</label>
+          <input type="text" id="editNameInput" class="w-full bg-whatsapp-input border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none" />
+        </div>
+
+        <!-- Bio / Status Input -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">বায়ো / স্ট্যাটাস</label>
+          <input type="text" id="editStatusInput" placeholder="উপলব্ধ আছি..." class="w-full bg-whatsapp-input border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none" />
+        </div>
+
+        <!-- Phone Readonly -->
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">ফোন নম্বর / ইউজার আইডি</label>
+          <input type="text" id="editPhoneInput" disabled class="w-full bg-gray-800/60 border border-gray-700/60 rounded-xl px-3.5 py-2.5 text-xs text-gray-400 font-mono" />
+        </div>
+
+        <button onclick="saveProfileChanges()" class="w-full mt-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-brand-500/20">
+          তথ্য সংরক্ষণ করুন
+        </button>
+      </div>
     </div>
+  </div>
 
+  <!-- 5. NEW CHAT / USER SEARCH MODAL -->
+  <div id="newChatModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md bg-whatsapp-sidebar border border-gray-800 rounded-2xl p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-brand-500"></i>
+          <span>নতুন চ্যাট শুরু করুন</span>
+        </h3>
+        <button onclick="closeNewChatModal()" class="text-gray-400 hover:text-white text-xl">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-    <!-- =========================================================
-         CALL OVERLAY
-         ========================================================= -->
-    <div id="callOverlay"
-         class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
-
-        <div class="text-center mt-8">
-
-            <img id="callUserAvatar"
-                 src="https://placehold.co/120"
-                 class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 animate-pulse">
-
-            <h3 id="callUserName"
-                class="text-2xl font-bold text-white">
-                ব্যবহারকারীর নাম
-            </h3>
-
-            <p id="callStatusText"
-               class="text-wa-green font-medium mt-1">
-                কলিং...
-            </p>
-
+      <div class="mt-4 space-y-4">
+        <div class="flex items-center bg-whatsapp-input border border-gray-700 rounded-xl px-3 py-2.5 focus-within:border-brand-500 transition">
+          <i class="fa-solid fa-magnifying-glass text-gray-400 mr-2 text-sm"></i>
+          <input type="text" id="userSearchQuery" oninput="searchUsersInDb()" placeholder="ইউজারের নাম বা ফোন নম্বর দিয়ে খুঁজুন..." class="w-full bg-transparent text-sm text-white focus:outline-none" />
         </div>
 
-        <div id="videoContainer"
-             class="relative w-full max-w-2xl h-80 bg-black rounded-2xl overflow-hidden my-4 border border-gray-800 hidden">
-
-            <video id="remoteVideo"
-                   autoplay
-                   playsinline
-                   class="w-full h-full object-cover">
-            </video>
-
-            <video id="localVideo"
-                   autoplay
-                   playsinline
-                   muted
-                   class="absolute bottom-4 right-4 w-32 h-24 object-cover rounded-lg border-2 border-white shadow-md">
-            </video>
-
+        <!-- Search Results List -->
+        <div id="searchResultsList" class="max-h-60 overflow-y-auto space-y-2 divide-y divide-gray-800/60 pt-2">
+          <p class="text-xs text-center text-gray-500 py-4">উপরে নাম বা ফোন নম্বর টাইপ করুন।</p>
         </div>
-
-        <audio id="remoteAudio"
-               autoplay
-               class="hidden">
-        </audio>
-
-        <div class="flex items-center gap-6 mb-8">
-
-            <div id="incomingCallControls"
-                 class="flex gap-8 hidden">
-
-                <button id="rejectCallBtn"
-                        class="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition">
-                    <i class="fa-solid fa-phone-slash"></i>
-                </button>
-
-                <button id="acceptCallBtn"
-                        class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition animate-bounce">
-                    <i class="fa-solid fa-phone"></i>
-                </button>
-
-            </div>
-
-            <div id="ongoingCallControls"
-                 class="flex gap-4">
-
-                <button id="toggleMicBtn"
-                        class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-microphone"></i>
-                </button>
-
-                <button id="toggleCamBtn"
-                        class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-video"></i>
-                </button>
-
-                <button id="endCallBtn"
-                        class="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
-                    <i class="fa-solid fa-phone-slash"></i>
-                </button>
-
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
+  <!-- 6. WEBRTC CALL OVERLAY (Incoming / Outgoing / Active Call Screen) -->
+  <div id="callOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-whatsapp-bg/95 backdrop-blur-md p-4">
+    <div class="w-full max-w-xl bg-whatsapp-sidebar border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-between min-h-[480px] relative overflow-hidden">
+      
+      <!-- Video Stream Canvas (Visible during Video Call) -->
+      <div id="videoStreamsContainer" class="hidden absolute inset-0 bg-black flex items-center justify-center">
+        <!-- Remote Video -->
+        <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+        <!-- Local Video Floating Preview -->
+        <video id="localVideo" autoplay playsinline muted class="absolute bottom-4 right-4 w-32 h-44 object-cover rounded-2xl border-2 border-brand-500 shadow-2xl bg-gray-900"></video>
+      </div>
 
-    <!-- =========================================================
-         MAIN APP
-         ========================================================= -->
-    <div class="flex-1 flex h-full overflow-hidden">
+      <!-- Caller Profile Info (Audio Call or Ringing State) -->
+      <div id="callHeaderInfo" class="z-10 text-center space-y-3 mt-6">
+        <img id="callUserAvatar" src="https://placehold.co/120x120/128c7e/ffffff?text=User" class="w-28 h-28 rounded-full object-cover border-4 border-brand-500 shadow-xl mx-auto" />
+        <h2 id="callUserName" class="text-2xl font-bold text-white">ইউজার</h2>
+        <p id="callStatusTxt" class="text-sm font-semibold text-brand-500 tracking-wider animate-pulse">কল হচ্ছে...</p>
+      </div>
 
-        <!-- SIDEBAR -->
-        <div id="sidebar"
-             class="w-full md:w-96 bg-wa-panel border-r border-gray-800 flex flex-col h-full z-10 transition-all duration-300">
+      <!-- Audio Element for Remote Stream -->
+      <audio id="remoteAudio" autoplay class="hidden"></audio>
 
-            <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800">
-
-                <div class="flex items-center gap-3 cursor-pointer"
-                     id="myProfileTrigger">
-
-                    <img id="myAvatarImg"
-                         src="https://placehold.co/100"
-                         class="w-10 h-10 rounded-full object-cover border border-wa-green">
-
-                    <div class="overflow-hidden">
-
-                        <h4 id="myNameTxt"
-                            class="font-bold text-sm text-white truncate">
-                            আমার নাম
-                        </h4>
-
-                        <p id="myPhoneTxt"
-                           class="text-xs text-wa-muted truncate">
-                            +8801700000000
-                        </p>
-
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-4 text-wa-muted">
-
-                    <button id="openSearchBtn"
-                            title="নতুন চ্যাট"
-                            class="hover:text-wa-green transition text-lg">
-                        <i class="fa-solid fa-message"></i>
-                    </button>
-
-                    <button id="editProfileBtn"
-                            title="প্রোফাইল এডিট"
-                            class="hover:text-wa-green transition text-lg">
-                        <i class="fa-solid fa-user-pen"></i>
-                    </button>
-
-                    <button id="logoutBtn"
-                            title="লগআউট"
-                            class="hover:text-red-400 transition text-lg">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
-
-                </div>
-            </div>
-
-            <div class="p-2 bg-wa-dark border-b border-gray-800">
-
-                <div class="relative">
-
-                    <input type="text"
-                           id="filterChatsInput"
-                           placeholder="চ্যাট খুঁজুন..."
-                           class="w-full bg-wa-panel text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none">
-
-                    <i class="fa-solid fa-magnifying-glass text-wa-muted text-xs absolute left-3 top-3"></i>
-
-                </div>
-            </div>
-
-            <div id="chatList"
-                 class="flex-1 overflow-y-auto divide-y divide-gray-800/40">
-
-                <div class="p-8 text-center text-wa-muted text-sm">
-
-                    <i class="fa-solid fa-spinner fa-spin text-2xl text-wa-green mb-2 block"></i>
-
-                    চ্যাট লোড হচ্ছে...
-                </div>
-
-            </div>
+      <!-- Calling Control Buttons -->
+      <div class="z-10 w-full flex items-center justify-center gap-6 mb-6">
+        
+        <!-- INCOMING CALL BUTTONS -->
+        <div id="incomingCallControls" class="hidden flex items-center gap-8">
+          <button onclick="rejectCall()" class="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-lg transition transform hover:scale-110" title="রিজেক্ট">
+            <i class="fa-solid fa-phone-slash"></i>
+          </button>
+          <button onclick="acceptCall()" class="w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-xl shadow-lg transition transform hover:scale-110 animate-bounce" title="রিসিভ">
+            <i class="fa-solid fa-phone"></i>
+          </button>
         </div>
 
-
-        <!-- CHAT AREA -->
-        <div id="chatArea"
-             class="hidden md:flex flex-1 bg-wa-chatbg flex-col h-full relative chat-pattern">
-
-            <!-- Welcome -->
-            <div id="noChatSelectedView"
-                 class="flex-1 flex flex-col items-center justify-center p-6 text-center">
-
-                <div class="w-24 h-24 bg-wa-panel rounded-full flex items-center justify-center text-wa-green text-5xl mb-4 border border-gray-800">
-                    <i class="fa-brands fa-whatsapp"></i>
-                </div>
-
-                <h2 class="text-2xl font-bold text-white mb-2">
-                    WhatsApp Web for Windows / Mobile
-                </h2>
-
-                <p class="text-wa-muted max-w-md text-sm">
-                    যে কারো সাথে কথা বলতে বামপাশের তালিকা থেকে চ্যাট নির্বাচন করুন অথবা নতুন নম্বর সার্চ করে চ্যাট শুরু করুন।
-                </p>
-
-                <div class="mt-6 flex items-center text-xs text-wa-muted gap-2">
-                    <i class="fa-solid fa-lock text-wa-green"></i>
-                    এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট
-                </div>
-
-            </div>
-
-
-            <!-- ACTIVE CHAT -->
-            <div id="activeChatView"
-                 class="hidden flex-1 flex flex-col h-full">
-
-                <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800 z-10">
-
-                    <div class="flex items-center gap-3">
-
-                        <button id="backToChatListBtn"
-                                class="md:hidden text-wa-muted hover:text-white mr-1">
-                            <i class="fa-solid fa-arrow-left text-lg"></i>
-                        </button>
-
-                        <img id="activeChatAvatar"
-                             src="https://placehold.co/100"
-                             class="w-10 h-10 rounded-full object-cover border border-gray-700">
-
-                        <div>
-
-                            <h3 id="activeChatName"
-                                class="font-semibold text-white leading-tight text-base">
-                                ব্যবহারকারীর নাম
-                            </h3>
-
-                            <p id="activeChatStatus"
-                               class="text-xs text-wa-green">
-                                অনলাইন
-                            </p>
-
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-5 text-wa-muted">
-
-                        <button id="startAudioCallBtn"
-                                title="অডিও কল"
-                                class="hover:text-wa-green text-lg transition">
-                            <i class="fa-solid fa-phone"></i>
-                        </button>
-
-                        <button id="startVideoCallBtn"
-                                title="ভিডিও কল"
-                                class="hover:text-wa-green text-lg transition">
-                            <i class="fa-solid fa-video"></i>
-                        </button>
-
-                    </div>
-                </div>
-
-
-                <div id="messagesContainer"
-                     class="flex-1 overflow-y-auto p-4 space-y-3">
-                </div>
-
-
-                <!-- MESSAGE INPUT -->
-                <div class="bg-wa-header p-3 flex items-center gap-2 border-t border-gray-800 relative">
-
-                    <label title="ছবি বা ভিডিও সংযুক্ত করুন"
-                           class="cursor-pointer text-wa-muted hover:text-white text-xl p-2 rounded-full hover:bg-gray-800 transition block">
-
-                        <i class="fa-solid fa-paperclip"></i>
-
-                        <input type="file"
-                               id="mediaFileInput"
-                               accept="image/*,video/*"
-                               class="hidden">
-
-                    </label>
-
-                    <div class="flex-1 relative">
-
-                        <input type="text"
-                               id="messageTextInput"
-                               placeholder="একটি বার্তা লিখুন..."
-                               class="w-full bg-wa-panel text-white placeholder-wa-muted rounded-xl px-4 py-3 text-sm focus:outline-none">
-
-                    </div>
-
-                    <div class="flex items-center gap-1">
-
-                        <button id="recordVoiceBtn"
-                                title="ভয়েস রেকর্ড করুন"
-                                class="text-wa-muted hover:text-wa-green text-xl p-2 rounded-full hover:bg-gray-800 transition">
-
-                            <i class="fa-solid fa-microphone"></i>
-
-                        </button>
-
-                        <button id="sendMessageBtn"
-                                title="পাঠান"
-                                class="bg-wa-green hover:bg-opacity-90 text-white rounded-full w-10 h-10 flex items-center justify-center shadow transition">
-
-                            <i class="fa-solid fa-paper-plane text-sm"></i>
-
-                        </button>
-
-                    </div>
-
-
-                    <!-- VOICE RECORDING -->
-                    <div id="voiceRecordingOverlay"
-                         class="absolute inset-0 bg-wa-header px-4 flex items-center justify-between hidden z-20">
-
-                        <div class="flex items-center gap-3 text-red-500 animate-pulse">
-
-                            <i class="fa-solid fa-circle text-xs"></i>
-
-                            <span class="font-medium text-sm text-white">
-                                ভয়েস মেসেজ রেকর্ড হচ্ছে...
-                            </span>
-
-                            <span id="recordTimer"
-                                  class="font-mono text-sm text-wa-muted">
-                                00:00
-                            </span>
-
-                        </div>
-
-                        <div class="flex items-center gap-3">
-
-                            <button id="cancelRecordBtn"
-                                    class="text-gray-400 hover:text-red-400 p-2">
-                                <i class="fa-solid fa-trash-can text-lg"></i>
-                            </button>
-
-                            <button id="sendVoiceRecordBtn"
-                                    class="bg-wa-green text-white p-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2">
-
-                                <span>পাঠান</span>
-
-                                <i class="fa-solid fa-paper-plane"></i>
-
-                            </button>
-
-                        </div>
-                    </div>
-
-                </div>
-            </div>
+        <!-- ACTIVE / OUTGOING CALL CONTROLS -->
+        <div id="activeCallControls" class="flex items-center gap-4">
+          <button id="toggleMicBtn" onclick="toggleMicrophone()" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg transition">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+          <button id="toggleCamBtn" onclick="toggleCamera()" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg transition">
+            <i class="fa-solid fa-video"></i>
+          </button>
+          <button onclick="endCall()" class="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-lg transition transform hover:scale-105" title="কল শেষ করুন">
+            <i class="fa-solid fa-phone-slash"></i>
+          </button>
         </div>
+
+      </div>
+
     </div>
-</div>
+  </div>
 
-
-<!-- =========================================================
-     FIREBASE
-     ========================================================= -->
-<script type="module">
-
-    import { initializeApp }
-        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-
-    import {
-        getAuth,
-        RecaptchaVerifier,
-        signInWithPhoneNumber,
-        GoogleAuthProvider,
-        signInWithRedirect,
-        signOut,
-        onAuthStateChanged,
-        setPersistence,
-        browserLocalPersistence,
-        getRedirectResult
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-    import {
-        getDatabase,
-        ref,
-        set,
-        push,
-        onValue,
-        get,
-        update,
-        remove,
-        off
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-
-    /* =========================================================
-       FIREBASE CONFIG
-       ========================================================= */
-
+  <script>
+    // Provided Firebase Config
     const firebaseConfig = {
-        apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
-        authDomain: "ern-93752.firebaseapp.com",
-        databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
-        projectId: "ern-93752",
-        storageBucket: "ern-93752.firebasestorage.app",
-        messagingSenderId: "159583001756",
-        appId: "1:159583001756:web:c7c8380f88da94ba97e159",
-        measurementId: "G-S8FXSQMLR3"
+      apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
+      authDomain: "ern-93752.firebaseapp.com",
+      databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
+      projectId: "ern-93752",
+      storageBucket: "ern-93752.firebasestorage.app",
+      messagingSenderId: "159583001756",
+      appId: "1:159583001756:web:c7c8380f88da94ba97e159",
+      measurementId: "G-S8FXSQMLR3"
     };
 
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const storage = firebase.storage();
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-
-    /* =========================================================
-       AUTH PERSISTENCE
-       ========================================================= */
-
-    const authPersistenceReady =
-        setPersistence(auth, browserLocalPersistence);
-
-
-    /* =========================================================
-       GLOBAL STATE
-       ========================================================= */
-
+    // App State Variables
     let currentUser = null;
     let currentUserData = null;
-    let activeChatUser = null;
+    let activeChatTarget = null; // Target user object
+    let activeChatId = null;
+    let confirmationResult = null; // For Phone OTP
+    let recaptchaVerifier = null;
 
-    let confirmationResult = null;
+    // WebRTC Calling State Variables
+    let peerConnection = null;
+    let localStream = null;
+    let currentCallId = null;
+    let isCaller = false;
+    let callType = 'audio'; // 'audio' or 'video'
+    let micMuted = false;
+    let camOff = false;
 
+    // Media Recording State
     let mediaRecorder = null;
     let audioChunks = [];
     let recordTimerInterval = null;
-
-    let localStream = null;
-    let peerConnection = null;
-    let activeCallId = null;
-
-    let initializedUserUid = null;
-
-    let chatsListenerRef = null;
-    let messagesListenerRef = null;
-    let incomingCallListenerRef = null;
-
-    let authObserverStarted = false;
-
-
-    /* =========================================================
-       WEBRTC
-       ========================================================= */
-
-    const rtcConfig = {
-        iceServers: [
-            {
-                urls: "stun:stun.l.google.com:19302"
-            },
-            {
-                urls: "stun:stun1.l.google.com:19302"
-            }
-        ]
-    };
-
-
-    /* =========================================================
-       DOM
-       ========================================================= */
-
-    const authScreen =
-        document.getElementById("authScreen");
-
-    const authLoadingState =
-        document.getElementById("authLoadingState");
-
-    const loginState =
-        document.getElementById("loginState");
-
-    const authErrorText =
-        document.getElementById("authErrorText");
-
-    const phoneTabBtn =
-        document.getElementById("phoneTabBtn");
-
-    const googleTabBtn =
-        document.getElementById("googleTabBtn");
-
-    const phoneAuthForm =
-        document.getElementById("phoneAuthForm");
-
-    const googleAuthForm =
-        document.getElementById("googleAuthForm");
-
-    const phoneInputGroup =
-        document.getElementById("phoneInputGroup");
-
-    const otpInputGroup =
-        document.getElementById("otpInputGroup");
-
-    const phoneNumberInput =
-        document.getElementById("phoneNumberInput");
-
-    const sendOtpBtn =
-        document.getElementById("sendOtpBtn");
-
-    const otpCodeInput =
-        document.getElementById("otpCodeInput");
-
-    const verifyOtpBtn =
-        document.getElementById("verifyOtpBtn");
-
-    const googleSignInBtn =
-        document.getElementById("googleSignInBtn");
-
-
-    /* =========================================================
-       AUTH UI HELPERS
-       ========================================================= */
-
-    function showAuthLoading() {
-
-        authScreen.classList.remove("hidden");
-
-        authLoadingState.classList.remove("hidden");
-
-        loginState.classList.add("hidden");
-
-        authErrorText.classList.add("hidden");
-    }
-
-
-    function showLoginScreen() {
-
-        authScreen.classList.remove("hidden");
-
-        authLoadingState.classList.add("hidden");
-
-        loginState.classList.remove("hidden");
-    }
-
-
-    function hideLoginScreen() {
-
-        authScreen.classList.add("hidden");
-    }
-
-
-    function showAuthError(message) {
-
-        authErrorText.innerText = message;
-
-        authErrorText.classList.remove("hidden");
-    }
-
-
-    /* =========================================================
-       RECAPTCHA
-       ========================================================= */
-
-    function clearRecaptcha() {
-
-        try {
-
-            if (window.recaptchaVerifier) {
-
-                window.recaptchaVerifier.clear();
-
-            }
-
-        } catch (e) {
-
-            console.warn("reCAPTCHA clear error:", e);
-
-        }
-
-        window.recaptchaVerifier = null;
-
-        const container =
-            document.getElementById("recaptcha-container");
-
-        if (container) {
-            container.innerHTML = "";
-        }
-    }
-
-
-    function setupRecaptcha() {
-
-        if (window.recaptchaVerifier) {
-            return window.recaptchaVerifier;
-        }
-
-        window.recaptchaVerifier =
-            new RecaptchaVerifier(
-                auth,
-                "recaptcha-container",
-                {
-                    size: "normal",
-
-                    callback: () => {
-                        console.log("reCAPTCHA solved");
-                    },
-
-                    "expired-callback": () => {
-                        clearRecaptcha();
-                    }
-                }
-            );
-
-        return window.recaptchaVerifier;
-    }
-
-
-    /* =========================================================
-       AUTH TABS
-       ========================================================= */
-
-    phoneTabBtn.addEventListener("click", () => {
-
-        phoneTabBtn.className =
-            "flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition";
-
-        googleTabBtn.className =
-            "flex-1 py-2 text-wa-muted hover:text-white font-semibold transition";
-
-        phoneAuthForm.classList.remove("hidden");
-
-        googleAuthForm.classList.add("hidden");
-
-        authErrorText.classList.add("hidden");
-    });
-
-
-    googleTabBtn.addEventListener("click", () => {
-
-        googleTabBtn.className =
-            "flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition";
-
-        phoneTabBtn.className =
-            "flex-1 py-2 text-wa-muted hover:text-white font-semibold transition";
-
-        googleAuthForm.classList.remove("hidden");
-
-        phoneAuthForm.classList.add("hidden");
-
-        authErrorText.classList.add("hidden");
-    });
-
-
-    /* =========================================================
-       SEND OTP
-       ========================================================= */
-
-    sendOtpBtn.addEventListener("click", async () => {
-
-        const phoneNumber =
-            phoneNumberInput.value.trim();
-
-        if (!phoneNumber || phoneNumber.length < 10) {
-
-            showAuthError(
-                "দয়া করে একটি সঠিক ফোন নম্বর লিখুন। যেমন: +8801700000000"
-            );
-
-            return;
-        }
-
-        try {
-
-            await authPersistenceReady;
-
-            authErrorText.classList.add("hidden");
-
-            const appVerifier =
-                setupRecaptcha();
-
-            sendOtpBtn.disabled = true;
-
-            sendOtpBtn.innerHTML =
-                `<i class="fa-solid fa-spinner fa-spin"></i>
-                 <span>পাঠানো হচ্ছে...</span>`;
-
-            confirmationResult =
-                await signInWithPhoneNumber(
-                    auth,
-                    phoneNumber,
-                    appVerifier
-                );
-
-            phoneInputGroup.classList.add("hidden");
-
-            otpInputGroup.classList.remove("hidden");
-
-            sendOtpBtn.disabled = false;
-
-            sendOtpBtn.innerHTML =
-                `<span>OTP কোড পাঠান</span>
-                 <i class="fa-solid fa-paper-plane text-sm"></i>`;
-
-        } catch (error) {
-
-            console.error(
-                "Phone Auth Error:",
-                error
-            );
-
-            clearRecaptcha();
-
-            sendOtpBtn.disabled = false;
-
-            sendOtpBtn.innerHTML =
-                `<span>OTP কোড পাঠান</span>
-                 <i class="fa-solid fa-paper-plane text-sm"></i>`;
-
-            showAuthError(
-                "OTP পাঠাতে ব্যর্থ: " +
-                (error.message || "অজানা সমস্যা")
-            );
-        }
-    });
-
-
-    /* =========================================================
-       VERIFY OTP
-       ========================================================= */
-
-    verifyOtpBtn.addEventListener("click", async () => {
-
-        const code =
-            otpCodeInput.value.trim();
-
-        if (!code || code.length !== 6) {
-
-            showAuthError(
-                "দয়া করে ৬ ডিজিটের OTP কোড দিন।"
-            );
-
-            return;
-        }
-
-        if (!confirmationResult) {
-
-            showAuthError(
-                "OTP সেশন পাওয়া যায়নি। আবার OTP পাঠান।"
-            );
-
-            return;
-        }
-
-        try {
-
-            verifyOtpBtn.disabled = true;
-
-            verifyOtpBtn.innerText =
-                "যাচাই করা হচ্ছে...";
-
-            await confirmationResult.confirm(code);
-
-            /*
-             * খুব গুরুত্বপূর্ণ:
-             *
-             * এখানে checkAndSetupUserProfile()
-             * call করা হচ্ছে না।
-             *
-             * Firebase onAuthStateChanged()
-             * নিজে থেকেই authenticated user ধরবে।
-             */
-
-        } catch (error) {
-
-            console.error(
-                "OTP verification error:",
-                error
-            );
-
-            verifyOtpBtn.disabled = false;
-
-            verifyOtpBtn.innerText =
-                "যাচাই করুন ও লগইন করুন";
-
-            showAuthError(
-                "OTP যাচাই ব্যর্থ: " +
-                (error.message || "ভুল OTP")
-            );
-        }
-    });
-
-
-    /* =========================================================
-       GOOGLE LOGIN
-       ========================================================= */
-
-    googleSignInBtn.addEventListener(
-        "click",
-        async () => {
-
-            try {
-
-                await authPersistenceReady;
-
-                const provider =
-                    new GoogleAuthProvider();
-
-                await signInWithRedirect(
-                    auth,
-                    provider
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Google Sign-In Error:",
-                    error
-                );
-
-                showAuthError(
-                    "Google সাইন-ইন করতে ব্যর্থ: " +
-                    (error.message || "অজানা সমস্যা")
-                );
-            }
-        }
-    );
-
-
-    /* =========================================================
-       PROFILE
-       ========================================================= */
-
-    async function checkAndSetupUserProfile(user) {
-
-        /*
-         * FIX:
-         * এখানে { ঠিকভাবে আছে।
-         * আগের কোডে এই function declaration-এর পরে
-         * { missing ছিল।
-         */
-
-        if (!user) {
-            return;
-        }
-
-        const userRef =
-            ref(db, "users/" + user.uid);
-
-        const snapshot =
-            await get(userRef);
-
-        if (snapshot.exists()) {
-
-            currentUserData =
-                snapshot.val();
-
-            updateUserUI();
-
+    let recordSeconds = 0;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Setup Recaptcha for Phone Auth
+      recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {}
+      });
+
+      // Request browser notification permissions
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
+
+      // 17. Robust Authentication Persistence Listener
+      auth.onAuthStateChanged(async (user) => {
+        const sessionLoader = document.getElementById('sessionLoadingScreen');
+        const authScreen = document.getElementById('authScreen');
+        const mainApp = document.getElementById('mainApp');
+
+        if (user) {
+          currentUser = user;
+          try {
+            // Load or Sync User Profile in Database
+            await syncUserProfileData();
+            // Setup Presence Listener
+            setupPresenceSystem();
+            // Load Chat List & Listeners
+            listenToChatList();
+            listenForIncomingCalls();
+
+            // Render UI
+            sessionLoader.classList.add('hidden');
+            authScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+          } catch (err) {
+            console.error("Profile sync error:", err);
+            // Do NOT log out user on temporary network glitch
+            sessionLoader.classList.add('hidden');
+            authScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+          }
         } else {
-
-            currentUserData = {
-
-                uid: user.uid,
-
-                name:
-                    user.displayName ||
-                    "ইউজার " +
-                    user.uid.substring(0, 4),
-
-                phone:
-                    user.phoneNumber ||
-                    "",
-
-                photo:
-                    user.photoURL ||
-                    "https://placehold.co/150x150/202c33/00a884?text=User",
-
-                status:
-                    "Hey there! I am using WhatsApp."
-            };
-
-            await set(
-                userRef,
-                currentUserData
-            );
-
-            updateUserUI();
-
-            openProfileModal();
+          currentUser = null;
+          currentUserData = null;
+          sessionLoader.classList.add('hidden');
+          mainApp.classList.add('hidden');
+          authScreen.classList.remove('hidden');
         }
+      });
+    });
 
-        /*
-         * Listener শুধু একবার শুরু হবে।
-         */
-        startRealtimeListeners();
+    function switchAuthTab(type) {
+      const phoneBtn = document.getElementById('tabPhoneBtn');
+      const googleBtn = document.getElementById('tabGoogleBtn');
+      const phoneSec = document.getElementById('phoneAuthSection');
+      const googleSec = document.getElementById('googleAuthSection');
+
+      if (type === 'phone') {
+        phoneBtn.className = "flex-1 pb-3 text-center border-b-2 border-brand-500 text-brand-500 font-semibold transition";
+        googleBtn.className = "flex-1 pb-3 text-center border-b-2 border-transparent text-gray-400 hover:text-white transition";
+        phoneSec.classList.remove('hidden');
+        googleSec.classList.add('hidden');
+      } else {
+        googleBtn.className = "flex-1 pb-3 text-center border-b-2 border-brand-500 text-brand-500 font-semibold transition";
+        phoneBtn.className = "flex-1 pb-3 text-center border-b-2 border-transparent text-gray-400 hover:text-white transition";
+        googleSec.classList.remove('hidden');
+        phoneSec.classList.add('hidden');
+      }
     }
 
-
-    function updateUserUI() {
-
-        if (!currentUserData) {
-            return;
-        }
-
-        document.getElementById("myNameTxt").innerText =
-            currentUserData.name ||
-            "আমার নাম";
-
-        document.getElementById("myPhoneTxt").innerText =
-            currentUserData.phone ||
-            "";
-
-        document.getElementById("myAvatarImg").src =
-            currentUserData.photo ||
-            "https://placehold.co/100";
+    function showAuthAlert(msg, isError = true) {
+      const alertBox = document.getElementById('authAlert');
+      alertBox.classList.remove('hidden', 'bg-red-500/10', 'border-red-500', 'text-red-400', 'bg-green-500/10', 'border-green-500', 'text-green-400');
+      if (isError) {
+        alertBox.classList.add('bg-red-500/10', 'border-red-500', 'text-red-400');
+      } else {
+        alertBox.classList.add('bg-green-500/10', 'border-green-500', 'text-green-400');
+      }
+      alertBox.innerText = msg;
     }
 
+    async function sendOtpCode() {
+      const phoneVal = document.getElementById('phoneNumberInput').value.trim();
+      if (!phoneVal || phoneVal.length < 10) {
+        showAuthAlert('সঠিক ফোন নম্বর প্রদান করুন (যেমন: 1700000000)');
+        return;
+      }
+      const fullPhoneNumber = '+880' + phoneVal;
+      showAuthAlert('OTP কোড পাঠানো হচ্ছে...', false);
 
-    /* =========================================================
-       PROFILE MODAL
-       ========================================================= */
+      try {
+        confirmationResult = await auth.signInWithPhoneNumber(fullPhoneNumber, recaptchaVerifier);
+        document.getElementById('phoneStep1').classList.add('hidden');
+        document.getElementById('phoneStep2').classList.remove('hidden');
+        showAuthAlert('আপনার মোবাইল নম্বরে OTP কোড পাঠানো হয়েছে!', false);
+      } catch (error) {
+        console.error("OTP Error:", error);
+        showAuthAlert('OTP পাঠাতে ব্যর্থ: ' + error.message);
+      }
+    }
 
-    const profileModal =
-        document.getElementById("profileModal");
+    async function verifyOtpCode() {
+      const code = document.getElementById('otpCodeInput').value.trim();
+      if (!code || code.length < 6) {
+        showAuthAlert('৬ সংখ্যার সঠিক OTP টাইপ করুন');
+        return;
+      }
+      try {
+        await confirmationResult.confirm(code);
+        // Auth state listener handles redirect
+      } catch (error) {
+        console.error("Verify Error:", error);
+        showAuthAlert('ভুল OTP কোড! আবার চেষ্টা করুন।');
+      }
+    }
 
+    function resetPhoneAuthStep() {
+      document.getElementById('phoneStep2').classList.add('hidden');
+      document.getElementById('phoneStep1').classList.remove('hidden');
+      document.getElementById('authAlert').classList.add('hidden');
+    }
+
+    async function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (error) {
+        console.error("Google Login Error:", error);
+        showAuthAlert('গুগল লগইন ব্যর্থ: ' + error.message);
+      }
+    }
+
+    function handleLogout() {
+      if (currentUser) {
+        db.ref(`users/${currentUser.uid}/status`).set('offline');
+        db.ref(`users/${currentUser.uid}/lastSeen`).set(firebase.database.ServerValue.TIMESTAMP);
+      }
+      auth.signOut();
+    }
+
+    async function syncUserProfileData() {
+      if (!currentUser) return;
+      const userRef = db.ref(`users/${currentUser.uid}`);
+      const snapshot = await userRef.once('value');
+      
+      let val = snapshot.val();
+      if (!val) {
+        val = {
+          uid: currentUser.uid,
+          name: currentUser.displayName || currentUser.phoneNumber || 'ইউজার',
+          phone: currentUser.phoneNumber || '',
+          photoURL: currentUser.photoURL || `https://placehold.co/100x100/128c7e/ffffff?text=${(currentUser.displayName || 'U').charAt(0)}`,
+          status: 'অনলাইনে আছেন',
+          bio: 'সাফিন ওয়েব ব্যবহার করছি...',
+          lastSeen: firebase.database.ServerValue.TIMESTAMP
+        };
+        await userRef.set(val);
+      }
+      currentUserData = val;
+
+      // Update Top Bar UI
+      document.getElementById('myNameTxt').innerText = val.name;
+      document.getElementById('myStatusTxt').innerText = val.bio || 'অনলাইনে আছেন';
+      if (val.photoURL) {
+        document.getElementById('myAvatarImg').src = val.photoURL;
+      }
+    }
+
+    function setupPresenceSystem() {
+      if (!currentUser) return;
+      const myPresenceRef = db.ref(`users/${currentUser.uid}/status`);
+      const myLastSeenRef = db.ref(`users/${currentUser.uid}/lastSeen`);
+      const connectedRef = db.ref('.info/connected');
+
+      connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+          myPresenceRef.onDisconnect().set('offline');
+          myLastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+          myPresenceRef.set('online');
+        }
+      });
+    }
 
     function openProfileModal() {
-
-        if (!currentUserData) {
-            return;
-        }
-
-        document.getElementById(
-            "profileNameInput"
-        ).value =
-            currentUserData.name || "";
-
-        document.getElementById(
-            "profilePhoneInput"
-        ).value =
-            currentUserData.phone || "";
-
-        document.getElementById(
-            "profileStatusInput"
-        ).value =
-            currentUserData.status || "";
-
-        document.getElementById(
-            "profileAvatarPreview"
-        ).src =
-            currentUserData.photo ||
-            "https://placehold.co/150";
-
-        profileModal.classList.remove("hidden");
+      if (!currentUserData) return;
+      document.getElementById('editNameInput').value = currentUserData.name || '';
+      document.getElementById('editStatusInput').value = currentUserData.bio || '';
+      document.getElementById('editPhoneInput').value = currentUserData.phone || currentUser.uid;
+      document.getElementById('editProfilePreview').src = currentUserData.photoURL || 'https://placehold.co/100x100/128c7e/ffffff?text=User';
+      document.getElementById('profileModal').classList.remove('hidden');
     }
 
-
-    document.getElementById(
-        "editProfileBtn"
-    ).addEventListener(
-        "click",
-        openProfileModal
-    );
-
-
-    document.getElementById(
-        "myProfileTrigger"
-    ).addEventListener(
-        "click",
-        openProfileModal
-    );
-
-
-    document.getElementById(
-        "closeProfileBtn"
-    ).addEventListener(
-        "click",
-        () => {
-            profileModal.classList.add("hidden");
-        }
-    );
-
-
-    /* Avatar */
-    document.getElementById(
-        "avatarFileInput"
-    ).addEventListener(
-        "change",
-        (e) => {
-
-            const file =
-                e.target.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            const reader =
-                new FileReader();
-
-            reader.onload = (evt) => {
-
-                document.getElementById(
-                    "profileAvatarPreview"
-                ).src =
-                    evt.target.result;
-            };
-
-            reader.readAsDataURL(file);
-        }
-    );
-
-
-    /* Save profile */
-    document.getElementById(
-        "saveProfileBtn"
-    ).addEventListener(
-        "click",
-        async () => {
-
-            if (!currentUser) {
-                return;
-            }
-
-            const name =
-                document.getElementById(
-                    "profileNameInput"
-                ).value.trim();
-
-            const phone =
-                document.getElementById(
-                    "profilePhoneInput"
-                ).value.trim();
-
-            const status =
-                document.getElementById(
-                    "profileStatusInput"
-                ).value.trim();
-
-            const photo =
-                document.getElementById(
-                    "profileAvatarPreview"
-                ).src;
-
-            if (!name) {
-
-                alert(
-                    "দয়া করে নাম প্রদান করুন"
-                );
-
-                return;
-            }
-
-            try {
-
-                currentUserData = {
-                    ...currentUserData,
-
-                    uid: currentUser.uid,
-
-                    name,
-                    phone,
-                    status,
-                    photo
-                };
-
-                await set(
-                    ref(
-                        db,
-                        "users/" +
-                        currentUser.uid
-                    ),
-                    currentUserData
-                );
-
-                updateUserUI();
-
-                profileModal.classList.add(
-                    "hidden"
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Profile save error:",
-                    error
-                );
-
-                alert(
-                    "প্রোফাইল সেভ করতে সমস্যা হয়েছে: " +
-                    error.message
-                );
-            }
-        }
-    );
-
-
-    /* =========================================================
-       LOGOUT
-       ========================================================= */
-
-    document.getElementById(
-        "logoutBtn"
-    ).addEventListener(
-        "click",
-        async () => {
-
-            if (!confirm(
-                "আপনি কি লগআউট করতে চান?"
-            )) {
-                return;
-            }
-
-            try {
-
-                stopAllRealtimeListeners();
-
-                await signOut(auth);
-
-                /*
-                 * এখানে location.reload() প্রয়োজন নেই।
-                 * onAuthStateChanged() নিজেই login screen দেখাবে।
-                 */
-
-            } catch (error) {
-
-                alert(
-                    "লগআউট করতে সমস্যা হয়েছে: " +
-                    error.message
-                );
-            }
-        }
-    );
-
-
-    /* =========================================================
-       SEARCH
-       ========================================================= */
-
-    const searchModal =
-        document.getElementById(
-            "searchModal"
-        );
-
-    const userSearchInput =
-        document.getElementById(
-            "userSearchInput"
-        );
-
-    const searchResultsList =
-        document.getElementById(
-            "searchResultsList"
-        );
-
-
-    document.getElementById(
-        "openSearchBtn"
-    ).addEventListener(
-        "click",
-        () => {
-
-            searchModal.classList.remove(
-                "hidden"
-            );
-
-            userSearchInput.focus();
-        }
-    );
-
-
-    document.getElementById(
-        "closeSearchBtn"
-    ).addEventListener(
-        "click",
-        () => {
-            searchModal.classList.add(
-                "hidden"
-            );
-        }
-    );
-
-
-    let searchTimeout = null;
-
-
-    userSearchInput.addEventListener(
-        "input",
-        () => {
-
-            clearTimeout(searchTimeout);
-
-            searchTimeout =
-                setTimeout(
-                    performUserSearch,
-                    250
-                );
-        }
-    );
-
-
-    async function performUserSearch() {
-
-        const queryText =
-            userSearchInput.value
-                .trim()
-                .toLowerCase();
-
-        if (!queryText) {
-
-            searchResultsList.innerHTML =
-                `<p class="text-center text-wa-muted text-sm py-4">
-                    সার্চ করার জন্য উপরে ফোন নম্বর বা নাম লিখুন
-                </p>`;
-
-            return;
-        }
-
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    let selectedProfileBlob = null;
+    function previewProfilePhoto(e) {
+      const file = e.target.files[0];
+      if (file) {
+        selectedProfileBlob = file;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          document.getElementById('editProfilePreview').src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function saveProfileChanges() {
+      const newName = document.getElementById('editNameInput').value.trim();
+      const newBio = document.getElementById('editStatusInput').value.trim();
+      if (!newName) return alert('দয়া করে নাম প্রদান করুন');
+
+      let photoURL = currentUserData.photoURL;
+
+      if (selectedProfileBlob) {
         try {
+          const storageRef = storage.ref(`profile_photos/${currentUser.uid}`);
+          await storageRef.put(selectedProfileBlob);
+          photoURL = await storageRef.getDownloadURL();
+        } catch (err) {
+          console.warn("Storage upload failed, fallback:", err);
+        }
+      }
 
-            const usersRef =
-                ref(db, "users");
+      const updates = {
+        name: newName,
+        bio: newBio,
+        photoURL: photoURL
+      };
 
-            const snapshot =
-                await get(usersRef);
+      await db.ref(`users/${currentUser.uid}`).update(updates);
+      await syncUserProfileData();
+      closeProfileModal();
+      alert('প্রোফাইল সফলভাবে আপডেট করা হয়েছে!');
+    }
 
-            if (!snapshot.exists()) {
+    function openNewChatModal() {
+      document.getElementById('userSearchQuery').value = '';
+      document.getElementById('searchResultsList').innerHTML = '<p class="text-xs text-center text-gray-500 py-4">উপরে নাম বা ফোন নম্বর টাইপ করুন।</p>';
+      document.getElementById('newChatModal').classList.remove('hidden');
+    }
 
-                searchResultsList.innerHTML =
-                    `<p class="text-center text-wa-muted text-sm py-4">
-                        কোনো ব্যবহারকারী পাওয়া যায়নি
-                    </p>`;
+    function closeNewChatModal() {
+      document.getElementById('newChatModal').classList.add('hidden');
+    }
 
-                return;
+    async function searchUsersInDb() {
+      const query = document.getElementById('userSearchQuery').value.trim().toLowerCase();
+      const listContainer = document.getElementById('searchResultsList');
+
+      if (!query) {
+        listContainer.innerHTML = '<p class="text-xs text-center text-gray-500 py-4">উপরে নাম বা ফোন নম্বর টাইপ করুন।</p>';
+        return;
+      }
+
+      const snapshot = await db.ref('users').once('value');
+      const usersVal = snapshot.val();
+      listContainer.innerHTML = '';
+
+      let found = false;
+      if (usersVal) {
+        Object.keys(usersVal).forEach(uid => {
+          if (uid !== currentUser.uid) {
+            const u = usersVal[uid];
+            const nameMatch = u.name && u.name.toLowerCase().includes(query);
+            const phoneMatch = u.phone && u.phone.includes(query);
+
+            if (nameMatch || phoneMatch) {
+              found = true;
+              const item = document.createElement('div');
+              item.className = 'flex items-center justify-between p-3 hover:bg-whatsapp-hover rounded-xl cursor-pointer transition';
+              item.onclick = () => selectUserToChat(u);
+              item.innerHTML = `
+                <div class="flex items-center gap-3">
+                  <img src="${u.photoURL || 'https://placehold.co/100x100/128c7e/ffffff?text=User'}" class="w-10 h-10 rounded-full object-cover border border-gray-700" />
+                  <div>
+                    <h4 class="text-sm font-semibold text-white">${u.name}</h4>
+                    <p class="text-xs text-gray-400">${u.phone || u.bio || 'সাফিন ওয়েব ইউজার'}</p>
+                  </div>
+                </div>
+                <button class="bg-brand-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow">চ্যাট করুন</button>
+              `;
+              listContainer.appendChild(item);
             }
+          }
+        });
+      }
 
-            const users =
-                snapshot.val();
+      if (!found) {
+        listContainer.innerHTML = '<p class="text-xs text-center text-gray-500 py-4">কোনো ইউজার পাওয়া যায়নি।</p>';
+      }
+    }
 
-            searchResultsList.innerHTML = "";
+    function selectUserToChat(targetUser) {
+      activeChatTarget = targetUser;
+      // ChatId deterministic key
+      activeChatId = [currentUser.uid, targetUser.uid].sort().join('_');
 
-            let count = 0;
+      closeNewChatModal();
 
-            Object.keys(users).forEach(
-                uid => {
+      // UI Switch to Active Chat
+      document.getElementById('noChatSelected').classList.add('hidden');
+      document.getElementById('activeChatBox').classList.remove('hidden');
 
-                    if (
-                        currentUser &&
-                        uid === currentUser.uid
-                    ) {
-                        return;
-                    }
+      if (window.innerWidth < 768) {
+        document.getElementById('leftSidebar').classList.add('hidden');
+        document.getElementById('chatMainArea').classList.remove('hidden');
+      }
 
-                    const u =
-                        users[uid];
+      // Update Header Info
+      document.getElementById('targetNameTxt').innerText = targetUser.name;
+      document.getElementById('targetAvatarImg').src = targetUser.photoURL || 'https://placehold.co/100x100/128c7e/ffffff?text=User';
 
-                    const name =
-                        String(
-                            u.name || ""
-                        ).toLowerCase();
-
-                    const phone =
-                        String(
-                            u.phone || ""
-                        );
-
-                    if (
-                        name.includes(queryText) ||
-                        phone.includes(queryText)
-                    ) {
-
-                        count++;
-
-                        const item =
-                            document.createElement(
-                                "div"
-                            );
-
-                        item.className =
-                            "flex items-center justify-between p-3 hover:bg-wa-dark rounded-xl cursor-pointer transition border border-transparent hover:border-gray-800";
-
-                        item.innerHTML = `
-
-                            <div class="flex items-center gap-3">
-
-                                <img
-                                    src="${u.photo || "https://placehold.co/100"}"
-                                    class="w-10 h-10 rounded-full object-cover">
-
-                                <div>
-
-                                    <h4 class="font-semibold text-white text-sm">
-                                        ${escapeHtml(u.name || "নাম নেই")}
-                                    </h4>
-
-                                    <p class="text-xs text-wa-muted">
-                                        ${escapeHtml(u.phone || "নম্বর নেই")}
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                            <button
-                                class="bg-wa-green text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-opacity-90">
-                                চ্যাট করুন
-                            </button>
-                        `;
-
-                        item.addEventListener(
-                            "click",
-                            () => {
-
-                                selectChatUser(u);
-
-                                searchModal.classList.add(
-                                    "hidden"
-                                );
-
-                                userSearchInput.value =
-                                    "";
-                            }
-                        );
-
-                        searchResultsList.appendChild(
-                            item
-                        );
-                    }
-                }
-            );
-
-            if (count === 0) {
-
-                searchResultsList.innerHTML =
-                    `<p class="text-center text-wa-muted text-sm py-4">
-                        কোনো ব্যবহারকারী পাওয়া যায়নি
-                    </p>`;
-            }
-
-        } catch (error) {
-
-            console.error(
-                "User search error:",
-                error
-            );
-
-            searchResultsList.innerHTML =
-                `<p class="text-center text-red-400 text-sm py-4">
-                    সার্চ করতে সমস্যা হয়েছে
-                </p>`;
+      // Presence Monitor for Target User
+      db.ref(`users/${targetUser.uid}`).on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+          const statusDot = document.getElementById('targetPresenceDot');
+          const statusTxt = document.getElementById('targetStatusTxt');
+          if (data.status === 'online') {
+            statusDot.className = "absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-whatsapp-header rounded-full";
+            statusTxt.innerText = "অনলাইনে আছেন";
+          } else {
+            statusDot.className = "absolute bottom-0 right-0 w-3 h-3 bg-gray-500 border-2 border-whatsapp-header rounded-full";
+            statusTxt.innerText = data.lastSeen ? `লাস্ট সিন ${new Date(data.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : "অফলাইন";
+          }
         }
+      });
+
+      // Clear & Load Messages Stream
+      loadRealtimeMessages();
     }
 
-
-    /* =========================================================
-       HTML ESCAPE
-       ========================================================= */
-
-    function escapeHtml(value) {
-
-        return String(value)
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
+    function closeMobileChat() {
+      document.getElementById('leftSidebar').classList.remove('hidden');
+      document.getElementById('chatMainArea').classList.add('hidden');
     }
 
+    function listenToChatList() {
+      if (!currentUser) return;
+      const userChatsRef = db.ref(`user_chats/${currentUser.uid}`);
+      userChatsRef.on('value', async (snap) => {
+        const chatsObj = snap.val();
+        const container = document.getElementById('chatListContainer');
+        const emptyState = document.getElementById('emptyChatList');
 
-    /* =========================================================
-       REALTIME LISTENERS
-       ========================================================= */
-
-    function startRealtimeListeners() {
-
-        if (!currentUser) {
-            return;
+        if (!chatsObj || Object.keys(chatsObj).length === 0) {
+          container.innerHTML = '';
+          container.appendChild(emptyState);
+          return;
         }
 
-        /*
-         * duplicate listener আটকানো
-         */
-
-        stopChatListListener();
-
-        stopIncomingCallListener();
-
-        loadRecentChats();
-
-        listenForIncomingCalls();
-    }
-
-
-    function stopAllRealtimeListeners() {
-
-        stopChatListListener();
-
-        stopMessagesListener();
-
-        stopIncomingCallListener();
-    }
-
-
-    function stopChatListListener() {
-
-        if (chatsListenerRef) {
-
-            off(chatsListenerRef);
-
-            chatsListenerRef = null;
-        }
-    }
-
-
-    function stopMessagesListener() {
-
-        if (messagesListenerRef) {
-
-            off(messagesListenerRef);
-
-            messagesListenerRef = null;
-        }
-    }
-
-
-    function stopIncomingCallListener() {
-
-        if (incomingCallListenerRef) {
-
-            off(incomingCallListenerRef);
-
-            incomingCallListenerRef = null;
-        }
-    }
-
-
-    /* =========================================================
-       RECENT CHATS
-       ========================================================= */
-
-    function loadRecentChats() {
-
-        if (!currentUser) {
-            return;
-        }
-
-        chatsListenerRef =
-            ref(
-                db,
-                `user_chats/${currentUser.uid}`
-            );
-
-        onValue(
-            chatsListenerRef,
-            async (snapshot) => {
-
-                const chatList =
-                    document.getElementById(
-                        "chatList"
-                    );
-
-                chatList.innerHTML = "";
-
-                if (!snapshot.exists()) {
-
-                    chatList.innerHTML =
-                        `<p class="text-center text-wa-muted text-sm p-6">
-                            আপনার কোনো চ্যাট নেই। নতুন চ্যাট চালু করুন!
-                        </p>`;
-
-                    return;
-                }
-
-                const chatsData =
-                    snapshot.val();
-
-                const uids =
-                    Object.keys(chatsData);
-
-                for (
-                    const peerUid of uids
-                ) {
-
-                    try {
-
-                        const peerUserSnap =
-                            await get(
-                                ref(
-                                    db,
-                                    `users/${peerUid}`
-                                )
-                            );
-
-                        if (!peerUserSnap.exists()) {
-                            continue;
-                        }
-
-                        const peer =
-                            peerUserSnap.val();
-
-                        const lastMsg =
-                            chatsData[peerUid]
-                                .lastMessage ||
-                            "নতুন বার্তা";
-
-                        const timestamp =
-                            chatsData[peerUid]
-                                .timestamp
-                                ? new Date(
-                                    chatsData[peerUid]
-                                        .timestamp
-                                ).toLocaleTimeString(
-                                    [],
-                                    {
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                    }
-                                )
-                                : "";
-
-                        const div =
-                            document.createElement(
-                                "div"
-                            );
-
-                        div.className =
-                            `p-3 flex items-center gap-3 cursor-pointer hover:bg-wa-dark transition ${
-                                activeChatUser &&
-                                activeChatUser.uid === peer.uid
-                                    ? "bg-wa-dark border-l-4 border-wa-green"
-                                    : ""
-                            }`;
-
-                        div.innerHTML = `
-
-                            <img
-                                src="${peer.photo || "https://placehold.co/100"}"
-                                class="w-12 h-12 rounded-full object-cover">
-
-                            <div class="flex-1 overflow-hidden">
-
-                                <div class="flex justify-between items-baseline mb-1">
-
-                                    <h4 class="font-semibold text-white text-sm truncate">
-                                        ${escapeHtml(peer.name || "নাম নেই")}
-                                    </h4>
-
-                                    <span class="text-[10px] text-wa-muted">
-                                        ${timestamp}
-                                    </span>
-
-                                </div>
-
-                                <p class="text-xs text-wa-muted truncate">
-                                    ${escapeHtml(lastMsg)}
-                                </p>
-
-                            </div>
-                        `;
-
-                        div.addEventListener(
-                            "click",
-                            () => {
-                                selectChatUser(peer);
-                            }
-                        );
-
-                        chatList.appendChild(div);
-
-                    } catch (error) {
-
-                        console.error(
-                            "Chat item error:",
-                            error
-                        );
-                    }
-                }
-            }
-        );
-    }
-
-
-    /* =========================================================
-       CHAT SELECT
-       ========================================================= */
-
-    function selectChatUser(peerUser) {
-
-        activeChatUser =
-            peerUser;
-
-        document.getElementById(
-            "noChatSelectedView"
-        ).classList.add("hidden");
-
-        document.getElementById(
-            "activeChatView"
-        ).classList.remove("hidden");
-
-        document.getElementById(
-            "activeChatName"
-        ).innerText =
-            peerUser.name ||
-            "ব্যবহারকারী";
-
-        document.getElementById(
-            "activeChatAvatar"
-        ).src =
-            peerUser.photo ||
-            "https://placehold.co/100";
-
-        document.getElementById(
-            "activeChatStatus"
-        ).innerText =
-            peerUser.status ||
-            "অনলাইন";
-
-        document.getElementById(
-            "sidebar"
-        ).classList.add(
-            "hidden",
-            "md:flex"
-        );
-
-        document.getElementById(
-            "chatArea"
-        ).classList.remove(
-            "hidden"
-        );
-
-        loadMessages();
-    }
-
-
-    document.getElementById(
-        "backToChatListBtn"
-    ).addEventListener(
-        "click",
-        () => {
-
-            document.getElementById(
-                "sidebar"
-            ).classList.remove(
-                "hidden"
-            );
-
-            document.getElementById(
-                "chatArea"
-            ).classList.add(
-                "hidden"
-            );
-        }
-    );
-
-
-    /* =========================================================
-       CHAT ROOM ID
-       ========================================================= */
-
-    function getChatRoomId(
-        uid1,
-        uid2
-    ) {
-
-        return uid1 < uid2
-            ? `${uid1}_${uid2}`
-            : `${uid2}_${uid1}`;
-    }
-
-
-    /* =========================================================
-       LOAD MESSAGES
-       ========================================================= */
-
-    function loadMessages() {
-
-        if (
-            !currentUser ||
-            !activeChatUser
-        ) {
-            return;
-        }
-
-        stopMessagesListener();
-
-        const roomId =
-            getChatRoomId(
-                currentUser.uid,
-                activeChatUser.uid
-            );
-
-        messagesListenerRef =
-            ref(
-                db,
-                `messages/${roomId}`
-            );
-
-        onValue(
-            messagesListenerRef,
-            (snapshot) => {
-
-                const container =
-                    document.getElementById(
-                        "messagesContainer"
-                    );
-
-                container.innerHTML = "";
-
-                if (!snapshot.exists()) {
-                    return;
-                }
-
-                const data =
-                    snapshot.val();
-
-                Object.keys(data).forEach(
-                    msgKey => {
-
-                        const msg =
-                            data[msgKey];
-
-                        const isMe =
-                            msg.senderId ===
-                            currentUser.uid;
-
-                        const msgEl =
-                            createMessageElement(
-                                msg,
-                                isMe
-                            );
-
-                        container.appendChild(
-                            msgEl
-                        );
-                    }
-                );
-
-                container.scrollTop =
-                    container.scrollHeight;
-            }
-        );
-    }
-
-
-    /* =========================================================
-       MESSAGE ELEMENT
-       ========================================================= */
-
-    function createMessageElement(
-        msg,
-        isMe
-    ) {
-
-        const wrap =
-            document.createElement(
-                "div"
-            );
-
-        wrap.className =
-            `flex ${
-                isMe
-                    ? "justify-end"
-                    : "justify-start"
-            } mb-2`;
-
-        const bubble =
-            document.createElement(
-                "div"
-            );
-
-        bubble.className =
-            `max-w-[75%] rounded-2xl px-4 py-2 shadow-sm text-sm relative ${
-                isMe
-                    ? "bg-wa-bubbleOut text-white rounded-tr-none"
-                    : "bg-wa-bubbleIn text-white rounded-tl-none"
-            }`;
-
-        let contentHtml = "";
-
-        if (msg.type === "text") {
-
-            contentHtml =
-                `<p class="break-words leading-relaxed">
-                    ${escapeHtml(msg.content)}
-                </p>`;
-
-        } else if (msg.type === "image") {
-
-            const safeSrc =
-                String(msg.content);
-
-            contentHtml =
-                `<img
-                    src="${safeSrc}"
-                    class="max-w-xs max-h-60 rounded-lg object-cover cursor-pointer mb-1"
-                    alt="image">`;
-
-        } else if (msg.type === "video") {
-
-            contentHtml =
-                `<video
-                    src="${msg.content}"
-                    controls
-                    class="max-w-xs rounded-lg mb-1">
-                </video>`;
-
-        } else if (msg.type === "audio") {
-
-            contentHtml =
-                `<div class="flex items-center gap-2 py-1">
-
-                    <i class="fa-solid fa-microphone text-wa-green text-lg"></i>
-
-                    <audio
-                        src="${msg.content}"
-                        controls
-                        class="h-8 max-w-[200px]">
-                    </audio>
-
-                </div>`;
-        }
-
-        const timeStr =
-            msg.timestamp
-                ? new Date(
-                    msg.timestamp
-                ).toLocaleTimeString(
-                    [],
-                    {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                    }
-                )
-                : "";
-
-        bubble.innerHTML = `
-
-            ${contentHtml}
-
-            <div class="text-[10px] text-wa-muted text-right mt-1 flex items-center justify-end gap-1">
-
-                <span>${timeStr}</span>
-
-                ${
-                    isMe
-                        ? '<i class="fa-solid fa-check-double text-blue-400"></i>'
-                        : ""
-                }
-
+        container.innerHTML = '';
+        const keys = Object.keys(chatsObj);
+
+        for (let targetUid of keys) {
+          const chatMeta = chatsObj[targetUid];
+          const userSnap = await db.ref(`users/${targetUid}`).once('value');
+          const targetUserData = userSnap.val() || { name: 'ইউজার', photoURL: 'https://placehold.co/100x100' };
+
+          const div = document.createElement('div');
+          div.className = `p-3 flex items-center gap-3 hover:bg-whatsapp-hover cursor-pointer transition ${activeChatTarget && activeChatTarget.uid === targetUid ? 'bg-whatsapp-hover' : ''}`;
+          div.onclick = () => selectUserToChat(targetUserData);
+
+          const timeStr = chatMeta.timestamp ? new Date(chatMeta.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+
+          div.innerHTML = `
+            <div class="relative shrink-0">
+              <img src="${targetUserData.photoURL}" class="w-12 h-12 rounded-full object-cover border border-gray-700" />
+              <span class="absolute bottom-0 right-0 w-3 h-3 ${targetUserData.status === 'online' ? 'bg-green-500' : 'bg-gray-500'} border-2 border-whatsapp-sidebar rounded-full"></span>
             </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <h4 class="text-sm font-semibold text-white truncate">${targetUserData.name}</h4>
+                <span class="text-[10px] text-gray-400">${timeStr}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <p class="text-xs text-gray-400 truncate">${chatMeta.lastMessage || 'মেসেজ লিঙ্ক'}</p>
+                ${chatMeta.unreadCount ? `<span class="bg-brand-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">${chatMeta.unreadCount}</span>` : ''}
+              </div>
+            </div>
+          `;
+          container.appendChild(div);
+        }
+      });
+    }
+
+    function loadRealtimeMessages() {
+      if (!activeChatId) return;
+      const messagesRef = db.ref(`messages/${activeChatId}`);
+
+      messagesRef.off(); // Remove old listeners
+      messagesRef.on('value', (snap) => {
+        const msgContainer = document.getElementById('messagesContainer');
+        msgContainer.innerHTML = '';
+
+        const data = snap.val();
+        if (data) {
+          Object.keys(data).forEach(msgKey => {
+            const msg = data[msgKey];
+            const isMe = msg.senderUid === currentUser.uid;
+
+            // Mark as read if received
+            if (!isMe && msg.status !== 'read') {
+              db.ref(`messages/${activeChatId}/${msgKey}/status`).set('read');
+            }
+
+            renderSingleMessageBubble(msg, isMe);
+          });
+          msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+      });
+
+      // Reset Unread Badge in user_chats
+      db.ref(`user_chats/${currentUser.uid}/${activeChatTarget.uid}/unreadCount`).set(0);
+    }
+
+    function renderSingleMessageBubble(msg, isMe) {
+      const container = document.getElementById('messagesContainer');
+      const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`;
+
+      let tickHtml = '';
+      if (isMe) {
+        if (msg.status === 'read') {
+          tickHtml = `<i class="fa-solid fa-check-double text-blue-400 ml-1.5 text-[10px]"></i>`;
+        } else {
+          tickHtml = `<i class="fa-solid fa-check text-gray-400 ml-1.5 text-[10px]"></i>`;
+        }
+      }
+
+      let contentHtml = '';
+      if (msg.type === 'image') {
+        contentHtml = `<img src="${msg.mediaUrl}" class="rounded-xl max-w-xs max-h-60 object-cover mb-1 border border-gray-700/50" />`;
+      } else if (msg.type === 'video') {
+        contentHtml = `<video src="${msg.mediaUrl}" controls class="rounded-xl max-w-xs max-h-60 mb-1 border border-gray-700/50"></video>`;
+      } else if (msg.type === 'voice') {
+        contentHtml = `
+          <div class="flex items-center gap-3 py-1">
+            <button onclick="playVoiceAudio('${msg.mediaUrl}', this)" class="w-8 h-8 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs">
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <div class="text-xs font-mono text-gray-300">ভয়েস মেসেজ</div>
+          </div>
         `;
+      } else {
+        contentHtml = `<p class="text-sm text-gray-100 leading-relaxed break-words">${escapeHtml(msg.text)}</p>`;
+      }
 
-        wrap.appendChild(
-            bubble
-        );
+      wrapper.innerHTML = `
+        <div class="max-w-[75%] md:max-w-[65%] px-3.5 py-2 rounded-2xl shadow-md ${isMe ? 'bg-whatsapp-outgoing text-white rounded-tr-none' : 'bg-whatsapp-incoming text-white rounded-tl-none'} border border-gray-800">
+          ${contentHtml}
+          <div class="flex items-center justify-end gap-1 mt-1">
+            <span class="text-[10px] text-gray-300 opacity-80">${timeStr}</span>
+            ${tickHtml}
+          </div>
+        </div>
+      `;
 
-        return wrap;
+      container.appendChild(wrapper);
     }
 
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
 
-    /* =========================================================
-       SEND MESSAGE
-       ========================================================= */
+    function handleMessageKeyPress(e) {
+      if (e.key === 'Enter') {
+        sendTextMessage();
+      }
+    }
 
-    async function sendMessage(
-        content,
-        type = "text"
-    ) {
+    async function sendTextMessage() {
+      const input = document.getElementById('messageTextInput');
+      const text = input.value.trim();
+      if (!text || !activeChatId) return;
 
-        if (
-            !currentUser ||
-            !activeChatUser
-        ) {
-            return;
-        }
+      input.value = '';
+      await pushMessageToDatabase({
+        text: text,
+        type: 'text'
+      });
+    }
 
+    async function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file || !activeChatId) return;
+
+      const isVideo = file.type.startsWith('video/');
+      const fileType = isVideo ? 'video' : 'image';
+
+      try {
+        const fileRef = storage.ref(`chat_media/${activeChatId}/${Date.now()}_${file.name}`);
+        await fileRef.put(file);
+        const downloadUrl = await fileRef.getDownloadURL();
+
+        await pushMessageToDatabase({
+          type: fileType,
+          mediaUrl: downloadUrl,
+          text: isVideo ? '[ভিডিও]' : '[ছবি]'
+        });
+      } catch (err) {
+        console.error("Media upload error:", err);
+        alert('মিডিয়া ফাইল আপলোড করতে সমস্যা হয়েছে!');
+      }
+    }
+
+    async function pushMessageToDatabase(payload) {
+      const msgRef = db.ref(`messages/${activeChatId}`).push();
+      const msgData = {
+        id: msgRef.key,
+        senderUid: currentUser.uid,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        status: 'sent',
+        ...payload
+      };
+
+      await msgRef.set(msgData);
+
+      // Update User Chat List Meta
+      const metaText = payload.text || (payload.type === 'image' ? '[ছবি]' : '[ভিডিও]');
+      
+      // Update for sender
+      db.ref(`user_chats/${currentUser.uid}/${activeChatTarget.uid}`).set({
+        lastMessage: metaText,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        unreadCount: 0
+      });
+
+      // Update for recipient & increment unread
+      const recipientChatRef = db.ref(`user_chats/${activeChatTarget.uid}/${currentUser.uid}`);
+      const snap = await recipientChatRef.once('value');
+      const currentUnread = (snap.val() && snap.val().unreadCount) || 0;
+
+      recipientChatRef.set({
+        lastMessage: metaText,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        unreadCount: currentUnread + 1
+      });
+
+      // Play Sent Sound Tone
+      playChimeSound('sent');
+    }
+
+    async function startVoiceRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return alert('আপনার ব্রাউজার ভয়েস রেকর্ডিং সাপোর্ট করে না');
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.start();
+
+        // UI Switch to recording mode
+        document.getElementById('recordingBar').classList.remove('hidden');
+        document.getElementById('chatInputBar').classList.add('hidden');
+
+        recordSeconds = 0;
+        document.getElementById('recordTimerTxt').innerText = "00:00";
+        recordTimerInterval = setInterval(() => {
+          recordSeconds++;
+          const mins = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+          const secs = String(recordSeconds % 60).padStart(2, '0');
+          document.getElementById('recordTimerTxt').innerText = `${mins}:${secs}`;
+        }, 1000);
+
+      } catch (err) {
+        console.error("Mic access error:", err);
+        alert('মাইক্রোফোন অ্যাক্সেস পাওয়া যায়নি!');
+      }
+    }
+
+    function cancelVoiceRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      clearInterval(recordTimerInterval);
+      document.getElementById('recordingBar').classList.add('hidden');
+      document.getElementById('chatInputBar').classList.remove('hidden');
+    }
+
+    async function stopAndSendVoiceRecording() {
+      if (!mediaRecorder) return;
+
+      mediaRecorder.onstop = async () => {
+        clearInterval(recordTimerInterval);
+        document.getElementById('recordingBar').classList.add('hidden');
+        document.getElementById('chatInputBar').classList.remove('hidden');
+
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         try {
+          const fileRef = storage.ref(`voice_messages/${activeChatId}/${Date.now()}.webm`);
+          await fileRef.put(audioBlob);
+          const downloadUrl = await fileRef.getDownloadURL();
 
-            const roomId =
-                getChatRoomId(
-                    currentUser.uid,
-                    activeChatUser.uid
-                );
-
-            const messagesRef =
-                ref(
-                    db,
-                    `messages/${roomId}`
-                );
-
-            const now =
-                Date.now();
-
-            const newMsg = {
-
-                senderId:
-                    currentUser.uid,
-
-                receiverId:
-                    activeChatUser.uid,
-
-                content,
-
-                type,
-
-                timestamp: now
-            };
-
-            await push(
-                messagesRef,
-                newMsg
-            );
-
-            const summary =
-                type === "text"
-                    ? content
-                    : `[${type.toUpperCase()} বার্তা]`;
-
-            await set(
-                ref(
-                    db,
-                    `user_chats/${currentUser.uid}/${activeChatUser.uid}`
-                ),
-                {
-                    lastMessage:
-                        summary,
-                    timestamp:
-                        now
-                }
-            );
-
-            await set(
-                ref(
-                    db,
-                    `user_chats/${activeChatUser.uid}/${currentUser.uid}`
-                ),
-                {
-                    lastMessage:
-                        summary,
-                    timestamp:
-                        now
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Send message error:",
-                error
-            );
-
-            alert(
-                "বার্তা পাঠানো যায়নি: " +
-                error.message
-            );
+          await pushMessageToDatabase({
+            type: 'voice',
+            mediaUrl: downloadUrl,
+            text: '[ভয়েস মেসেজ]'
+          });
+        } catch (err) {
+          console.error("Voice storage upload error:", err);
+          alert('ভয়েস মেসেজ পাঠাতে সমস্যা হয়েছে!');
         }
+      };
+
+      mediaRecorder.stop();
     }
 
-
-    /* =========================================================
-       TEXT SEND
-       ========================================================= */
-
-    document.getElementById(
-        "sendMessageBtn"
-    ).addEventListener(
-        "click",
-        () => {
-
-            const input =
-                document.getElementById(
-                    "messageTextInput"
-                );
-
-            const text =
-                input.value.trim();
-
-            if (text) {
-
-                sendMessage(
-                    text,
-                    "text"
-                );
-
-                input.value = "";
-            }
-        }
-    );
-
-
-    document.getElementById(
-        "messageTextInput"
-    ).addEventListener(
-        "keypress",
-        (e) => {
-
-            if (e.key === "Enter") {
-
-                e.preventDefault();
-
-                document.getElementById(
-                    "sendMessageBtn"
-                ).click();
-            }
-        }
-    );
-
-
-    /* =========================================================
-       IMAGE / VIDEO
-       ========================================================= */
-
-    document.getElementById(
-        "mediaFileInput"
-    ).addEventListener(
-        "change",
-        (e) => {
-
-            const file =
-                e.target.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            const isImage =
-                file.type.startsWith(
-                    "image/"
-                );
-
-            const isVideo =
-                file.type.startsWith(
-                    "video/"
-                );
-
-            if (
-                !isImage &&
-                !isVideo
-            ) {
-
-                alert(
-                    "শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন"
-                );
-
-                return;
-            }
-
-            const reader =
-                new FileReader();
-
-            reader.onload =
-                (evt) => {
-
-                    sendMessage(
-                        evt.target.result,
-                        isImage
-                            ? "image"
-                            : "video"
-                    );
-                };
-
-            reader.readAsDataURL(
-                file
-            );
-
-            e.target.value = "";
-        }
-    );
-
-
-    /* =========================================================
-       VOICE RECORDING
-       ========================================================= */
-
-    const recordVoiceBtn =
-        document.getElementById(
-            "recordVoiceBtn"
-        );
-
-    const voiceRecordingOverlay =
-        document.getElementById(
-            "voiceRecordingOverlay"
-        );
-
-    const cancelRecordBtn =
-        document.getElementById(
-            "cancelRecordBtn"
-        );
-
-    const sendVoiceRecordBtn =
-        document.getElementById(
-            "sendVoiceRecordBtn"
-        );
-
-    const recordTimer =
-        document.getElementById(
-            "recordTimer"
-        );
-
-
-    recordVoiceBtn.addEventListener(
-        "click",
-        async () => {
-
-            if (!activeChatUser) {
-
-                alert(
-                    "প্রথমে একটি চ্যাট নির্বাচন করুন।"
-                );
-
-                return;
-            }
-
-            try {
-
-                const stream =
-                    await navigator
-                        .mediaDevices
-                        .getUserMedia({
-                            audio: true
-                        });
-
-                mediaRecorder =
-                    new MediaRecorder(
-                        stream
-                    );
-
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable =
-                    (e) => {
-
-                        if (e.data.size > 0) {
-                            audioChunks.push(
-                                e.data
-                            );
-                        }
-                    };
-
-                mediaRecorder.start();
-
-                voiceRecordingOverlay
-                    .classList
-                    .remove("hidden");
-
-                let seconds = 0;
-
-                recordTimer.innerText =
-                    "00:00";
-
-                recordTimerInterval =
-                    setInterval(
-                        () => {
-
-                            seconds++;
-
-                            const mins =
-                                String(
-                                    Math.floor(
-                                        seconds / 60
-                                    )
-                                ).padStart(
-                                    2,
-                                    "0"
-                                );
-
-                            const secs =
-                                String(
-                                    seconds % 60
-                                ).padStart(
-                                    2,
-                                    "0"
-                                );
-
-                            recordTimer.innerText =
-                                `${mins}:${secs}`;
-
-                        },
-                        1000
-                    );
-
-            } catch (err) {
-
-                alert(
-                    "মাইক্রোফোন সংযোগ করা যায়নি: " +
-                    err.message
-                );
-            }
-        }
-    );
-
-
-    function stopRecordingStream() {
-
-        if (
-            mediaRecorder &&
-            mediaRecorder.stream
-        ) {
-
-            mediaRecorder.stream
-                .getTracks()
-                .forEach(
-                    track => track.stop()
-                );
-        }
+    function playVoiceAudio(url, btnElem) {
+      const audio = new Audio(url);
+      btnElem.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+      audio.play();
+      audio.onended = () => {
+        btnElem.innerHTML = `<i class="fa-solid fa-play"></i>`;
+      };
     }
 
-
-    cancelRecordBtn.addEventListener(
-        "click",
-        () => {
-
-            if (
-                mediaRecorder &&
-                mediaRecorder.state !==
-                "inactive"
-            ) {
-
-                mediaRecorder.stop();
-            }
-
-            stopRecordingStream();
-
-            clearInterval(
-                recordTimerInterval
-            );
-
-            recordTimer.innerText =
-                "00:00";
-
-            voiceRecordingOverlay
-                .classList
-                .add("hidden");
-
-            audioChunks = [];
-        }
-    );
-
-
-    sendVoiceRecordBtn.addEventListener(
-        "click",
-        () => {
-
-            if (
-                !mediaRecorder ||
-                mediaRecorder.state ===
-                "inactive"
-            ) {
-                return;
-            }
-
-            mediaRecorder.onstop =
-                () => {
-
-                    const audioBlob =
-                        new Blob(
-                            audioChunks,
-                            {
-                                type:
-                                    "audio/webm"
-                            }
-                        );
-
-                    const reader =
-                        new FileReader();
-
-                    reader.onload =
-                        (e) => {
-
-                            sendMessage(
-                                e.target.result,
-                                "audio"
-                            );
-                        };
-
-                    reader.readAsDataURL(
-                        audioBlob
-                    );
-
-                    stopRecordingStream();
-                };
-
-            mediaRecorder.stop();
-
-            clearInterval(
-                recordTimerInterval
-            );
-
-            voiceRecordingOverlay
-                .classList
-                .add("hidden");
-
-            recordTimer.innerText =
-                "00:00";
-        }
-    );
-
-
-    /* =========================================================
-       CALLING SYSTEM
-       ========================================================= */
-
-    const callOverlay =
-        document.getElementById(
-            "callOverlay"
-        );
-
-    const videoContainer =
-        document.getElementById(
-            "videoContainer"
-        );
-
-    const startAudioCallBtn =
-        document.getElementById(
-            "startAudioCallBtn"
-        );
-
-    const startVideoCallBtn =
-        document.getElementById(
-            "startVideoCallBtn"
-        );
-
-    const endCallBtn =
-        document.getElementById(
-            "endCallBtn"
-        );
-
-    const acceptCallBtn =
-        document.getElementById(
-            "acceptCallBtn"
-        );
-
-    const rejectCallBtn =
-        document.getElementById(
-            "rejectCallBtn"
-        );
-
-
-    startAudioCallBtn.addEventListener(
-        "click",
-        () => initiateCall("audio")
-    );
-
-
-    startVideoCallBtn.addEventListener(
-        "click",
-        () => initiateCall("video")
-    );
-
+    const rtcConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
 
     async function initiateCall(type) {
+      if (!activeChatTarget) return;
+      callType = type;
+      isCaller = true;
+      currentCallId = `${currentUser.uid}_${activeChatTarget.uid}`;
 
-        if (
-            !activeChatUser ||
-            !currentUser
-        ) {
-            return;
+      showCallOverlay(activeChatTarget.name, activeChatTarget.photoURL, 'কল করা হচ্ছে...');
+
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: callType === 'video'
+        });
+
+        if (callType === 'video') {
+          document.getElementById('videoStreamsContainer').classList.remove('hidden');
+          document.getElementById('localVideo').srcObject = localStream;
         }
 
-        activeCallId =
-            currentUser.uid;
+        peerConnection = new RTCPeerConnection(rtcConfig);
 
-        callOverlay.classList.remove(
-            "hidden"
-        );
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
 
-        document.getElementById(
-            "callUserName"
-        ).innerText =
-            activeChatUser.name;
+        peerConnection.ontrack = (event) => {
+          if (callType === 'video') {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+          } else {
+            document.getElementById('remoteAudio').srcObject = event.streams[0];
+          }
+        };
 
-        document.getElementById(
-            "callUserAvatar"
-        ).src =
-            activeChatUser.photo ||
-            "https://placehold.co/100";
+        const callRef = db.ref(`calls/${currentCallId}`);
+        const callerCandidatesRef = callRef.child('callerCandidates');
 
-        document.getElementById(
-            "callStatusText"
-        ).innerText =
-            "কল দেওয়া হচ্ছে...";
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            callerCandidatesRef.push(event.candidate.toJSON());
+          }
+        };
 
-        document.getElementById(
-            "incomingCallControls"
-        ).classList.add(
-            "hidden"
-        );
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
 
-        document.getElementById(
-            "ongoingCallControls"
-        ).classList.remove(
-            "hidden"
-        );
+        await callRef.set({
+          callerUid: currentUser.uid,
+          callerName: currentUserData.name,
+          callerPhoto: currentUserData.photoURL,
+          calleeUid: activeChatTarget.uid,
+          type: callType,
+          status: 'calling',
+          offer: {
+            type: offer.type,
+            sdp: offer.sdp
+          }
+        });
 
-        if (type === "video") {
+        // Listen for answer
+        callRef.on('value', async (snap) => {
+          const data = snap.val();
+          if (data && data.answer && !peerConnection.currentRemoteDescription) {
+            const rsd = new RTCSessionDescription(data.answer);
+            await peerConnection.setRemoteDescription(rsd);
+            document.getElementById('callStatusTxt').innerText = "সংযুক্ত আছে";
+          }
+          if (data && data.status === 'rejected') {
+            endCall();
+            alert('কলটি রিজেক্ট করা হয়েছে');
+          }
+        });
 
-            videoContainer.classList.remove(
-                "hidden"
-            );
+        // Listen for callee ICE candidates
+        callRef.child('calleeCandidates').on('child_added', (snap) => {
+          const candidate = new RTCIceCandidate(snap.val());
+          peerConnection.addIceCandidate(candidate);
+        });
 
-        } else {
-
-            videoContainer.classList.add(
-                "hidden"
-            );
-        }
-
-        try {
-
-            localStream =
-                await navigator
-                    .mediaDevices
-                    .getUserMedia({
-                        audio: true,
-                        video:
-                            type === "video"
-                    });
-
-            if (type === "video") {
-
-                document.getElementById(
-                    "localVideo"
-                ).srcObject =
-                    localStream;
-            }
-
-            peerConnection =
-                new RTCPeerConnection(
-                    rtcConfig
-                );
-
-            localStream
-                .getTracks()
-                .forEach(
-                    track => {
-
-                        peerConnection.addTrack(
-                            track,
-                            localStream
-                        );
-                    }
-                );
-
-            peerConnection.ontrack =
-                (e) => {
-
-                    if (type === "video") {
-
-                        document.getElementById(
-                            "remoteVideo"
-                        ).srcObject =
-                            e.streams[0];
-
-                    } else {
-
-                        document.getElementById(
-                            "remoteAudio"
-                        ).srcObject =
-                            e.streams[0];
-                    }
-                };
-
-            const callRef =
-                ref(
-                    db,
-                    `calls/${activeChatUser.uid}`
-                );
-
-            const offer =
-                await peerConnection
-                    .createOffer();
-
-            await peerConnection
-                .setLocalDescription(
-                    offer
-                );
-
-            await set(
-                callRef,
-                {
-                    callerId:
-                        currentUser.uid,
-
-                    callerName:
-                        currentUserData.name,
-
-                    callerPhoto:
-                        currentUserData.photo,
-
-                    type,
-
-                    offer: {
-                        sdp:
-                            offer.sdp,
-                        type:
-                            offer.type
-                    },
-
-                    status:
-                        "calling"
-                }
-            );
-
-            onValue(
-                callRef,
-                async (snapshot) => {
-
-                    const data =
-                        snapshot.val();
-
-                    if (
-                        data &&
-                        data.answer &&
-                        peerConnection &&
-                        !peerConnection
-                            .currentRemoteDescription
-                    ) {
-
-                        await peerConnection
-                            .setRemoteDescription(
-                                new RTCSessionDescription(
-                                    data.answer
-                                )
-                            );
-
-                        document.getElementById(
-                            "callStatusText"
-                        ).innerText =
-                            "সংযুক্ত হয়েছে";
-                    }
-
-                    if (!data) {
-
-                        closeCallUI();
-                    }
-                }
-            );
-
-        } catch (err) {
-
-            console.error(
-                "Call error:",
-                err
-            );
-
-            alert(
-                "ক্যামেরা/মাইক্রোফোন এক্সেস পাওয়া যায়নি: " +
-                err.message
-            );
-
-            closeCallUI();
-        }
+      } catch (err) {
+        console.error("Media/RTC Call error:", err);
+        alert('ক্যামেরা বা মাইক্রোফোন অ্যাক্সেস করতে ব্যর্থ!');
+        endCall();
+      }
     }
-
-
-    /* =========================================================
-       INCOMING CALL
-       ========================================================= */
 
     function listenForIncomingCalls() {
+      if (!currentUser) return;
+      db.ref('calls').on('child_added', (snap) => {
+        const callData = snap.val();
+        if (callData && callData.calleeUid === currentUser.uid && callData.status === 'calling') {
+          currentCallId = snap.key;
+          isCaller = false;
+          callType = callData.type;
 
-        if (!currentUser) {
-            return;
+          showIncomingCallOverlay(callData.callerName, callData.callerPhoto, callData.type);
+          playChimeSound('ringtone');
         }
+      });
 
-        stopIncomingCallListener();
-
-        incomingCallListenerRef =
-            ref(
-                db,
-                `calls/${currentUser.uid}`
-            );
-
-        onValue(
-            incomingCallListenerRef,
-            async (snapshot) => {
-
-                const data =
-                    snapshot.val();
-
-                if (
-                    data &&
-                    data.status ===
-                    "calling"
-                ) {
-
-                    callOverlay.classList.remove(
-                        "hidden"
-                    );
-
-                    document.getElementById(
-                        "callUserName"
-                    ).innerText =
-                        data.callerName ||
-                        "অজানা ব্যবহারকারী";
-
-                    document.getElementById(
-                        "callUserAvatar"
-                    ).src =
-                        data.callerPhoto ||
-                        "https://placehold.co/100";
-
-                    document.getElementById(
-                        "callStatusText"
-                    ).innerText =
-                        `ইনকামিং ${
-                            data.type === "video"
-                                ? "ভিডিও"
-                                : "অডিও"
-                        } কল...`;
-
-                    document.getElementById(
-                        "incomingCallControls"
-                    ).classList.remove(
-                        "hidden"
-                    );
-
-                    document.getElementById(
-                        "ongoingCallControls"
-                    ).classList.add(
-                        "hidden"
-                    );
-
-                    if (
-                        data.type ===
-                        "video"
-                    ) {
-
-                        videoContainer
-                            .classList
-                            .remove(
-                                "hidden"
-                            );
-
-                    } else {
-
-                        videoContainer
-                            .classList
-                            .add(
-                                "hidden"
-                            );
-                    }
-
-                    acceptCallBtn.onclick =
-                        () => {
-
-                            acceptIncomingCall(
-                                data
-                            );
-                        };
-
-                    rejectCallBtn.onclick =
-                        async () => {
-
-                            await remove(
-                                incomingCallListenerRef
-                            );
-
-                            closeCallUI();
-                        };
-                }
-            }
-        );
+      db.ref('calls').on('child_changed', (snap) => {
+        const callData = snap.val();
+        if (callData && callData.status === 'ended' && currentCallId === snap.key) {
+          cleanupCall();
+        }
+      });
     }
 
+    async function acceptCall() {
+      const callRef = db.ref(`calls/${currentCallId}`);
+      const snap = await callRef.once('value');
+      const callData = snap.val();
 
-    /* =========================================================
-       ACCEPT CALL
-       ========================================================= */
+      document.getElementById('incomingCallControls').classList.add('hidden');
+      document.getElementById('activeCallControls').classList.remove('hidden');
+      document.getElementById('callStatusTxt').innerText = "সংযুক্ত হচ্ছে...";
 
-    async function acceptIncomingCall(
-        callData
-    ) {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: callType === 'video'
+        });
 
-        document.getElementById(
-            "incomingCallControls"
-        ).classList.add(
-            "hidden"
-        );
-
-        document.getElementById(
-            "ongoingCallControls"
-        ).classList.remove(
-            "hidden"
-        );
-
-        document.getElementById(
-            "callStatusText"
-        ).innerText =
-            "সংযুক্ত হচ্ছে...";
-
-        try {
-
-            localStream =
-                await navigator
-                    .mediaDevices
-                    .getUserMedia({
-                        audio: true,
-                        video:
-                            callData.type ===
-                            "video"
-                    });
-
-            if (
-                callData.type ===
-                "video"
-            ) {
-
-                document.getElementById(
-                    "localVideo"
-                ).srcObject =
-                    localStream;
-            }
-
-            peerConnection =
-                new RTCPeerConnection(
-                    rtcConfig
-                );
-
-            localStream
-                .getTracks()
-                .forEach(
-                    track => {
-
-                        peerConnection.addTrack(
-                            track,
-                            localStream
-                        );
-                    }
-                );
-
-            peerConnection.ontrack =
-                (e) => {
-
-                    if (
-                        callData.type ===
-                        "video"
-                    ) {
-
-                        document.getElementById(
-                            "remoteVideo"
-                        ).srcObject =
-                            e.streams[0];
-
-                    } else {
-
-                        document.getElementById(
-                            "remoteAudio"
-                        ).srcObject =
-                            e.streams[0];
-                    }
-                };
-
-            await peerConnection
-                .setRemoteDescription(
-                    new RTCSessionDescription(
-                        callData.offer
-                    )
-                );
-
-            const answer =
-                await peerConnection
-                    .createAnswer();
-
-            await peerConnection
-                .setLocalDescription(
-                    answer
-                );
-
-            await update(
-                ref(
-                    db,
-                    `calls/${currentUser.uid}`
-                ),
-                {
-                    answer: {
-                        sdp:
-                            answer.sdp,
-                        type:
-                            answer.type
-                    },
-
-                    status:
-                        "connected"
-                }
-            );
-
-            document.getElementById(
-                "callStatusText"
-            ).innerText =
-                "সংযুক্ত হয়েছে";
-
-        } catch (err) {
-
-            console.error(
-                "Accept call error:",
-                err
-            );
-
-            alert(
-                "কল ধরতে সমস্যা হয়েছে: " +
-                err.message
-            );
-
-            closeCallUI();
+        if (callType === 'video') {
+          document.getElementById('videoStreamsContainer').classList.remove('hidden');
+          document.getElementById('localVideo').srcObject = localStream;
         }
+
+        peerConnection = new RTCPeerConnection(rtcConfig);
+
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+
+        peerConnection.ontrack = (event) => {
+          if (callType === 'video') {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+          } else {
+            document.getElementById('remoteAudio').srcObject = event.streams[0];
+          }
+        };
+
+        const calleeCandidatesRef = callRef.child('calleeCandidates');
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            calleeCandidatesRef.push(event.candidate.toJSON());
+          }
+        };
+
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        await callRef.update({
+          status: 'connected',
+          answer: {
+            type: answer.type,
+            sdp: answer.sdp
+          }
+        });
+
+        // Listen for caller candidates
+        callRef.child('callerCandidates').on('child_added', (snapCandidate) => {
+          const candidate = new RTCIceCandidate(snapCandidate.val());
+          peerConnection.addIceCandidate(candidate);
+        });
+
+        document.getElementById('callStatusTxt').innerText = "সংযুক্ত আছে";
+
+      } catch (err) {
+        console.error("Accept call error:", err);
+        endCall();
+      }
     }
 
-
-    /* =========================================================
-       CALL CONTROLS
-       ========================================================= */
-
-    document.getElementById(
-        "toggleMicBtn"
-    ).addEventListener(
-        "click",
-        () => {
-
-            if (!localStream) {
-                return;
-            }
-
-            const audioTracks =
-                localStream.getAudioTracks();
-
-            if (!audioTracks.length) {
-                return;
-            }
-
-            const enabled =
-                !audioTracks[0].enabled;
-
-            audioTracks.forEach(
-                track => {
-                    track.enabled =
-                        enabled;
-                }
-            );
-
-            document.getElementById(
-                "toggleMicBtn"
-            ).innerHTML =
-                enabled
-                    ? '<i class="fa-solid fa-microphone"></i>'
-                    : '<i class="fa-solid fa-microphone-slash"></i>';
-        }
-    );
-
-
-    document.getElementById(
-        "toggleCamBtn"
-    ).addEventListener(
-        "click",
-        () => {
-
-            if (!localStream) {
-                return;
-            }
-
-            const videoTracks =
-                localStream.getVideoTracks();
-
-            if (!videoTracks.length) {
-                return;
-            }
-
-            const enabled =
-                !videoTracks[0].enabled;
-
-            videoTracks.forEach(
-                track => {
-                    track.enabled =
-                        enabled;
-                }
-            );
-
-            document.getElementById(
-                "toggleCamBtn"
-            ).innerHTML =
-                enabled
-                    ? '<i class="fa-solid fa-video"></i>'
-                    : '<i class="fa-solid fa-video-slash"></i>';
-        }
-    );
-
-
-    /* =========================================================
-       END CALL
-       ========================================================= */
-
-    endCallBtn.addEventListener(
-        "click",
-        async () => {
-
-            try {
-
-                if (currentUser) {
-
-                    await remove(
-                        ref(
-                            db,
-                            `calls/${currentUser.uid}`
-                        )
-                    );
-                }
-
-                if (
-                    activeChatUser
-                ) {
-
-                    await remove(
-                        ref(
-                            db,
-                            `calls/${activeChatUser.uid}`
-                        )
-                    );
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "End call error:",
-                    error
-                );
-            }
-
-            closeCallUI();
-        }
-    );
-
-
-    function closeCallUI() {
-
-        if (localStream) {
-
-            localStream
-                .getTracks()
-                .forEach(
-                    track => {
-                        track.stop();
-                    }
-                );
-
-            localStream = null;
-        }
-
-        if (peerConnection) {
-
-            try {
-                peerConnection.close();
-            } catch (e) {}
-
-            peerConnection = null;
-        }
-
-        document.getElementById(
-            "remoteVideo"
-        ).srcObject = null;
-
-        document.getElementById(
-            "localVideo"
-        ).srcObject = null;
-
-        document.getElementById(
-            "remoteAudio"
-        ).srcObject = null;
-
-        callOverlay.classList.add(
-            "hidden"
-        );
-
-        activeCallId = null;
+    function rejectCall() {
+      if (currentCallId) {
+        db.ref(`calls/${currentCallId}`).update({ status: 'rejected' });
+      }
+      cleanupCall();
     }
 
-
-    /* =========================================================
-       CHAT FILTER
-       ========================================================= */
-
-    document.getElementById(
-        "filterChatsInput"
-    ).addEventListener(
-        "input",
-        (e) => {
-
-            const query =
-                e.target.value
-                    .trim()
-                    .toLowerCase();
-
-            const items =
-                document.getElementById(
-                    "chatList"
-                ).children;
-
-            Array.from(items).forEach(
-                item => {
-
-                    const text =
-                        item.innerText
-                            .toLowerCase();
-
-                    item.style.display =
-                        !query ||
-                        text.includes(query)
-                            ? ""
-                            : "none";
-                }
-            );
-        }
-    );
-
-
-    /* =========================================================
-       AUTH STARTUP
-       ========================================================= */
-
-    async function startAuthenticatedApp(
-        user
-    ) {
-
-        if (!user) {
-            return;
-        }
-
-        /*
-         * একই user-এর জন্য দ্বিতীয়বার initialization হবে না।
-         */
-
-        if (
-            initializedUserUid ===
-            user.uid
-        ) {
-            return;
-        }
-
-        initializedUserUid =
-            user.uid;
-
-        currentUser =
-            user;
-
-        hideLoginScreen();
-
-        try {
-
-            await checkAndSetupUserProfile(
-                user
-            );
-
-        } catch (error) {
-
-            console.error(
-                "User initialization error:",
-                error
-            );
-
-            /*
-             * সবচেয়ে গুরুত্বপূর্ণ FIX:
-             *
-             * Database/Profile error হলে
-             * user-কে LOGOUT করা হবে না।
-             *
-             * Login screen-ও দেখানো হবে না।
-             */
-
-            currentUser =
-                user;
-
-            hideLoginScreen();
-
-            initializedUserUid =
-                user.uid;
-
-            alert(
-                "লগইন সফল হয়েছে, কিন্তু প্রোফাইল/ডাটাবেস লোড করতে সমস্যা হয়েছে:\n" +
-                error.message
-            );
-        }
+    function endCall() {
+      if (currentCallId) {
+        db.ref(`calls/${currentCallId}`).update({ status: 'ended' });
+      }
+      cleanupCall();
     }
 
-
-    async function startAuth() {
-
-        if (authObserverStarted) {
-            return;
-        }
-
-        authObserverStarted = true;
-
-        showAuthLoading();
-
-        try {
-
-            /*
-             * প্রথমে persistence ready।
-             */
-            await authPersistenceReady;
-
-            /*
-             * Pending Google redirect থাকলে complete করবে।
-             * Result থেকে login করার চেষ্টা এখানে করা হচ্ছে না;
-             * onAuthStateChanged() আসল auth state controller।
-             */
-            try {
-
-                await getRedirectResult(
-                    auth
-                );
-
-            } catch (redirectError) {
-
-                console.error(
-                    "Google redirect result error:",
-                    redirectError
-                );
-
-                /*
-                 * Redirect error মানেই logout নয়।
-                 */
-            }
-
-
-            /*
-             * SINGLE AUTH CONTROLLER
-             */
-            onAuthStateChanged(
-                auth,
-                async (user) => {
-
-                    if (user) {
-
-                        await startAuthenticatedApp(
-                            user
-                        );
-
-                    } else {
-
-                        /*
-                         * এখানে Firebase নিশ্চিতভাবে
-                         * বলেছে user নেই।
-                         *
-                         * তাই শুধু এই অবস্থাতেই Login দেখানো হবে।
-                         */
-
-                        currentUser =
-                            null;
-
-                        currentUserData =
-                            null;
-
-                        activeChatUser =
-                            null;
-
-                        initializedUserUid =
-                            null;
-
-                        stopAllRealtimeListeners();
-
-                        showLoginScreen();
-                    }
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Firebase startup error:",
-                error
-            );
-
-            /*
-             * Firebase Auth startup error হলেও
-             * auth.currentUser থাকলে Login দেখাব না।
-             */
-
-            if (auth.currentUser) {
-
-                currentUser =
-                    auth.currentUser;
-
-                hideLoginScreen();
-
-                try {
-
-                    await startAuthenticatedApp(
-                        auth.currentUser
-                    );
-
-                } catch (innerError) {
-
-                    console.error(
-                        innerError
-                    );
-                }
-
-            } else {
-
-                showLoginScreen();
-
-                showAuthError(
-                    "Firebase Auth চালু করা যাচ্ছে না: " +
-                    error.message
-                );
-            }
-        }
+    function cleanupCall() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      document.getElementById('callOverlay').classList.add('hidden');
+      document.getElementById('videoStreamsContainer').classList.add('hidden');
     }
 
+    function toggleMicrophone() {
+      if (localStream) {
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = !audioTrack.enabled;
+          micMuted = !audioTrack.enabled;
+          document.getElementById('toggleMicBtn').classList.toggle('bg-red-600', micMuted);
+        }
+      }
+    }
 
-    /* =========================================================
-       IMPORTANT INITIAL STATE
-       ========================================================= */
+    function toggleCamera() {
+      if (localStream) {
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.enabled = !videoTrack.enabled;
+          camOff = !videoTrack.enabled;
+          document.getElementById('toggleCamBtn').classList.toggle('bg-red-600', camOff);
+        }
+      }
+    }
 
-    /*
-     * শুরুতেই login card নয়,
-     * loading card দেখানো হবে।
-     *
-     * Firebase session restore না হওয়া পর্যন্ত
-     * Login দেখাবে না।
-     */
+    function showCallOverlay(name, photo, status) {
+      document.getElementById('callUserName').innerText = name;
+      document.getElementById('callUserAvatar').src = photo || 'https://placehold.co/120x120';
+      document.getElementById('callStatusTxt').innerText = status;
 
-    showAuthLoading();
+      document.getElementById('incomingCallControls').classList.add('hidden');
+      document.getElementById('activeCallControls').classList.remove('hidden');
+      document.getElementById('callOverlay').classList.remove('hidden');
+    }
 
-    startAuth();
+    function showIncomingCallOverlay(name, photo, type) {
+      document.getElementById('callUserName').innerText = name;
+      document.getElementById('callUserAvatar').src = photo || 'https://placehold.co/120x120';
+      document.getElementById('callStatusTxt').innerText = `ইনকামিং ${type === 'video' ? 'ভিডিও' : 'অডিও'} কল...`;
 
-</script>
+      document.getElementById('incomingCallControls').classList.remove('hidden');
+      document.getElementById('activeCallControls').classList.add('hidden');
+      document.getElementById('callOverlay').classList.remove('hidden');
+    }
 
+    function playChimeSound(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'sent') {
+          osc.frequency.setValueAtTime(800, ctx.currentTime);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.15);
+        } else if (type === 'ringtone') {
+          osc.frequency.setValueAtTime(440, ctx.currentTime);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          osc.start();
+          osc.stop(ctx.currentTime + 1.0);
+        }
+      } catch (e) {
+        // Browser autoplay restriction catch
+      }
+    }
+
+    function filterChatList() {
+      const q = document.getElementById('chatSearchInput').value.toLowerCase();
+      const items = document.querySelectorAll('#chatListContainer > div');
+      items.forEach(item => {
+        const text = item.innerText.toLowerCase();
+        item.style.display = text.includes(q) ? 'flex' : 'none';
+      });
+    }
+
+    function viewTargetUserProfile() {
+      if (activeChatTarget) {
+        alert(`নাম: ${activeChatTarget.name}\nবায়ো: ${activeChatTarget.bio || 'নেই'}\nফোন: ${activeChatTarget.phone || 'গোপন'}`);
+      }
+    }
+  </script>
 </body>
 </html>
