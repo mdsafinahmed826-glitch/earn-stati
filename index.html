@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Web Bangla</title>
     
-    <!-- PWA & Mobile Web App Meta Tags -->
-    <meta name="theme-color" content="#111b21">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="সাফিন ওয়েব">
-    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -56,16 +50,6 @@
             background-image: radial-gradient(#1e293b 1px, transparent 1px);
             background-size: 20px 20px;
         }
-
-        @keyframes ringPulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 168, 132, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(0, 168, 132, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 168, 132, 0); }
-        }
-
-        .ring-animation {
-            animation: ringPulse 1.5s infinite;
-        }
     </style>
 </head>
 <body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
@@ -74,8 +58,8 @@
     <div id="app" class="h-full w-full flex flex-col relative">
 
         <!-- ==================== AUTH / LOGIN MODAL ==================== -->
-        <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4 overflow-y-auto">
-            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center my-auto">
+        <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
+            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center">
                 <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-lg">
                     <i class="fa-brands font-bold fa-whatsapp"></i>
                 </div>
@@ -159,6 +143,21 @@
                         <input type="text" id="profileStatusInput" placeholder="Hey there! I am using WhatsApp." class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
                     </div>
 
+                    <!-- Lock Screen Notification Settings Block -->
+                    <div class="p-3 bg-wa-dark rounded-xl border border-gray-700 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-white font-semibold flex items-center gap-1.5">
+                                <i class="fa-solid fa-bell text-wa-green"></i> মোবাইল লক স্ক্রিন নোটিফিকেশন
+                            </span>
+                            <span id="notifStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">যাচাই করুন</span>
+                        </div>
+                        <p class="text-[11px] text-wa-muted leading-tight">মেসেজ বা কল আসলে মোবাইল লক থাকা অবস্থায়ও স্ক্রিনে ভেসে উঠবে।</p>
+                        <button type="button" id="testLockNotifBtn" class="w-full bg-wa-panel hover:bg-gray-700 text-wa-green text-xs font-semibold py-2 rounded-lg border border-wa-green/40 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            লক স্ক্রিন নোটিফিকেশন সক্রিয় ও টেস্ট করুন
+                        </button>
+                    </div>
+
                     <button id="saveProfileBtn" class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition mt-4">
                         সেভ করুন
                     </button>
@@ -187,22 +186,6 @@
             </div>
         </div>
 
-        <!-- ==================== BACKGROUND PERMISSION & INSTALL BANNER ==================== -->
-        <div id="bgPermissionBanner" class="bg-wa-green text-white px-4 py-2.5 flex items-center justify-between text-xs sm:text-sm font-medium shadow-md z-30">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-bell text-lg animate-bounce"></i>
-                <span>অ্যাপ বন্ধ থাকলেও ব্যাকগ্রাউন্ড নোটিফিকেশন ও রিংটোন পেতে অনুমতি চালু করুন।</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="enableBgPermissionBtn" class="bg-white text-wa-dark hover:bg-gray-100 px-3 py-1 rounded-lg font-bold transition shadow text-xs">
-                    চালু করুন
-                </button>
-                <button id="dismissBgBannerBtn" class="text-white hover:text-gray-200 px-1">
-                    <i class="fa-solid fa-xmark text-base"></i>
-                </button>
-            </div>
-        </div>
-
         <!-- ==================== APP NOTIFICATIONS ==================== -->
         <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer">
             <div class="flex items-start gap-3">
@@ -219,7 +202,7 @@
         <div id="callOverlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
             <!-- Call Header -->
             <div class="text-center mt-8">
-                <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 ring-animation">
+                <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 animate-pulse">
                 <h3 id="callUserName" class="text-2xl font-bold text-white">ব্যবহারকারীর নাম</h3>
                 <p id="callStatusText" class="text-wa-green font-medium mt-1">কলিং...</p>
             </div>
@@ -309,7 +292,7 @@
                     <h2 class="text-2xl font-bold text-white mb-2">WhatsApp Web for Windows / Mobile</h2>
                     <p class="text-wa-muted max-w-md text-sm">যে কারো সাথে কথা বলতে বামপাশের তালিকা থেকে চ্যাট নির্বাচন করুন অথবা নতুন নম্বর সার্চ করে চ্যাট শুরু করুন।</p>
                     <div class="mt-6 flex items-center text-xs text-wa-muted gap-2">
-                        <i class="fa-solid fa-lock text-wa-green"></i> এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট ও ব্যাকগ্রাউন্ড সার্ভিস
+                        <i class="fa-solid fa-lock text-wa-green"></i> এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট
                     </div>
                 </div>
 
@@ -392,7 +375,7 @@
 
     </div>
 
-    <!-- Firebase Libraries -->
+    <!-- Firebase Libraries (With FCM Messaging support) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { 
@@ -416,6 +399,11 @@
             off, 
             remove 
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { 
+            getMessaging, 
+            getToken, 
+            onMessage 
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
         // Provided User Firebase Config
         const firebaseConfig = {
@@ -429,10 +417,17 @@
             measurementId: "G-S8FXSQMLR3"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase Services
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        
+        let messaging = null;
+        try {
+            messaging = getMessaging(app);
+        } catch (e) {
+            console.warn("Messaging not supported on this browser context:", e);
+        }
 
         // App Global State Variable
         let currentUser = null;
@@ -444,7 +439,6 @@
         let recordTimerInterval = null;
         let localStream = null;
         let peerConnection = null;
-        let activeCallId = null;
 
         // WebRTC Config
         const rtcConfig = {
@@ -455,66 +449,46 @@
             iceCandidatePoolSize: 10
         };
 
-        // Dynamically create web app manifest for APK/PWA background background execution capability
-        const pwaManifest = {
-            name: "সাফিন ওয়েব - WhatsApp Bangla",
-            short_name: "সাফিন ওয়েব",
-            start_url: "./",
-            display: "standalone",
-            background_color: "#111b21",
-            theme_color: "#111b21",
-            icons: [
-                {
-                    src: "https://cdn-icons-png.flaticon.com/512/3670/3670051.png",
-                    sizes: "512x512",
-                    type: "image/png",
-                    purpose: "any maskable"
-                }
-            ]
-        };
-        const manifestBlob = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
-        const manifestURL = URL.createObjectURL(manifestBlob);
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = manifestURL;
-        document.head.appendChild(manifestLink);
-
-        // Register Service Worker with Background Push & Vibration capability
+        // Dynamic Firebase Background Service Worker for System Level Push Notification
         if ('serviceWorker' in navigator) {
-            const swCode = `
-                self.addEventListener('install', event => self.skipWaiting());
-                self.addEventListener('activate', event => event.waitUntil(clients.claim()));
+            const fcmSwCode = `
+                importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+                importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-                // Handle incoming background pushes & sync triggers
-                self.addEventListener('push', event => {
-                    let data = { title: 'নতুন কল / বার্তা', body: 'আপনার অ্যাপে নতুন বার্তা বা কল এসেছে', type: 'message' };
-                    try { if (event.data) data = event.data.json(); } catch(e) {}
-
-                    const isCall = data.type === 'call';
-                    const title = data.title || (isCall ? '📞 ইনকামিং কল' : '💬 নতুন বার্তা');
-                    const options = {
-                        body: data.body || 'আপনার কাছে নোটিফিকেশন এসেছে',
-                        icon: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
-                        badge: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
-                        tag: 'safin-bg-notif-' + (isCall ? 'call' : 'msg'),
-                        renotify: true,
-                        requireInteraction: isCall,
-                        vibrate: isCall ? [800, 400, 800, 400, 800, 400, 800] : [300, 150, 300],
-                        actions: isCall ? [
-                            { action: 'open', title: 'উত্তর দিন / চ্যাট খুলুন' }
-                        ] : [
-                            { action: 'open', title: 'দেখুন' }
-                        ]
-                    };
-
-                    event.waitUntil(self.registration.showNotification(title, options));
+                firebase.initializeApp({
+                    apiKey: "${firebaseConfig.apiKey}",
+                    authDomain: "${firebaseConfig.authDomain}",
+                    databaseURL: "${firebaseConfig.databaseURL}",
+                    projectId: "${firebaseConfig.projectId}",
+                    storageBucket: "${firebaseConfig.storageBucket}",
+                    messagingSenderId: "${firebaseConfig.messagingSenderId}",
+                    appId: "${firebaseConfig.appId}"
                 });
 
-                self.addEventListener('notificationclick', event => {
+                const messaging = firebase.messaging();
+
+                // Handles Push Notifications when app is CLOSED or IN BACKGROUND
+                messaging.onBackgroundMessage((payload) => {
+                    console.log('[SW] Background notification received:', payload);
+                    const title = payload.notification?.title || payload.data?.title || 'নতুন বার্তা / কল';
+                    const options = {
+                        body: payload.notification?.body || payload.data?.body || 'আপনার অ্যাপে একটি নতুন নোটিফিকেশন এসেছে।',
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
+                        badge: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
+                        vibrate: [500, 250, 500, 250, 500],
+                        tag: 'safin-lockscreen-push',
+                        renotify: true,
+                        data: payload.data || {},
+                        requireInteraction: true
+                    };
+                    return self.registration.showNotification(title, options);
+                });
+
+                self.addEventListener('notificationclick', (event) => {
                     event.notification.close();
                     event.waitUntil(
                         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-                            for (let client of clientList) {
+                            for (const client of clientList) {
                                 if ('focus' in client) return client.focus();
                             }
                             if (clients.openWindow) return clients.openWindow('/');
@@ -522,11 +496,49 @@
                     );
                 });
             `;
-            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const blob = new Blob([fcmSwCode], { type: 'application/javascript' });
             const swUrl = URL.createObjectURL(blob);
             navigator.serviceWorker.register(swUrl).then(reg => {
-                console.log('Background Service Worker Active:', reg.scope);
-            }).catch(err => console.warn('SW Register:', err));
+                console.log("FCM Service Worker Registered successfully!");
+            }).catch(err => console.warn('SW Register Error:', err));
+        }
+
+        // Setup FCM Push Token & Permission
+        async function setupFCMToken(uid) {
+            if (!messaging) return;
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    // Register FCM Token with VAPID Key if available
+                    const token = await getToken(messaging, {
+                        vapidKey: 'BD3mYg1...YOUR_FIREBASE_VAPID_KEY_IF_NEEDED...' 
+                    }).catch(err => {
+                        console.warn("FCM getToken failed (VAPID key required for Web Push):", err);
+                        return null;
+                    });
+
+                    if (token) {
+                        console.log("FCM Device Token:", token);
+                        // Save token to Realtime Database so server/cloud functions can trigger direct FCM pushes
+                        await update(ref(db, `users/${uid}`), {
+                            fcmToken: token,
+                            lastOnline: Date.now()
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn("FCM Setup Error:", err);
+            }
+        }
+
+        // Listen for FCM foreground push notifications
+        if (messaging) {
+            onMessage(messaging, (payload) => {
+                console.log("Foreground FCM Message received:", payload);
+                const title = payload.notification?.title || "নতুন নোটিফিকেশন";
+                const body = payload.notification?.body || "আপনার একটি নতুন মেসেজ এসেছে";
+                notifyUser(title, body, payload.data?.type || 'message');
+            });
         }
 
         // Setup Recaptcha for Phone auth
@@ -568,23 +580,11 @@
 
         async function requestNotificationPermission() {
             try {
-                if ('Notification' in window) {
-                    const perm = await Notification.requestPermission();
-                    if (perm === 'granted') {
-                        document.getElementById('bgPermissionBanner').classList.add('hidden');
-                    }
+                if ('Notification' in window && Notification.permission === 'default') {
+                    await Notification.requestPermission();
                 }
             } catch (e) { console.warn('Notification permission unavailable:', e); }
         }
-
-        document.getElementById('enableBgPermissionBtn').addEventListener('click', () => {
-            requestNotificationPermission();
-            getAudioContext();
-        });
-
-        document.getElementById('dismissBgBannerBtn').addEventListener('click', () => {
-            document.getElementById('bgPermissionBanner').classList.add('hidden');
-        });
 
         function showInAppNotification(title, body, type = 'message', onClick = null) {
             const box = document.getElementById('appNotification');
@@ -611,10 +611,11 @@
                     const notifOptions = {
                         body: body,
                         icon: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
+                        badge: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
                         tag: 'safin-web-' + type + '-' + Date.now(),
                         renotify: true,
-                        requireInteraction: type === 'call',
-                        vibrate: type === 'call' ? [800, 400, 800, 400, 800, 400, 800] : [300, 150, 300]
+                        requireInteraction: true,
+                        vibrate: [500, 250, 500, 250, 500, 250, 500]
                     };
 
                     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -648,7 +649,6 @@
                 if (!ctx) return;
                 if (ctx.state === 'suspended') await ctx.resume();
 
-                // Dynamic Audio Compressor Node to push volume to maximum acoustic reach without clipping
                 const compressor = ctx.createDynamicsCompressor();
                 compressor.threshold.setValueAtTime(-10, ctx.currentTime);
                 compressor.knee.setValueAtTime(40, ctx.currentTime);
@@ -657,12 +657,10 @@
                 compressor.release.setValueAtTime(0.25, ctx.currentTime);
                 compressor.connect(ctx.destination);
 
-                // High gain for 25m distance audibility
                 ringtoneGain = ctx.createGain();
                 ringtoneGain.gain.setValueAtTime(0.85, ctx.currentTime);
                 ringtoneGain.connect(compressor);
 
-                // Distinct acoustic chime sequence (Optimized 1kHz - 2.5kHz formant frequencies for distance)
                 const playLoudChimePattern = () => {
                     if (!globalAudioCtx || !ringtoneGain) return;
                     const now = globalAudioCtx.currentTime;
@@ -671,7 +669,7 @@
                     freqs.forEach((freq, idx) => {
                         const osc = globalAudioCtx.createOscillator();
                         const gain = globalAudioCtx.createGain();
-                        osc.type = 'triangle'; // High harmonic penetration
+                        osc.type = 'triangle';
 
                         osc.frequency.setValueAtTime(freq, now + idx * 0.12);
                         gain.gain.setValueAtTime(0.001, now + idx * 0.12);
@@ -742,7 +740,7 @@
         sendOtpBtn.addEventListener('click', async () => {
             const phoneNumber = phoneNumberInput.value.trim();
             if (!phoneNumber || phoneNumber.length < 10) {
-                notifyUser("ভুল নম্বর", "দয়া করে একটি সঠিক ফোন নম্বর লিখুন (যেমন: +8801700000000)", 'message');
+                alert("দয়া করে একটি সঠিক ফোন নম্বর লিখুন (যেমন: +8801700000000)");
                 return;
             }
 
@@ -753,12 +751,12 @@
                 sendOtpBtn.innerText = "পাঠানো হচ্ছে...";
 
                 confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-                notifyUser("OTP পাঠানো হয়েছে", "আপনার ফোনে OTP কোড পাঠানো হয়েছে।", 'message');
+                alert("আপনার ফোনে OTP পাঠানো হয়েছে।");
                 phoneInputGroup.classList.add('hidden');
                 otpInputGroup.classList.remove('hidden');
             } catch (error) {
                 console.error("Phone Auth Error:", error);
-                notifyUser("ত্রুটি", "OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message, 'message');
+                alert("OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message);
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.innerText = "OTP কোড পাঠান";
             }
@@ -768,7 +766,7 @@
         verifyOtpBtn.addEventListener('click', async () => {
             const code = otpCodeInput.value.trim();
             if (!code || code.length < 6) {
-                notifyUser("ভুল কোড", "দয়া করে ৬ ডিজিটের কোড প্রদান করুন", 'message');
+                alert("দয়া করে ৬ ডিজিটের কোড প্রদান করুন");
                 return;
             }
 
@@ -777,7 +775,7 @@
                 currentUser = result.user;
                 checkAndSetupUserProfile(currentUser);
             } catch (error) {
-                notifyUser("ত্রুটি", "ভুল OTP কোড: " + error.message, 'message');
+                alert("ভুল OTP কোড: " + error.message);
             }
         });
 
@@ -789,48 +787,44 @@
                 currentUser = result.user;
                 checkAndSetupUserProfile(currentUser);
             } catch (error) {
-                console.error("Google Signin Error:", error);
-                notifyUser("ত্রুটি", "গুগল সাইন-ইন করতে ব্যর্থ: " + error.message, 'message');
+        // Helper to update notification status badge
+        function updateNotifBadge() {
+            const badge = document.getElementById('notifStatusBadge');
+            if (!badge || !('Notification' in window)) return;
+            if (Notification.permission === 'granted') {
+                badge.innerText = 'সক্রিয় চালু';
+                badge.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold';
+            } else if (Notification.permission === 'denied') {
+                badge.innerText = 'ব্লক করা';
+                badge.className = 'text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-semibold';
+            }
+        }
+
+        // Lock Screen Notification Test Listener
+        document.getElementById('testLockNotifBtn').addEventListener('click', async () => {
+            if (!('Notification' in window)) {
+                alert('আপনার ডিভাইসে সিস্টেম নোটিফিকেশন সাপোর্টেড নয়।');
+                return;
+            }
+
+            let perm = Notification.permission;
+            if (perm !== 'granted') {
+                perm = await Notification.requestPermission();
+            }
+
+            updateNotifBadge();
+
+            if (perm === 'granted') {
+                notifyUser(
+                    '📱 সাফিন ওয়েব টেস্ট নোটিফিকেশন',
+                    'অভিনন্দন! আপনার মোবাইল লক স্ক্রিন নোটিফিকেশন সক্রিয় হয়েছে।',
+                    'message'
+                );
+                alert('একটি টেস্ট নোটিফিকেশন পাঠানো হয়েছে!\n\nজরুরি টিপস: নোটিফিকেশন মোবাইল লক স্ক্রিনে পাওয়ার জন্য আপনার ফোনের Settings -> Apps -> Chrome / Browser -> Notifications এ গিয়ে "Lock screen notifications" চালু রাখুন।');
+            } else {
+                alert('নোটিফিকেশন পারমিশন অনুমতি দেওয়া হয়নি। ব্রাউজার সেটিংসে গিয়ে Notifications Allow করুন।');
             }
         });
-
-        // Check and fetch user profile from Realtime DB
-        async function checkAndSetupUserProfile(user) {
-            authScreen.classList.add('hidden');
-            const userRef = ref(db, 'users/' + user.uid);
-            const snapshot = await get(userRef);
-
-            if (snapshot.exists()) {
-                currentUserData = snapshot.val();
-                updateUserUI();
-            } else {
-                // Initialize default profile
-                currentUserData = {
-                    uid: user.uid,
-                    name: user.displayName || "ইউজার " + user.uid.substring(0, 4),
-                    phone: user.phoneNumber || "+8801...",
-                    photo: user.photoURL || "https://placehold.co/150x150/202c33/00a884?text=User",
-                    status: "Hey there! I am using WhatsApp."
-                };
-                await set(userRef, currentUserData);
-                updateUserUI();
-                openProfileModal();
-            }
-            
-            if ('Notification' in window && Notification.permission === 'granted') {
-                document.getElementById('bgPermissionBanner').classList.add('hidden');
-            }
-            
-            listenForIncomingCalls();
-            loadRecentChats();
-        }
-
-        // Update UI header with user details
-        function updateUserUI() {
-            document.getElementById('myNameTxt').innerText = currentUserData.name || "আমার নাম";
-            document.getElementById('myPhoneTxt').innerText = currentUserData.phone || "";
-            document.getElementById('myAvatarImg').src = currentUserData.photo || "https://placehold.co/100";
-        }
 
         // Profile Modal Logic
         const profileModal = document.getElementById('profileModal');
@@ -839,6 +833,7 @@
             document.getElementById('profilePhoneInput').value = currentUserData.phone || "";
             document.getElementById('profileStatusInput').value = currentUserData.status || "";
             document.getElementById('profileAvatarPreview').src = currentUserData.photo || "https://placehold.co/150";
+            updateNotifBadge();
             profileModal.classList.remove('hidden');
         };
 
@@ -866,7 +861,7 @@
             const photo = document.getElementById('profileAvatarPreview').src;
 
             if (!name) {
-                notifyUser("ইনপুট প্রয়োজন", "দয়া করে নাম প্রদান করুন", 'message');
+                alert("দয়া করে নাম প্রদান করুন");
                 return;
             }
 
@@ -881,13 +876,15 @@
             await set(ref(db, 'users/' + currentUser.uid), currentUserData);
             updateUserUI();
             profileModal.classList.add('hidden');
-            notifyUser("সফল", "প্রোফাইল সফলভাবে আপডেট করা হয়েছে!", 'message');
+            alert("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
         });
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await signOut(auth);
-            location.reload();
+            if (confirm("আপনি কি লগআউট করতে চান?")) {
+                await signOut(auth);
+                location.reload();
+            }
         });
 
         // Search Contacts Modal
@@ -951,6 +948,10 @@
                 }
             }
         });
+
+        let chatNotificationInitialised = false;
+        const lastSeenChatTimestamps = {};
+        const originalDocumentTitle = document.title;
 
         // Load Recent Chats List
         function loadRecentChats() {
@@ -1023,7 +1024,6 @@
             document.getElementById('activeChatAvatar').src = peerUser.photo || 'https://placehold.co/100';
             document.getElementById('activeChatStatus').innerText = peerUser.status || "অনলাইন";
 
-            // Mobile switch screen view
             document.getElementById('sidebar').classList.add('hidden', 'md:flex');
             document.getElementById('chatArea').classList.remove('hidden');
 
@@ -1115,7 +1115,6 @@
 
             await push(messagesRef, newMsg);
 
-            // Update user chats node
             const summary = type === 'text' ? content : `[${type.toUpperCase()} বার্তা]`;
             const chatTimestamp = Date.now();
             await set(ref(db, `user_chats/${currentUser.uid}/${activeChatUser.uid}`), {
@@ -1150,7 +1149,7 @@
             const isVideo = file.type.startsWith('video/');
 
             if (!isImage && !isVideo) {
-                notifyUser("ভুল ফাইল", "শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন", 'message');
+                alert("শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন");
                 return;
             }
 
@@ -1189,7 +1188,7 @@
                 }, 1000);
 
             } catch (err) {
-                notifyUser("মাইক্রোফোন এরর", "মাইক্রোফোন সংযোগ করা যায়নি: " + err.message, 'message');
+                alert("মাইক্রোফোন সংযোগ করা যায়নি: " + err.message);
             }
         });
 
@@ -1243,9 +1242,6 @@
         let ringtoneTimer = null;
         let ringtoneGain = null;
         let notificationTimeout = null;
-        let chatNotificationInitialised = false;
-        const lastSeenChatTimestamps = {};
-        const originalDocumentTitle = document.title;
 
         function showCallUI(type, peerName, peerPhoto, status, incoming = false) {
             callOverlay.classList.remove('hidden');
@@ -1417,12 +1413,12 @@
 
         async function initiateCall(type) {
             if (!currentUser || !activeChatUser) {
-                notifyUser("ব্যবহারকারী নির্বাচন করুন", "প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।", 'message');
+                alert('প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।');
                 return;
             }
 
             if (activeCallRef) {
-                notifyUser("কল ইতিমধ্যে সক্রিয়", "একটি কল ইতিমধ্যে চলছে।", 'message');
+                alert('একটি কল ইতিমধ্যে চলছে।');
                 return;
             }
 
@@ -1529,10 +1525,10 @@
 
             } catch (err) {
                 console.error('Start call error:', err);
-                notifyUser(
-                    'মিডিয়া পারমিশন এরর',
-                    'ক্যামেরা/মাইক্রোফোন পারমিশন ও HTTPS নিশ্চিত করুন।',
-                    'message'
+                alert(
+                    'ক্যামেরা/মাইক্রোফোন চালু করা যায়নি।\n\n' +
+                    'Browser/WebView permission এবং HTTPS নিশ্চিত করুন।\n\n' +
+                    'কারণ: ' + (err.message || err)
                 );
                 closeCallUI(true);
             }
@@ -1541,7 +1537,7 @@
         startAudioCallBtn.addEventListener('click', () => initiateCall('audio'));
         startVideoCallBtn.addEventListener('click', () => initiateCall('video'));
 
-        // Listen for incoming calls addressed to the current user.
+        // Listen for incoming calls addressed to the current user
         function listenForIncomingCalls() {
             if (!currentUser) return;
 
@@ -1682,7 +1678,7 @@
 
             } catch (err) {
                 console.error('Accept call error:', err);
-                notifyUser('ত্রুটি', 'কল ধরতে সমস্যা হয়েছে: ' + (err.message || err), 'message');
+                alert('কল ধরতে সমস্যা হয়েছে: ' + (err.message || err));
                 closeCallUI(true);
             }
         }
@@ -1694,7 +1690,7 @@
                 const data = snapshot.val();
 
                 if (!data || !data.offer) {
-                    notifyUser('কল তথ্য', 'কলটি আর পাওয়া যাচ্ছে না।', 'message');
+                    alert('কলটি আর পাওয়া যাচ্ছে না।');
                     closeCallUI(false);
                     return;
                 }
@@ -1702,7 +1698,7 @@
                 acceptIncomingCall(data);
             }).catch(err => {
                 console.error(err);
-                notifyUser('ত্রুটি', 'কলের তথ্য পাওয়া যায়নি।', 'message');
+                alert('কলের তথ্য পাওয়া যায়নি।');
                 closeCallUI(false);
             });
         });
@@ -1754,7 +1750,7 @@
                 : '<i class="fa-solid fa-video-slash"></i>';
 
             toggleCamBtn.classList.toggle('bg-red-600', !videoTrack.enabled);
-            toggleCamBtn.classList.toggle('bg-gray-800', toggleCamBtn.classList.contains('bg-red-600'));
+            toggleCamBtn.classList.toggle('bg-gray-800', videoTrack.enabled);
         });
 
         // End call from either side
