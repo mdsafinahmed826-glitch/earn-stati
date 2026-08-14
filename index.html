@@ -1115,6 +1115,11 @@
 
             initializedUserUid = user.uid;
 
+            // Firebase has already authenticated this user.
+            // Hide the login interface immediately and never treat a
+            // Realtime Database/profile error as a logout.
+            authScreen.classList.add('hidden');
+
             try {
                 profileSetupPromise = checkAndSetupUserProfile(user);
                 await profileSetupPromise;
@@ -1122,8 +1127,10 @@
                 console.error("User initialization error:", error);
                 initializedUserUid = null;
                 profileSetupPromise = null;
-                authScreen.classList.remove('hidden');
-                alert("অ্যাপ চালু করতে সমস্যা হয়েছে: " + error.message);
+
+                // Keep the user logged in. Show the real initialization
+                // error instead of sending them back to the login screen.
+                alert("লগইন সফল হয়েছে, কিন্তু প্রোফাইল/ডাটা লোড করতে সমস্যা হয়েছে: " + error.message);
             }
         }
 
