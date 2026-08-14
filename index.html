@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Web Bangla</title>
     
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <meta name="theme-color" content="#111b21">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="সাফিন ওয়েব">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -50,6 +56,16 @@
             background-image: radial-gradient(#1e293b 1px, transparent 1px);
             background-size: 20px 20px;
         }
+
+        @keyframes ringPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 168, 132, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(0, 168, 132, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 168, 132, 0); }
+        }
+
+        .ring-animation {
+            animation: ringPulse 1.5s infinite;
+        }
     </style>
 </head>
 <body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
@@ -58,8 +74,8 @@
     <div id="app" class="h-full w-full flex flex-col relative">
 
         <!-- ==================== AUTH / LOGIN MODAL ==================== -->
-        <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
-            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center">
+        <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4 overflow-y-auto">
+            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center my-auto">
                 <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-lg">
                     <i class="fa-brands font-bold fa-whatsapp"></i>
                 </div>
@@ -171,6 +187,22 @@
             </div>
         </div>
 
+        <!-- ==================== BACKGROUND PERMISSION & INSTALL BANNER ==================== -->
+        <div id="bgPermissionBanner" class="bg-wa-green text-white px-4 py-2.5 flex items-center justify-between text-xs sm:text-sm font-medium shadow-md z-30">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bell text-lg animate-bounce"></i>
+                <span>অ্যাপ বন্ধ থাকলেও ব্যাকগ্রাউন্ড নোটিফিকেশন ও রিংটোন পেতে অনুমতি চালু করুন।</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="enableBgPermissionBtn" class="bg-white text-wa-dark hover:bg-gray-100 px-3 py-1 rounded-lg font-bold transition shadow text-xs">
+                    চালু করুন
+                </button>
+                <button id="dismissBgBannerBtn" class="text-white hover:text-gray-200 px-1">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+        </div>
+
         <!-- ==================== APP NOTIFICATIONS ==================== -->
         <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer">
             <div class="flex items-start gap-3">
@@ -187,7 +219,7 @@
         <div id="callOverlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
             <!-- Call Header -->
             <div class="text-center mt-8">
-                <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 animate-pulse">
+                <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 ring-animation">
                 <h3 id="callUserName" class="text-2xl font-bold text-white">ব্যবহারকারীর নাম</h3>
                 <p id="callStatusText" class="text-wa-green font-medium mt-1">কলিং...</p>
             </div>
@@ -277,7 +309,7 @@
                     <h2 class="text-2xl font-bold text-white mb-2">WhatsApp Web for Windows / Mobile</h2>
                     <p class="text-wa-muted max-w-md text-sm">যে কারো সাথে কথা বলতে বামপাশের তালিকা থেকে চ্যাট নির্বাচন করুন অথবা নতুন নম্বর সার্চ করে চ্যাট শুরু করুন।</p>
                     <div class="mt-6 flex items-center text-xs text-wa-muted gap-2">
-                        <i class="fa-solid fa-lock text-wa-green"></i> এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট
+                        <i class="fa-solid fa-lock text-wa-green"></i> এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট ও ব্যাকগ্রাউন্ড সার্ভিস
                     </div>
                 </div>
 
@@ -423,26 +455,78 @@
             iceCandidatePoolSize: 10
         };
 
-        // Register Inline Service Worker for Background Notification handling
+        // Dynamically create web app manifest for APK/PWA background background execution capability
+        const pwaManifest = {
+            name: "সাফিন ওয়েব - WhatsApp Bangla",
+            short_name: "সাফিন ওয়েব",
+            start_url: "./",
+            display: "standalone",
+            background_color: "#111b21",
+            theme_color: "#111b21",
+            icons: [
+                {
+                    src: "https://cdn-icons-png.flaticon.com/512/3670/3670051.png",
+                    sizes: "512x512",
+                    type: "image/png",
+                    purpose: "any maskable"
+                }
+            ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(pwaManifest)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = manifestURL;
+        document.head.appendChild(manifestLink);
+
+        // Register Service Worker with Background Push & Vibration capability
         if ('serviceWorker' in navigator) {
             const swCode = `
                 self.addEventListener('install', event => self.skipWaiting());
                 self.addEventListener('activate', event => event.waitUntil(clients.claim()));
+
+                // Handle incoming background pushes & sync triggers
+                self.addEventListener('push', event => {
+                    let data = { title: 'নতুন কল / বার্তা', body: 'আপনার অ্যাপে নতুন বার্তা বা কল এসেছে', type: 'message' };
+                    try { if (event.data) data = event.data.json(); } catch(e) {}
+
+                    const isCall = data.type === 'call';
+                    const title = data.title || (isCall ? '📞 ইনকামিং কল' : '💬 নতুন বার্তা');
+                    const options = {
+                        body: data.body || 'আপনার কাছে নোটিফিকেশন এসেছে',
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
+                        badge: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
+                        tag: 'safin-bg-notif-' + (isCall ? 'call' : 'msg'),
+                        renotify: true,
+                        requireInteraction: isCall,
+                        vibrate: isCall ? [800, 400, 800, 400, 800, 400, 800] : [300, 150, 300],
+                        actions: isCall ? [
+                            { action: 'open', title: 'উত্তর দিন / চ্যাট খুলুন' }
+                        ] : [
+                            { action: 'open', title: 'দেখুন' }
+                        ]
+                    };
+
+                    event.waitUntil(self.registration.showNotification(title, options));
+                });
+
                 self.addEventListener('notificationclick', event => {
                     event.notification.close();
                     event.waitUntil(
                         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-                            if (clientList.length > 0) {
-                                return clientList[0].focus();
+                            for (let client of clientList) {
+                                if ('focus' in client) return client.focus();
                             }
-                            return clients.openWindow('/');
+                            if (clients.openWindow) return clients.openWindow('/');
                         })
                     );
                 });
             `;
             const blob = new Blob([swCode], { type: 'application/javascript' });
             const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).catch(err => console.warn('SW Register:', err));
+            navigator.serviceWorker.register(swUrl).then(reg => {
+                console.log('Background Service Worker Active:', reg.scope);
+            }).catch(err => console.warn('SW Register:', err));
         }
 
         // Setup Recaptcha for Phone auth
@@ -484,11 +568,23 @@
 
         async function requestNotificationPermission() {
             try {
-                if ('Notification' in window && Notification.permission === 'default') {
-                    await Notification.requestPermission();
+                if ('Notification' in window) {
+                    const perm = await Notification.requestPermission();
+                    if (perm === 'granted') {
+                        document.getElementById('bgPermissionBanner').classList.add('hidden');
+                    }
                 }
             } catch (e) { console.warn('Notification permission unavailable:', e); }
         }
+
+        document.getElementById('enableBgPermissionBtn').addEventListener('click', () => {
+            requestNotificationPermission();
+            getAudioContext();
+        });
+
+        document.getElementById('dismissBgBannerBtn').addEventListener('click', () => {
+            document.getElementById('bgPermissionBanner').classList.add('hidden');
+        });
 
         function showInAppNotification(title, body, type = 'message', onClick = null) {
             const box = document.getElementById('appNotification');
@@ -518,7 +614,7 @@
                         tag: 'safin-web-' + type + '-' + Date.now(),
                         renotify: true,
                         requireInteraction: type === 'call',
-                        vibrate: [500, 250, 500, 250, 500, 250, 500]
+                        vibrate: type === 'call' ? [800, 400, 800, 400, 800, 400, 800] : [300, 150, 300]
                     };
 
                     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -646,7 +742,7 @@
         sendOtpBtn.addEventListener('click', async () => {
             const phoneNumber = phoneNumberInput.value.trim();
             if (!phoneNumber || phoneNumber.length < 10) {
-                alert("দয়া করে একটি সঠিক ফোন নম্বর লিখুন (যেমন: +8801700000000)");
+                notifyUser("ভুল নম্বর", "দয়া করে একটি সঠিক ফোন নম্বর লিখুন (যেমন: +8801700000000)", 'message');
                 return;
             }
 
@@ -657,12 +753,12 @@
                 sendOtpBtn.innerText = "পাঠানো হচ্ছে...";
 
                 confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-                alert("আপনার ফোনে OTP পাঠানো হয়েছে।");
+                notifyUser("OTP পাঠানো হয়েছে", "আপনার ফোনে OTP কোড পাঠানো হয়েছে।", 'message');
                 phoneInputGroup.classList.add('hidden');
                 otpInputGroup.classList.remove('hidden');
             } catch (error) {
                 console.error("Phone Auth Error:", error);
-                alert("OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message);
+                notifyUser("ত্রুটি", "OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message, 'message');
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.innerText = "OTP কোড পাঠান";
             }
@@ -672,7 +768,7 @@
         verifyOtpBtn.addEventListener('click', async () => {
             const code = otpCodeInput.value.trim();
             if (!code || code.length < 6) {
-                alert("দয়া করে ৬ ডিজিটের কোড প্রদান করুন");
+                notifyUser("ভুল কোড", "দয়া করে ৬ ডিজিটের কোড প্রদান করুন", 'message');
                 return;
             }
 
@@ -681,7 +777,7 @@
                 currentUser = result.user;
                 checkAndSetupUserProfile(currentUser);
             } catch (error) {
-                alert("ভুল OTP কোড: " + error.message);
+                notifyUser("ত্রুটি", "ভুল OTP কোড: " + error.message, 'message');
             }
         });
 
@@ -694,7 +790,7 @@
                 checkAndSetupUserProfile(currentUser);
             } catch (error) {
                 console.error("Google Signin Error:", error);
-                alert("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message);
+                notifyUser("ত্রুটি", "গুগল সাইন-ইন করতে ব্যর্থ: " + error.message, 'message');
             }
         });
 
@@ -721,7 +817,10 @@
                 openProfileModal();
             }
             
-            requestNotificationPermission();
+            if ('Notification' in window && Notification.permission === 'granted') {
+                document.getElementById('bgPermissionBanner').classList.add('hidden');
+            }
+            
             listenForIncomingCalls();
             loadRecentChats();
         }
@@ -767,7 +866,7 @@
             const photo = document.getElementById('profileAvatarPreview').src;
 
             if (!name) {
-                alert("দয়া করে নাম প্রদান করুন");
+                notifyUser("ইনপুট প্রয়োজন", "দয়া করে নাম প্রদান করুন", 'message');
                 return;
             }
 
@@ -782,15 +881,13 @@
             await set(ref(db, 'users/' + currentUser.uid), currentUserData);
             updateUserUI();
             profileModal.classList.add('hidden');
-            alert("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
+            notifyUser("সফল", "প্রোফাইল সফলভাবে আপডেট করা হয়েছে!", 'message');
         });
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            if (confirm("আপনি কি লগআউট করতে চান?")) {
-                await signOut(auth);
-                location.reload();
-            }
+            await signOut(auth);
+            location.reload();
         });
 
         // Search Contacts Modal
@@ -1053,7 +1150,7 @@
             const isVideo = file.type.startsWith('video/');
 
             if (!isImage && !isVideo) {
-                alert("শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন");
+                notifyUser("ভুল ফাইল", "শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন", 'message');
                 return;
             }
 
@@ -1092,7 +1189,7 @@
                 }, 1000);
 
             } catch (err) {
-                alert("মাইক্রোফোন সংযোগ করা যায়নি: " + err.message);
+                notifyUser("মাইক্রোফোন এরর", "মাইক্রোফোন সংযোগ করা যায়নি: " + err.message, 'message');
             }
         });
 
@@ -1320,12 +1417,12 @@
 
         async function initiateCall(type) {
             if (!currentUser || !activeChatUser) {
-                alert('প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।');
+                notifyUser("ব্যবহারকারী নির্বাচন করুন", "প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।", 'message');
                 return;
             }
 
             if (activeCallRef) {
-                alert('একটি কল ইতিমধ্যে চলছে।');
+                notifyUser("কল ইতিমধ্যে সক্রিয়", "একটি কল ইতিমধ্যে চলছে।", 'message');
                 return;
             }
 
@@ -1432,10 +1529,10 @@
 
             } catch (err) {
                 console.error('Start call error:', err);
-                alert(
-                    'ক্যামেরা/মাইক্রোফোন চালু করা যায়নি।\n\n' +
-                    'Browser/WebView permission এবং HTTPS নিশ্চিত করুন।\n\n' +
-                    'কারণ: ' + (err.message || err)
+                notifyUser(
+                    'মিডিয়া পারমিশন এরর',
+                    'ক্যামেরা/মাইক্রোফোন পারমিশন ও HTTPS নিশ্চিত করুন।',
+                    'message'
                 );
                 closeCallUI(true);
             }
@@ -1585,7 +1682,7 @@
 
             } catch (err) {
                 console.error('Accept call error:', err);
-                alert('কল ধরতে সমস্যা হয়েছে: ' + (err.message || err));
+                notifyUser('ত্রুটি', 'কল ধরতে সমস্যা হয়েছে: ' + (err.message || err), 'message');
                 closeCallUI(true);
             }
         }
@@ -1597,7 +1694,7 @@
                 const data = snapshot.val();
 
                 if (!data || !data.offer) {
-                    alert('কলটি আর পাওয়া যাচ্ছে না।');
+                    notifyUser('কল তথ্য', 'কলটি আর পাওয়া যাচ্ছে না।', 'message');
                     closeCallUI(false);
                     return;
                 }
@@ -1605,7 +1702,7 @@
                 acceptIncomingCall(data);
             }).catch(err => {
                 console.error(err);
-                alert('কলের তথ্য পাওয়া যায়নি।');
+                notifyUser('ত্রুটি', 'কলের তথ্য পাওয়া যায়নি।', 'message');
                 closeCallUI(false);
             });
         });
@@ -1657,7 +1754,7 @@
                 : '<i class="fa-solid fa-video-slash"></i>';
 
             toggleCamBtn.classList.toggle('bg-red-600', !videoTrack.enabled);
-            toggleCamBtn.classList.toggle('bg-gray-800', videoTrack.enabled);
+            toggleCamBtn.classList.toggle('bg-gray-800', toggleCamBtn.classList.contains('bg-red-600'));
         });
 
         // End call from either side
