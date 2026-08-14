@@ -415,11 +415,15 @@
         let activeCallId = null;
 
         // WebRTC Config
+        // Firebase is used only for signaling. Actual audio/video travels peer-to-peer
+        // through WebRTC. ICE candidates are exchanged through callerCandidates and
+        // answerCandidates under the call node.
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' }
-            ]
+            ],
+            iceCandidatePoolSize: 10
         };
 
         // Setup Recaptcha for Phone auth
@@ -1224,7 +1228,11 @@
             peerConnection.oniceconnectionstatechange = () => {
                 if (!peerConnection) return;
                 const state = peerConnection.iceConnectionState;
-                if (state === 'failed') {
+                if (state === 'checking') {
+                    document.getElementById('callStatusText').innerText = 'নেটওয়ার্ক সংযোগ খোঁজা হচ্ছে...';
+                } else if (state === 'connected' || state === 'completed') {
+                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হয়েছে';
+                } else if (state === 'failed') {
                     document.getElementById('callStatusText').innerText = 'নেটওয়ার্ক সংযোগ ব্যর্থ হয়েছে';
                 }
             };
@@ -1271,13 +1279,15 @@
                     localVideo.play().catch(() => {});
                 }
 
+                // Create the signaling path BEFORE setLocalDescription().
+                // This is important because ICE candidates can be generated immediately
+                // after setLocalDescription(); otherwise the first candidates could be lost.
+                activeCallRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}`);
+
                 setupPeerConnection(type);
                 localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, localStream);
                 });
-
-                // One call per caller -> callee pair.
-                activeCallRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}`);
 
                 const offer = await peerConnection.createOffer({
                     offerToReceiveAudio: true,
