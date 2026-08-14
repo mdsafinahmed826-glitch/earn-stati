@@ -171,6 +171,18 @@
             </div>
         </div>
 
+        <!-- ==================== APP NOTIFICATIONS ==================== -->
+        <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer">
+            <div class="flex items-start gap-3">
+                <div id="notificationIcon" class="w-11 h-11 rounded-full bg-wa-green flex items-center justify-center text-white text-lg shrink-0"><i class="fa-solid fa-message"></i></div>
+                <div class="min-w-0 flex-1">
+                    <p id="notificationTitle" class="font-bold text-white text-sm">নতুন বার্তা</p>
+                    <p id="notificationBody" class="text-wa-muted text-sm mt-1 break-words">আপনার কাছে নতুন বার্তা এসেছে।</p>
+                </div>
+                <button id="closeNotificationBtn" class="text-wa-muted hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
         <!-- ==================== CALL OVERLAY (AUDIO/VIDEO) ==================== -->
         <div id="callOverlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
             <!-- Call Header -->
@@ -422,6 +434,96 @@
             }
         };
 
+        // ==================== RINGTONE + MESSAGE NOTIFICATION ====================
+        async function requestNotificationPermission() {
+            try {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    await Notification.requestPermission();
+                }
+            } catch (e) { console.warn('Notification permission unavailable:', e); }
+        }
+
+        function showInAppNotification(title, body, type = 'message', onClick = null) {
+            const box = document.getElementById('appNotification');
+            if (!box) return;
+            document.getElementById('notificationTitle').innerText = title;
+            document.getElementById('notificationBody').innerText = body;
+            document.getElementById('notificationIcon').innerHTML = type === 'call'
+                ? '<i class="fa-solid fa-phone"></i>'
+                : '<i class="fa-solid fa-message"></i>';
+            box.classList.remove('hidden');
+            box.onclick = (e) => {
+                if (e.target.closest('#closeNotificationBtn')) return;
+                if (onClick) onClick();
+                box.classList.add('hidden');
+            };
+            clearTimeout(notificationTimeout);
+            notificationTimeout = setTimeout(() => box.classList.add('hidden'), 6000);
+        }
+
+        function notifyUser(title, body, type = 'message', onClick = null) {
+            showInAppNotification(title, body, type, onClick);
+            try {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { body, tag: 'safin-web-' + type, renotify: true });
+                }
+            } catch (e) { console.warn('System notification unavailable:', e); }
+        }
+
+        function flashTitle(title) {
+            let state = false;
+            const timer = setInterval(() => {
+                state = !state;
+                document.title = state ? title : originalDocumentTitle;
+            }, 800);
+            setTimeout(() => { clearInterval(timer); document.title = originalDocumentTitle; }, 10000);
+        }
+
+        async function startRingtone() {
+            stopRingtone();
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return;
+                ringtoneAudioContext = new AC();
+                if (ringtoneAudioContext.state === 'suspended') await ringtoneAudioContext.resume();
+                ringtoneGain = ringtoneAudioContext.createGain();
+                ringtoneGain.gain.value = 0.08;
+                ringtoneGain.connect(ringtoneAudioContext.destination);
+                const ring = () => {
+                    if (!ringtoneAudioContext || !ringtoneGain) return;
+                    const now = ringtoneAudioContext.currentTime;
+                    [660, 880].forEach((freq, i) => {
+                        const osc = ringtoneAudioContext.createOscillator();
+                        const gain = ringtoneAudioContext.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.0001, now + i * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.18, now + i * 0.08 + 0.03);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.08 + 0.45);
+                        osc.connect(gain).connect(ringtoneGain);
+                        osc.start(now + i * 0.08);
+                        osc.stop(now + i * 0.08 + 0.5);
+                    });
+                };
+                ring();
+                ringtoneTimer = setInterval(ring, 1500);
+            } catch (e) { console.warn('Ringtone failed:', e); }
+        }
+
+        function stopRingtone() {
+            if (ringtoneTimer) { clearInterval(ringtoneTimer); ringtoneTimer = null; }
+            if (ringtoneAudioContext) {
+                try { ringtoneAudioContext.close(); } catch (_) {}
+                ringtoneAudioContext = null;
+                ringtoneGain = null;
+            }
+        }
+
+        document.getElementById('closeNotificationBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('appNotification').classList.add('hidden');
+        });
+
         // DOM elements reference
         const authScreen = document.getElementById('authScreen');
         const phoneTabBtn = document.getElementById('phoneTabBtn');
@@ -530,6 +632,7 @@
                 openProfileModal();
             }
             
+            requestNotificationPermission();
             listenForIncomingCalls();
             loadRecentChats();
         }
@@ -678,6 +781,26 @@
                 const chatsData = snapshot.val();
                 const uids = Object.keys(chatsData);
 
+                if (chatNotificationInitialised) {
+                    for (const peerUid of uids) {
+                        const chat = chatsData[peerUid] || {};
+                        const ts = Number(chat.timestamp || 0);
+                        const previous = lastSeenChatTimestamps[peerUid] || 0;
+                        if (ts > previous && chat.lastSenderId && chat.lastSenderId !== currentUser.uid) {
+                            const peerSnap = await get(ref(db, `users/${peerUid}`));
+                            if (peerSnap.exists() && (!activeChatUser || activeChatUser.uid !== peerUid)) {
+                                const peer = peerSnap.val();
+                                notifyUser(peer.name || 'নতুন বার্তা', chat.lastMessage || 'নতুন বার্তা এসেছে', 'message', () => selectChatUser(peer));
+                                flashTitle('💬 নতুন বার্তা — সাফিন ওয়েব');
+                            }
+                        }
+                    }
+                }
+                uids.forEach(uid => {
+                    lastSeenChatTimestamps[uid] = Math.max(lastSeenChatTimestamps[uid] || 0, Number(chatsData[uid]?.timestamp || 0));
+                });
+                chatNotificationInitialised = true;
+
                 for (let peerUid of uids) {
                     const peerUserSnap = await get(ref(db, `users/${peerUid}`));
                     if (peerUserSnap.exists()) {
@@ -808,8 +931,13 @@
 
             // Update user chats node
             const summary = type === 'text' ? content : `[${type.toUpperCase()} বার্তা]`;
-            await set(ref(db, `user_chats/${currentUser.uid}/${activeChatUser.uid}`), { lastMessage: summary, timestamp: Date.now() });
-            await set(ref(db, `user_chats/${activeChatUser.uid}/${currentUser.uid}`), { lastMessage: summary, timestamp: Date.now() });
+            const chatTimestamp = Date.now();
+            await set(ref(db, `user_chats/${currentUser.uid}/${activeChatUser.uid}`), {
+                lastMessage: summary, timestamp: chatTimestamp, lastSenderId: currentUser.uid
+            });
+            await set(ref(db, `user_chats/${activeChatUser.uid}/${currentUser.uid}`), {
+                lastMessage: summary, timestamp: chatTimestamp, lastSenderId: currentUser.uid
+            });
         }
 
         document.getElementById('sendMessageBtn').addEventListener('click', () => {
@@ -930,6 +1058,13 @@
         let activeCallRole = null;
         let callListeners = [];
         let pendingRemoteCandidates = [];
+        let ringtoneTimer = null;
+        let ringtoneAudioContext = null;
+        let ringtoneGain = null;
+        let notificationTimeout = null;
+        let chatNotificationInitialised = false;
+        const lastSeenChatTimestamps = {};
+        const originalDocumentTitle = document.title;
 
         function showCallUI(type, peerName, peerPhoto, status, incoming = false) {
             callOverlay.classList.remove('hidden');
@@ -987,6 +1122,7 @@
         }
 
         function closeCallUI(removeRemoteCall = false) {
+            stopRingtone();
             const refToRemove = activeCallRef;
 
             clearCallListeners();
@@ -1258,6 +1394,14 @@
                     activeCallType = data.type === 'video' ? 'video' : 'audio';
                     activeCallRole = 'callee';
 
+                    startRingtone();
+                    notifyUser(
+                        `${data.callerName || 'কেউ একজন'} কল করছেন`,
+                        `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল`,
+                        'call'
+                    );
+                    flashTitle('📞 ইনকামিং কল — সাফিন ওয়েব');
+
                     showCallUI(
                         activeCallType,
                         data.callerName,
@@ -1273,6 +1417,7 @@
         }
 
         async function acceptIncomingCall(callData) {
+            stopRingtone();
             if (!activeCallRef || activeCallRole !== 'callee') return;
 
             incomingCallControls.classList.add('hidden');
@@ -1389,6 +1534,7 @@
         });
 
         rejectCallBtn.addEventListener('click', async () => {
+            stopRingtone();
             if (!activeCallRef) return;
 
             try {
