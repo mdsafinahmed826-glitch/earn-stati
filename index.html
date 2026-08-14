@@ -467,6 +467,8 @@
             }
 
             try {
+                // IMPORTANT: establish local persistence BEFORE signing in.
+                await authPersistenceReady;
                 window.setupRecaptcha();
                 const appVerifier = window.recaptchaVerifier;
                 sendOtpBtn.disabled = true;
@@ -504,6 +506,8 @@
         // Google Sign-In
         googleSignInBtn.addEventListener('click', async () => {
             try {
+                // IMPORTANT: establish local persistence BEFORE redirecting.
+                await authPersistenceReady;
                 const provider = new GoogleAuthProvider();
                 await signInWithRedirect(auth, provider);
                 // The page may reload/redirect here. Firebase restores the
@@ -1090,41 +1094,52 @@
         }
 
         // Auth state observer
-        // This is the only place that starts the app after a successful login.
+        // Wait for Firebase's local persistence to be ready before deciding
+        // whether the user is logged in. This prevents the login screen from
+        // appearing again during the initial page load.
         let initializedUserUid = null;
         let profileSetupPromise = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                authScreen.classList.add('hidden');
+        (async () => {
+            try {
+                await authPersistenceReady;
 
-                // Firebase can fire the same authenticated state more than once.
-                // Avoid registering duplicate realtime listeners in that case.
-                if (initializedUserUid === user.uid) return;
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        authScreen.classList.add('hidden');
 
-                initializedUserUid = user.uid;
+                        // Prevent duplicate realtime listeners.
+                        if (initializedUserUid === user.uid) return;
 
-                try {
-                    if (!profileSetupPromise) {
-                        profileSetupPromise = checkAndSetupUserProfile(user);
+                        initializedUserUid = user.uid;
+
+                        try {
+                            if (!profileSetupPromise) {
+                                profileSetupPromise = checkAndSetupUserProfile(user);
+                            }
+                            await profileSetupPromise;
+                        } catch (error) {
+                            console.error("User initialization error:", error);
+                            initializedUserUid = null;
+                            profileSetupPromise = null;
+                            authScreen.classList.remove('hidden');
+                            alert("অ্যাপ চালু করতে সমস্যা হয়েছে: " + error.message);
+                        }
+                    } else {
+                        currentUser = null;
+                        currentUserData = null;
+                        initializedUserUid = null;
+                        profileSetupPromise = null;
+                        authScreen.classList.remove('hidden');
                     }
-                    await profileSetupPromise;
-                } catch (error) {
-                    console.error("User initialization error:", error);
-                    initializedUserUid = null;
-                    profileSetupPromise = null;
-                    authScreen.classList.remove('hidden');
-                    alert("অ্যাপ চালু করতে সমস্যা হয়েছে: " + error.message);
-                }
-            } else {
-                currentUser = null;
-                currentUserData = null;
-                initializedUserUid = null;
-                profileSetupPromise = null;
+                });
+            } catch (error) {
+                console.error("Firebase Auth Persistence Error:", error);
                 authScreen.classList.remove('hidden');
+                alert("লগইন সেশন সংরক্ষণ করা যাচ্ছে না। ব্রাউজারের Private/Incognito mode বন্ধ করে আবার চেষ্টা করুন।");
             }
-        });
+        })();
 
     </script>
 </body>
