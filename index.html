@@ -397,7 +397,7 @@
         // signed in after refresh/reopen. Firebase documents that LOCAL
         // persistence survives browser restarts until signOut() is called.
         const authPersistenceReady = setPersistence(auth, browserLocalPersistence);
-
+        getRedirectResult
         // App Global State Variable
         let currentUser = null;
         let currentUserData = null;
@@ -520,9 +520,6 @@
         });
 
         // Check and fetch user profile from Realtime DB
-            }
-        });
-        
                async function checkAndSetupUserProfile(user)
             // Make sure the local auth persistence has been established
             // before continuing with the authenticated app state.
