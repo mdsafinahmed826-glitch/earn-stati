@@ -392,9 +392,9 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        // Keep the Firebase login session after page refresh/reopen.
-        // This prevents the app from asking the user to log in again
-        // while the Firebase session is still valid.
+        // Firebase Auth LOCAL persistence keeps the authenticated user
+        // signed in after refresh/reopen. Firebase documents that LOCAL
+        // persistence survives browser restarts until signOut() is called.
         const authPersistenceReady = setPersistence(auth, browserLocalPersistence);
 
         // App Global State Variable
@@ -1093,53 +1093,79 @@
             callOverlay.classList.add('hidden');
         }
 
-        // Auth state observer
-        // Wait for Firebase's local persistence to be ready before deciding
-        // whether the user is logged in. This prevents the login screen from
-        // appearing again during the initial page load.
+        // ============================================================
+        // AUTH STARTUP / SESSION RESTORE
+        // ============================================================
+        // IMPORTANT:
+        // We do NOT show the login screen immediately on page load.
+        // Firebase first restores LOCAL persistence. Only after that do we
+        // decide whether the user is logged in or actually needs to log in.
         let initializedUserUid = null;
         let profileSetupPromise = null;
+        let authStateResolved = false;
 
-        (async () => {
+        async function startAuthenticatedApp(user) {
+            if (!user) return;
+
+            currentUser = user;
+            authStateResolved = true;
+            authScreen.classList.add('hidden');
+
+            if (initializedUserUid === user.uid) return;
+
+            initializedUserUid = user.uid;
+
             try {
+                profileSetupPromise = checkAndSetupUserProfile(user);
+                await profileSetupPromise;
+            } catch (error) {
+                console.error("User initialization error:", error);
+                initializedUserUid = null;
+                profileSetupPromise = null;
+                authScreen.classList.remove('hidden');
+                alert("অ্যাপ চালু করতে সমস্যা হয়েছে: " + error.message);
+            }
+        }
+
+        async function startAuth() {
+            try {
+                // Persistence MUST be ready before any sign-in or auth-state
+                // decision is made.
                 await authPersistenceReady;
+
+                // Complete any pending Google redirect flow. This is harmless
+                // when no redirect login is pending.
+                try {
+                    await getRedirectResult(auth);
+                } catch (redirectError) {
+                    console.error("Google redirect result error:", redirectError);
+                }
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        currentUser = user;
-                        authScreen.classList.add('hidden');
-
-                        // Prevent duplicate realtime listeners.
-                        if (initializedUserUid === user.uid) return;
-
-                        initializedUserUid = user.uid;
-
-                        try {
-                            if (!profileSetupPromise) {
-                                profileSetupPromise = checkAndSetupUserProfile(user);
-                            }
-                            await profileSetupPromise;
-                        } catch (error) {
-                            console.error("User initialization error:", error);
-                            initializedUserUid = null;
-                            profileSetupPromise = null;
-                            authScreen.classList.remove('hidden');
-                            alert("অ্যাপ চালু করতে সমস্যা হয়েছে: " + error.message);
-                        }
+                        await startAuthenticatedApp(user);
                     } else {
+                        // At this point Firebase has definitely finished
+                        // restoring LOCAL persistence, so showing login is safe.
                         currentUser = null;
                         currentUserData = null;
                         initializedUserUid = null;
                         profileSetupPromise = null;
+                        authStateResolved = true;
                         authScreen.classList.remove('hidden');
                     }
                 });
             } catch (error) {
-                console.error("Firebase Auth Persistence Error:", error);
+                console.error("Firebase Auth startup error:", error);
                 authScreen.classList.remove('hidden');
-                alert("লগইন সেশন সংরক্ষণ করা যাচ্ছে না। ব্রাউজারের Private/Incognito mode বন্ধ করে আবার চেষ্টা করুন।");
+                alert("Firebase লগইন সেশন চালু করা যাচ্ছে না: " + error.message);
             }
-        })();
+        }
+
+        // Keep the login screen hidden while Firebase is checking the saved
+        // session. This prevents the brief/incorrect return to the login page.
+        authScreen.classList.add('hidden');
+        startAuth();
 
     </script>
 </body>
