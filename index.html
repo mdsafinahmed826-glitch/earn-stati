@@ -356,9 +356,11 @@
             RecaptchaVerifier, 
             signInWithPhoneNumber, 
             GoogleAuthProvider, 
-            signInWithRedirect, 
-            signOut, 
-            onAuthStateChanged 
+            signInWithRedirect,
+            signOut,
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { 
             getDatabase, 
@@ -389,6 +391,11 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+
+        // Keep the Firebase login session after page refresh/reopen.
+        // This prevents the app from asking the user to log in again
+        // while the Firebase session is still valid.
+        const authPersistenceReady = setPersistence(auth, browserLocalPersistence);
 
         // App Global State Variable
         let currentUser = null;
@@ -486,9 +493,9 @@
             }
 
             try {
-                const result = await confirmationResult.confirm(code);
-                currentUser = result.user;
-                checkAndSetupUserProfile(currentUser);
+                await confirmationResult.confirm(code);
+                // Do not call checkAndSetupUserProfile() here.
+                // onAuthStateChanged() below handles the successful login.
             } catch (error) {
                 alert("ভুল OTP কোড: " + error.message);
             }
@@ -498,9 +505,9 @@
         googleSignInBtn.addEventListener('click', async () => {
             try {
                 const provider = new GoogleAuthProvider();
-                const result = await signInWithRedirect(auth, provider);
-                currentUser = result.user;
-                checkAndSetupUserProfile(currentUser);
+                await signInWithRedirect(auth, provider);
+                // The page may reload/redirect here. Firebase restores the
+                // session and onAuthStateChanged() handles the signed-in user.
             } catch (error) {
                 console.error("Google Signin Error:", error);
                 alert("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message);
@@ -509,6 +516,9 @@
 
         // Check and fetch user profile from Realtime DB
         async function checkAndSetupUserProfile(user) {
+            // Make sure the local auth persistence has been established
+            // before continuing with the authenticated app state.
+            await authPersistenceReady;
             authScreen.classList.add('hidden');
             const userRef = ref(db, 'users/' + user.uid);
             const snapshot = await get(userRef);
@@ -1080,11 +1090,38 @@
         }
 
         // Auth state observer
-        onAuthStateChanged(auth, (user) => {
+        // This is the only place that starts the app after a successful login.
+        let initializedUserUid = null;
+        let profileSetupPromise = null;
+
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                checkAndSetupUserProfile(user);
+                authScreen.classList.add('hidden');
+
+                // Firebase can fire the same authenticated state more than once.
+                // Avoid registering duplicate realtime listeners in that case.
+                if (initializedUserUid === user.uid) return;
+
+                initializedUserUid = user.uid;
+
+                try {
+                    if (!profileSetupPromise) {
+                        profileSetupPromise = checkAndSetupUserProfile(user);
+                    }
+                    await profileSetupPromise;
+                } catch (error) {
+                    console.error("User initialization error:", error);
+                    initializedUserUid = null;
+                    profileSetupPromise = null;
+                    authScreen.classList.remove('hidden');
+                    alert("অ্যাপ চালু করতে সমস্যা হয়েছে: " + error.message);
+                }
             } else {
+                currentUser = null;
+                currentUserData = null;
+                initializedUserUid = null;
+                profileSetupPromise = null;
                 authScreen.classList.remove('hidden');
             }
         });
