@@ -165,7 +165,6 @@
             </div>
         </div>
 
-        <!-- ==================== APP NOTIFICATIONS ==================== -->
         <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer transition-all">
             <div class="flex items-start gap-3">
                 <div id="notificationIcon" class="w-11 h-11 rounded-full bg-wa-green flex items-center justify-center text-white text-lg shrink-0"><i class="fa-solid fa-message"></i></div>
@@ -177,7 +176,7 @@
             </div>
         </div>
 
-        <!-- ==================== CALL OVERLAY (AUDIO/VIDEO) ==================== -->
+        <!-- CALL OVERLAY (AUDIO/VIDEO) -->
         <div id="callOverlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
             <div class="text-center mt-8">
                 <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 animate-pulse">
@@ -216,10 +215,9 @@
             </div>
         </div>
 
-        <!-- ==================== MAIN WHATSAPP APP UI ==================== -->
+        <!-- MAIN WHATSAPP APP UI -->
         <div class="flex-1 flex h-full overflow-hidden">
-
-            <!-- SIDEBAR: Contact list & settings -->
+            <!-- SIDEBAR -->
             <div id="sidebar" class="w-full md:w-96 bg-wa-panel border-r border-gray-800 flex flex-col h-full z-10 transition-all duration-300">
                 <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800">
                     <div class="flex items-center gap-3 cursor-pointer" id="myProfileTrigger">
@@ -253,7 +251,6 @@
 
             <!-- CHAT AREA -->
             <div id="chatArea" class="hidden md:flex flex-1 bg-wa-chatbg flex-col h-full relative chat-pattern">
-                
                 <div id="noChatSelectedView" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
                     <div class="w-24 h-24 bg-wa-panel rounded-full flex items-center justify-center text-wa-green text-5xl mb-4 border border-gray-800">
                         <i class="fa-brands fa-whatsapp"></i>
@@ -335,7 +332,7 @@
             RecaptchaVerifier, 
             signInWithPhoneNumber, 
             GoogleAuthProvider, 
-            signInWithRedirect, 
+            signInWithPopup, 
             signOut, 
             onAuthStateChanged 
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -367,16 +364,13 @@
             measurementId: "G-S8FXSQMLR3"
         };
 
-        // User Provided VAPID Key for Background Web Push
         const VAPID_KEY = "BC0MPvC6ZXBfg1weG9bqeVAOSB2Iwq2xW90k8qEBgmIDnkTHZjF6amecQL5WMV2otUb6MZDQU2pMO3E3PyPXJv8";
 
-        // Initialize Firebase Core & Messaging
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const messaging = getMessaging(app);
 
-        // App States
         let currentUser = null;
         let currentUserData = null;
         let activeChatUser = null;
@@ -394,7 +388,6 @@
         const lastSeenChatTimestamps = {};
         const originalDocumentTitle = document.title;
 
-        // WebRTC Config
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -403,26 +396,6 @@
             iceCandidatePoolSize: 10
         };
 
-        // FCM Token নিয়ে ডাটাবেজে সেভ করার ফাংশন
-        async function saveUserFcmToken(userId) {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await getToken(messaging, { 
-                        vapidKey: VAPID_KEY 
-                    });
-                    if (token) {
-                        // ডাটাবেজে fcmToken সেভ করা হচ্ছে
-                        await update(ref(db, `users/${userId}`), { fcmToken: token });
-                        console.log("FCM Token Successfully Saved:", token);
-                    }
-                }
-            } catch (err) {
-                console.error("Token Save Error:", err); 
-            }
-        }
-
-        // Setup Recaptcha
         window.setupRecaptcha = () => {
             if (!window.recaptchaVerifier) {
                 window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -432,8 +405,6 @@
             }
         };
 
-        // ==================== ULTRA LOUD RINGTONE (50 FEET AUDIBLE) ====================
-        // Dual harmonic high-pitched synthesizers running through dynamic compression for max clarity & volume
         async function startLoudRingtone() {
             stopRingtone();
             try {
@@ -444,7 +415,6 @@
                     await ringtoneAudioContext.resume();
                 }
 
-                // Dynamic compressor node guarantees high loudness without sound clipping
                 const compressor = ringtoneAudioContext.createDynamicsCompressor();
                 compressor.threshold.setValueAtTime(-10, ringtoneAudioContext.currentTime);
                 compressor.knee.setValueAtTime(40, ringtoneAudioContext.currentTime);
@@ -453,7 +423,7 @@
                 compressor.release.setValueAtTime(0.25, ringtoneAudioContext.currentTime);
 
                 ringtoneGainNode = ringtoneAudioContext.createGain();
-                ringtoneGainNode.gain.setValueAtTime(1.0, ringtoneAudioContext.currentTime); // Max gain
+                ringtoneGainNode.gain.setValueAtTime(1.0, ringtoneAudioContext.currentTime);
 
                 ringtoneGainNode.connect(compressor);
                 compressor.connect(ringtoneAudioContext.destination);
@@ -462,7 +432,6 @@
                     if (!ringtoneAudioContext || ringtoneAudioContext.state === 'closed') return;
                     const now = ringtoneAudioContext.currentTime;
 
-                    // High-pitched double pulse chime (Messenger/WhatsApp pattern)
                     const pulses = [
                         { f1: 880, f2: 1320, start: now },
                         { f1: 880, f2: 1320, start: now + 0.18 },
@@ -494,7 +463,6 @@
                         osc2.stop(p.start + 0.16);
                     });
 
-                    // Mobile Vibration (Vibrate mode support)
                     if (navigator.vibrate) {
                         navigator.vibrate([400, 200, 400]);
                     }
@@ -519,13 +487,13 @@
             }
         }
 
-        // ==================== BACKGROUND PUSH & SYSTEM NOTIFICATIONS ====================
         async function setupPushNotifications(user) {
             try {
-                // Call saveUserFcmToken function
-                await saveUserFcmToken(user.uid);
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') return;
+                }
 
-                // Register dynamic Inline Service Worker Blob for FCM background pushes
                 const swCode = `
                     importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
                     importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
@@ -549,13 +517,23 @@
 
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 const swUrl = URL.createObjectURL(blob);
-                await navigator.serviceWorker.register(swUrl);
+                const registration = await navigator.serviceWorker.register(swUrl);
+
+                const messaging = getMessaging(app);
+                const token = await getToken(messaging, { 
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: registration 
+                });
+
+                if (token) {
+                    await update(ref(db, `users/${user.uid}`), { fcmToken: token });
+                }
 
                 onMessage(messaging, (payload) => {
                     notifyUser(payload.notification?.title || 'নতুন বার্তা', payload.notification?.body || '', 'message');
                 });
             } catch (err) {
-                console.warn("FCM Service Worker initialization:", err);
+                console.warn("FCM Service Worker initialization error:", err);
             }
         }
 
@@ -646,7 +624,7 @@
                 otpInputGroup.classList.remove('hidden');
             } catch (error) {
                 console.error("Phone Auth Error:", error);
-                alert("OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message);
+                alert("OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message + "\n\nনোট: Firebase Console -> Authentication এ Phone Sign-in Provider চালু থাকতে হবে।");
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.innerText = "OTP কোড পাঠান";
             }
@@ -668,39 +646,50 @@
             }
         });
 
+        // Fixed Google Sign in with Popup for Seamless Auth inside Browser / Frames
         googleSignInBtn.addEventListener('click', async () => {
             try {
                 const provider = new GoogleAuthProvider();
-                const result = await signInWithRedirect(auth, provider);
+                const result = await signInWithPopup(auth, provider);
                 currentUser = result.user;
                 checkAndSetupUserProfile(currentUser);
             } catch (error) {
                 console.error("Google Signin Error:", error);
-                alert("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message);
+                alert("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message + "\n\nনোট: Firebase Console -> Authentication এ Google Provider চালু থাকতে হবে।");
             }
         });
 
         async function checkAndSetupUserProfile(user) {
+            // অবিলম্বে অ্যাথ স্ক্রিন হাইড করে মেইন ইউজার ইন্টারফেসে নেওয়ার প্রস্তুতি
             authScreen.classList.add('hidden');
-            const userRef = ref(db, 'users/' + user.uid);
-            const snapshot = await get(userRef);
-
-            if (snapshot.exists()) {
-                currentUserData = snapshot.val();
-                updateUserUI();
-            } else {
-                currentUserData = {
-                    uid: user.uid,
-                    name: user.displayName || "ইউজার " + user.uid.substring(0, 4),
-                    phone: user.phoneNumber || "+8801...",
-                    photo: user.photoURL || "https://placehold.co/150x150/202c33/00a884?text=User",
-                    status: "Hey there! I am using WhatsApp."
-                };
-                await set(userRef, currentUserData);
-                updateUserUI();
-                openProfileModal();
-            }
             
+            const defaultUserData = {
+                uid: user.uid,
+                name: user.displayName || "ইউজার " + user.uid.substring(0, 4),
+                phone: user.phoneNumber || "+8801...",
+                photo: user.photoURL || "https://placehold.co/150x150/202c33/00a884?text=User",
+                status: "Hey there! I am using WhatsApp."
+            };
+
+            const userRef = ref(db, 'users/' + user.uid);
+            
+            try {
+                const snapshot = await get(userRef);
+                if (snapshot.exists()) {
+                    currentUserData = snapshot.val();
+                } else {
+                    currentUserData = defaultUserData;
+                    await set(userRef, currentUserData);
+                    openProfileModal();
+                }
+            } catch (err) {
+                console.error("Database User Save/Fetch Error:", err);
+                // ফায়ারবেস রুলসে সমস্যা থাকলেও অ্যাপ ক্র্যাশ করবে না বা আটকে থাকবে না
+                currentUserData = defaultUserData;
+                showInAppNotification("ডাটাবেজ অ্যালার্ট", "ফায়ারবেস রুলসের কারণে পারমিশন ব্লকড, তবে আপনি মূল ইন্টারফেসে প্রবেশ করতে পেরেছেন।", "message");
+            }
+
+            updateUserUI();
             setupPushNotifications(user);
             listenForIncomingCalls();
             loadRecentChats();
@@ -755,10 +744,14 @@
                 photo: photo
             };
 
-            await set(ref(db, 'users/' + currentUser.uid), currentUserData);
-            updateUserUI();
-            profileModal.classList.add('hidden');
-            alert("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
+            try {
+                await set(ref(db, 'users/' + currentUser.uid), currentUserData);
+                updateUserUI();
+                profileModal.classList.add('hidden');
+                alert("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!");
+            } catch (e) {
+                alert("প্রোফাইল সেভ ব্যর্থ হয়েছে। ফায়ারবেস ডাটাবেজ রুলস চেক করুন।");
+            }
         });
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -787,48 +780,53 @@
             }
 
             const usersRef = ref(db, 'users');
-            const snapshot = await get(usersRef);
-            if (snapshot.exists()) {
-                const users = snapshot.val();
-                searchResultsList.innerHTML = '';
-                let count = 0;
+            try {
+                const snapshot = await get(usersRef);
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    searchResultsList.innerHTML = '';
+                    let count = 0;
 
-                Object.keys(users).forEach(uid => {
-                    if (uid !== currentUser.uid) {
-                        const u = users[uid];
-                        const nameMatch = u.name && u.name.toLowerCase().includes(queryText);
-                        const phoneMatch = u.phone && u.phone.includes(queryText);
+                    Object.keys(users).forEach(uid => {
+                        if (uid !== currentUser.uid) {
+                            const u = users[uid];
+                            const nameMatch = u.name && u.name.toLowerCase().includes(queryText);
+                            const phoneMatch = u.phone && u.phone.includes(queryText);
 
-                        if (nameMatch || phoneMatch) {
-                            count++;
-                            const item = document.createElement('div');
-                            item.className = "flex items-center justify-between p-3 hover:bg-wa-dark rounded-xl cursor-pointer transition border border-transparent hover:border-gray-800";
-                            item.innerHTML = `
-                                <div class="flex items-center gap-3">
-                                    <img src="${u.photo || 'https://placehold.co/100'}" class="w-10 h-10 rounded-full object-cover">
-                                    <div>
-                                        <h4 class="font-semibold text-white text-sm">${u.name}</h4>
-                                        <p class="text-xs text-wa-muted">${u.phone || 'নম্বর নেই'}</p>
+                            if (nameMatch || phoneMatch) {
+                                count++;
+                                const item = document.createElement('div');
+                                item.className = "flex items-center justify-between p-3 hover:bg-wa-dark rounded-xl cursor-pointer transition border border-transparent hover:border-gray-800";
+                                item.innerHTML = `
+                                    <div class="flex items-center gap-3">
+                                        <img src="${u.photo || 'https://placehold.co/100'}" class="w-10 h-10 rounded-full object-cover">
+                                        <div>
+                                            <h4 class="font-semibold text-white text-sm">${u.name}</h4>
+                                            <p class="text-xs text-wa-muted">${u.phone || 'নম্বর নেই'}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <button class="bg-wa-green text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-opacity-90">চ্যাট করুন</button>
-                            `;
-                            item.addEventListener('click', () => {
-                                selectChatUser(u);
-                                searchModal.classList.add('hidden');
-                            });
-                            searchResultsList.appendChild(item);
+                                    <button class="bg-wa-green text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-opacity-90">চ্যাট করুন</button>
+                                `;
+                                item.addEventListener('click', () => {
+                                    selectChatUser(u);
+                                    searchModal.classList.add('hidden');
+                                });
+                                searchResultsList.appendChild(item);
+                            }
                         }
-                    }
-                });
+                    });
 
-                if (count === 0) {
-                    searchResultsList.innerHTML = `<p class="text-center text-wa-muted text-sm py-4">কোনো ব্যবহারকারী পাওয়া যায়নি</p>`;
+                    if (count === 0) {
+                        searchResultsList.innerHTML = `<p class="text-center text-wa-muted text-sm py-4">কোনো ব্যবহারকারী পাওয়া যায়নি</p>`;
+                    }
                 }
+            } catch (err) {
+                console.error("Search users error:", err);
             }
         });
 
         function loadRecentChats() {
+            if (!currentUser) return;
             const userChatsRef = ref(db, `user_chats/${currentUser.uid}`);
             onValue(userChatsRef, async (snapshot) => {
                 const chatList = document.getElementById('chatList');
@@ -848,12 +846,14 @@
                         const ts = Number(chat.timestamp || 0);
                         const previous = lastSeenChatTimestamps[peerUid] || 0;
                         if (ts > previous && chat.lastSenderId && chat.lastSenderId !== currentUser.uid) {
-                            const peerSnap = await get(ref(db, `users/${peerUid}`));
-                            if (peerSnap.exists() && (!activeChatUser || activeChatUser.uid !== peerUid)) {
-                                const peer = peerSnap.val();
-                                notifyUser(peer.name || 'নতুন বার্তা', chat.lastMessage || 'নতুন বার্তা এসেছে', 'message', () => selectChatUser(peer));
-                                flashTitle('💬 নতুন বার্তা — সাফিন ওয়েব');
-                            }
+                            try {
+                                const peerSnap = await get(ref(db, `users/${peerUid}`));
+                                if (peerSnap.exists() && (!activeChatUser || activeChatUser.uid !== peerUid)) {
+                                    const peer = peerSnap.val();
+                                    notifyUser(peer.name || 'নতুন বার্তা', chat.lastMessage || 'নতুন বার্তা এসেছে', 'message', () => selectChatUser(peer));
+                                    flashTitle('💬 নতুন বার্তা — সাফিন ওয়েব');
+                                }
+                            } catch(e) { console.warn(e); }
                         }
                     }
                 }
@@ -863,27 +863,35 @@
                 chatNotificationInitialised = true;
 
                 for (let peerUid of uids) {
-                    const peerUserSnap = await get(ref(db, `users/${peerUid}`));
-                    if (peerUserSnap.exists()) {
-                        const peer = peerUserSnap.val();
-                        const lastMsg = chatsData[peerUid].lastMessage || "নতুন বার্তা";
-                        const timestamp = chatsData[peerUid].timestamp ? new Date(chatsData[peerUid].timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                    try {
+                        const peerUserSnap = await get(ref(db, `users/${peerUid}`));
+                        if (peerUserSnap.exists()) {
+                            const peer = peerUserSnap.val();
+                            const lastMsg = chatsData[peerUid].lastMessage || "নতুন বার্তা";
+                            const timestamp = chatsData[peerUid].timestamp ? new Date(chatsData[peerUid].timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
 
-                        const div = document.createElement('div');
-                        div.className = `p-3 flex items-center gap-3 cursor-pointer hover:bg-wa-dark transition ${activeChatUser && activeChatUser.uid === peer.uid ? 'bg-wa-dark border-l-4 border-wa-green' : ''}`;
-                        div.innerHTML = `
-                            <img src="${peer.photo || 'https://placehold.co/100'}" class="w-12 h-12 rounded-full object-cover">
-                            <div class="flex-1 overflow-hidden">
-                                <div class="flex justify-between items-baseline mb-1">
-                                    <h4 class="font-semibold text-white text-sm truncate">${peer.name}</h4>
-                                    <span class="text-[10px] text-wa-muted">${timestamp}</span>
+                            const div = document.createElement('div');
+                            div.className = `p-3 flex items-center gap-3 cursor-pointer hover:bg-wa-dark transition ${activeChatUser && activeChatUser.uid === peer.uid ? 'bg-wa-dark border-l-4 border-wa-green' : ''}`;
+                            div.innerHTML = `
+                                <img src="${peer.photo || 'https://placehold.co/100'}" class="w-12 h-12 rounded-full object-cover">
+                                <div class="flex-1 overflow-hidden">
+                                    <div class="flex justify-between items-baseline mb-1">
+                                        <h4 class="font-semibold text-white text-sm truncate">${peer.name}</h4>
+                                        <span class="text-[10px] text-wa-muted">${timestamp}</span>
+                                    </div>
+                                    <p class="text-xs text-wa-muted truncate">${lastMsg}</p>
                                 </div>
-                                <p class="text-xs text-wa-muted truncate">${lastMsg}</p>
-                            </div>
-                        `;
-                        div.addEventListener('click', () => selectChatUser(peer));
-                        chatList.appendChild(div);
-                    }
+                            `;
+                            div.addEventListener('click', () => selectChatUser(peer));
+                            chatList.appendChild(div);
+                        }
+                    } catch(e) { console.warn(e); }
+                }
+            }, (error) => {
+                console.error("Chat list listener error:", error);
+                const chatList = document.getElementById('chatList');
+                if (chatList) {
+                    chatList.innerHTML = `<div class="p-6 text-center text-yellow-400 text-xs">ডাটাবেজ পারমিশন ইস্যু। ফায়ারবেস রুলসে <code>auth != null</code> সেট করে দিন।</div>`;
                 }
             });
         }
@@ -1084,7 +1092,6 @@
             voiceRecordingOverlay.classList.add('hidden');
         });
 
-        // ==================== REAL-TIME CALLING SYSTEM ====================
         const callOverlay = document.getElementById('callOverlay');
         const videoContainer = document.getElementById('videoContainer');
         const remoteVideo = document.getElementById('remoteVideo');
@@ -1374,7 +1381,6 @@
                     activeCallType = data.type === 'video' ? 'video' : 'audio';
                     activeCallRole = 'callee';
 
-                    // Start Loud Ringtone and system vibrations
                     startLoudRingtone();
                     notifyUser(`${data.callerName || 'কেউ একজন'} কল করছেন`, `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল`, 'call');
                     flashTitle('📞 ইনকামিং কল — সাফিন ওয়েব');
