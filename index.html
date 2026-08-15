@@ -370,10 +370,11 @@
         // User Provided VAPID Key for Background Web Push
         const VAPID_KEY = "BC0MPvC6ZXBfg1weG9bqeVAOSB2Iwq2xW90k8qEBgmIDnkTHZjF6amecQL5WMV2otUb6MZDQU2pMO3E3PyPXJv8";
 
-        // Initialize Firebase Core
+        // Initialize Firebase Core & Messaging
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        const messaging = getMessaging(app);
 
         // App States
         let currentUser = null;
@@ -401,6 +402,25 @@
             ],
             iceCandidatePoolSize: 10
         };
+
+        // FCM Token নিয়ে ডাটাবেজে সেভ করার ফাংশন
+        async function saveUserFcmToken(userId) {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await getToken(messaging, { 
+                        vapidKey: VAPID_KEY 
+                    });
+                    if (token) {
+                        // ডাটাবেজে fcmToken সেভ করা হচ্ছে
+                        await update(ref(db, `users/${userId}`), { fcmToken: token });
+                        console.log("FCM Token Successfully Saved:", token);
+                    }
+                }
+            } catch (err) {
+                console.error("Token Save Error:", err); 
+            }
+        }
 
         // Setup Recaptcha
         window.setupRecaptcha = () => {
@@ -502,10 +522,8 @@
         // ==================== BACKGROUND PUSH & SYSTEM NOTIFICATIONS ====================
         async function setupPushNotifications(user) {
             try {
-                if ('Notification' in window) {
-                    const permission = await Notification.requestPermission();
-                    if (permission !== 'granted') return;
-                }
+                // Call saveUserFcmToken function
+                await saveUserFcmToken(user.uid);
 
                 // Register dynamic Inline Service Worker Blob for FCM background pushes
                 const swCode = `
@@ -531,17 +549,7 @@
 
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 const swUrl = URL.createObjectURL(blob);
-                const registration = await navigator.serviceWorker.register(swUrl);
-
-                const messaging = getMessaging(app);
-                const token = await getToken(messaging, { 
-                    vapidKey: VAPID_KEY,
-                    serviceWorkerRegistration: registration 
-                });
-
-                if (token) {
-                    await update(ref(db, `users/${user.uid}`), { fcmToken: token });
-                }
+                await navigator.serviceWorker.register(swUrl);
 
                 onMessage(messaging, (payload) => {
                     notifyUser(payload.notification?.title || 'নতুন বার্তা', payload.notification?.body || '', 'message');
