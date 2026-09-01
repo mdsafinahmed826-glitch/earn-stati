@@ -1,1586 +1,908 @@
 <!DOCTYPE html>
-<html lang="bn" class="h-full bg-gray-900">
+<html lang="bn" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Web Bangla - সাফিন ওয়েব</title>
-    
-    <!-- Tailwind CSS CDN -->
+    <title>Live Country Flag Battle Game - Auto Battle</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts (Hind Siliguri for Bangla) -->
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        wa: {
-                            dark: '#111b21',
-                            panel: '#202c33',
-                            header: '#202c33',
-                            green: '#00a884',
-                            lightgreen: '#005c4b',
-                            chatbg: '#0b141a',
-                            bubbleIn: '#202c33',
-                            bubbleOut: '#005c4b',
-                            text: '#e9edef',
-                            muted: '#8696a0'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Hind Siliguri', 'sans-serif'],
+                        neonCyan: '#00ffcc',
+                        neonPink: '#ff007f',
+                        neonGreen: '#39ff14',
+                        neonYellow: '#ffe600',
+                        darkBg: '#05070c',
+                        cardBg: '#0d1322'
                     }
                 }
             }
         }
     </script>
-
     <style>
-        body { font-family: 'Hind Siliguri', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #374045; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4a555c; }
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Share+Tech+Mono&family=Poppins:wght@400;600;700;800&display=swap');
         
-        .chat-pattern {
-            background-image: radial-gradient(#1e293b 1px, transparent 1px);
-            background-size: 20px 20px;
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #04060a;
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
         }
-
-        @keyframes toastIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .font-teko { font-family: 'Teko', sans-serif; }
+        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
+        
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #060911; }
+        ::-webkit-scrollbar-thumb { background: #1a2640; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ffcc; }
+        
+        .glow-title {
+            text-shadow: 0 0 12px rgba(0, 255, 204, 0.8), 0 0 25px rgba(0, 255, 204, 0.4);
         }
-        .animate-toast { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .glow-box-cyan {
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.25), inset 0 0 15px rgba(0, 255, 204, 0.1);
+        }
+        .glow-btn-green {
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+        }
+        .bg-flag-pattern {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0, 255, 204, 0.04) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 255, 204, 0.04) 1px, transparent 1px);
+        }
+        .neon-border {
+            border: 1.5px solid #00ffcc;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+        }
     </style>
 </head>
-<body class="h-full text-wa-text bg-wa-dark antialiased selection:bg-wa-green selection:text-white flex flex-col justify-between overflow-hidden">
+<body class="bg-flag-pattern min-h-screen flex flex-col justify-between items-center text-slate-100 p-2 md:p-3">
 
-    <div id="app" class="h-full w-full flex flex-col relative">
-
-        <!-- ==================== TOAST & DIALOG CONTAINER ==================== -->
-        <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4"></div>
-
-        <div id="customConfirmModal" class="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4 hidden">
-            <div class="bg-wa-panel border border-gray-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
-                <div class="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-3 text-xl">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-                <h4 id="confirmTitle" class="text-lg font-bold text-white mb-2">আপনি কি নিশ্চিত?</h4>
-                <p id="confirmMessage" class="text-sm text-wa-muted mb-6">আপনি এই কাজটি সম্পন্ন করতে চান?</p>
-                <div class="flex gap-3">
-                    <button id="confirmCancelBtn" class="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-medium text-sm transition">বাতিল</button>
-                    <button id="confirmOkBtn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition">হ্যাঁ, নিশ্চিত</button>
-                </div>
+    <!-- Streamer Top Banner (PRISM Live Style) -->
+    <header class="w-full max-w-lg flex flex-col items-center gap-1.5 mb-2">
+        <div class="w-full bg-black/90 border border-emerald-500/50 rounded-2xl px-4 py-1.5 flex justify-between items-center shadow-lg">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-xs font-bold font-mono-tech text-emerald-400 uppercase tracking-widest">LIVE FLAG BATTLE</span>
+            </div>
+            <div class="text-[11px] font-mono-tech text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-800">
+                REMAINING: <span id="topRemainingCountText" class="text-white font-bold">98 / 98</span>
             </div>
         </div>
 
-        <!-- ==================== AUTH / LOGIN MODAL ==================== -->
-        <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-wa-dark p-4">
-            <div class="bg-wa-panel rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl border border-gray-800 text-center">
-                <div class="w-20 h-20 bg-wa-green rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl shadow-lg">
-                    <i class="fa-brands font-bold fa-whatsapp"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-white mb-2">সাফিন ওয়েব</h2>
-                <p class="text-wa-muted mb-6 text-sm">স্বাগতম! চ্যাট শুরু করতে লগইন করুন</p>
-
-                <div class="flex border-b border-gray-700 mb-6">
-                    <button id="phoneTabBtn" class="flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition">ফোন নম্বর</button>
-                    <button id="googleTabBtn" class="flex-1 py-2 text-wa-muted hover:text-white font-semibold transition">Google দিয়ে</button>
-                </div>
-
-                <div id="phoneAuthForm" class="space-y-4">
-                    <div id="recaptcha-container" class="flex justify-center my-2"></div>
-                    
-                    <div id="phoneInputGroup">
-                        <label class="block text-left text-xs text-wa-muted mb-1">আপনার ফোন নম্বর (দেশি কোডসহ)</label>
-                        <div class="flex gap-2">
-                            <input type="tel" id="phoneNumberInput" placeholder="+8801700000000" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-wa-green">
-                        </div>
-                        <button id="sendOtpBtn" class="w-full mt-4 bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2">
-                            <span>OTP কোড পাঠান</span>
-                            <i class="fa-solid fa-paper-plane text-sm"></i>
-                        </button>
-                    </div>
-
-                    <div id="otpInputGroup" class="hidden space-y-4">
-                        <div>
-                            <label class="block text-left text-xs text-wa-muted mb-1">OTP কোড লিখুন</label>
-                            <input type="text" id="otpCodeInput" placeholder="123456" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-3 text-center text-xl font-mono text-white tracking-widest focus:outline-none focus:border-wa-green">
-                        </div>
-                        <button id="verifyOtpBtn" class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition">
-                            যাচাই করুন ও লগইন করুন
-                        </button>
-                    </div>
-                </div>
-
-                <div id="googleAuthForm" class="hidden py-4">
-                    <button id="googleSignInBtn" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-3">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                        Google অ্যাকাউন্টের মাধ্যমে সাইন ইন
-                    </button>
-                </div>
+        <!-- Top Leaderboard Preview Window -->
+        <div class="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-2 text-xs font-mono-tech">
+            <div id="miniLeaderboard" class="grid grid-cols-2 gap-x-3 gap-y-1">
+                <!-- Dynamically populated top 4 active countries -->
             </div>
         </div>
-
-        <!-- ==================== PROFILE SETUP / EDIT MODAL ==================== -->
-        <div id="profileModal" class="fixed inset-0 z-40 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
-            <div class="bg-wa-panel rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-800">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-user-gear text-wa-green"></i> প্রোফাইল এডিটর
-                    </h3>
-                    <button id="closeProfileBtn" class="text-wa-muted hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="text-center relative group">
-                        <img id="profileAvatarPreview" src="https://placehold.co/150x150/202c33/00a884?text=User" class="w-24 h-24 rounded-full object-cover mx-auto border-2 border-wa-green shadow">
-                        <label class="cursor-pointer bg-wa-green hover:bg-opacity-90 text-white rounded-full p-2 absolute bottom-0 right-1/2 translate-x-8 shadow-md">
-                            <i class="fa-solid fa-camera text-sm"></i>
-                            <input type="file" id="avatarFileInput" accept="image/*" class="hidden">
-                        </label>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-wa-muted mb-1">আপনার নাম</label>
-                        <input type="text" id="profileNameInput" placeholder="যেমন: আব্দুর রহমান" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-wa-muted mb-1">ফোন নম্বর (যোগাযোগের জন্য)</label>
-                        <input type="tel" id="profilePhoneInput" placeholder="+8801700000000" class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-wa-muted mb-1">স্ট্যাটাস / বায়ো</label>
-                        <input type="text" id="profileStatusInput" placeholder="Hey there! I am using WhatsApp." class="w-full bg-wa-dark border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                    </div>
-
-                    <button id="saveProfileBtn" class="w-full bg-wa-green hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg shadow-md transition mt-4">
-                        সেভ করুন
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== USER SEARCH / ADD CONTACT MODAL ==================== -->
-        <div id="searchModal" class="fixed inset-0 z-40 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden">
-            <div class="bg-wa-panel rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-800">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-user-plus text-wa-green"></i> নতুন চ্যাট / বন্ধু খুঁজুন
-                    </h3>
-                    <button id="closeSearchBtn" class="text-wa-muted hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-                </div>
-
-                <div class="relative mb-4">
-                    <input type="text" id="userSearchInput" placeholder="নাম অথবা ফোন নম্বর লিখুন..." class="w-full bg-wa-dark border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-wa-green">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-wa-muted"></i>
-                </div>
-
-                <div id="searchResultsList" class="max-h-60 overflow-y-auto space-y-2">
-                    <p class="text-center text-wa-muted text-sm py-4">সার্চ করার জন্য উপরে ফোন নম্বর বা নাম লিখুন</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== APP NOTIFICATIONS ==================== -->
-        <div id="appNotification" class="fixed top-4 right-4 z-[80] hidden w-[min(92vw,380px)] bg-wa-panel border border-gray-700 rounded-2xl shadow-2xl p-4 cursor-pointer transition-all">
-            <div class="flex items-start gap-3">
-                <div id="notificationIcon" class="w-11 h-11 rounded-full bg-wa-green flex items-center justify-center text-white text-lg shrink-0"><i class="fa-solid fa-message"></i></div>
-                <div class="min-w-0 flex-1">
-                    <p id="notificationTitle" class="font-bold text-white text-sm">নতুন বার্তা</p>
-                    <p id="notificationBody" class="text-wa-muted text-sm mt-1 break-words">আপনার কাছে নতুন বার্তা এসেছে।</p>
-                </div>
-                <button id="closeNotificationBtn" class="text-wa-muted hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-        </div>
-
-        <!-- ==================== CALL OVERLAY (AUDIO/VIDEO) ==================== -->
-        <div id="callOverlay" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-6 hidden">
-            <div class="text-center mt-8">
-                <img id="callUserAvatar" src="https://placehold.co/120" class="w-24 h-24 rounded-full object-cover border-4 border-wa-green mx-auto mb-4 animate-pulse">
-                <h3 id="callUserName" class="text-2xl font-bold text-white">ব্যবহারকারীর নাম</h3>
-                <p id="callStatusText" class="text-wa-green font-medium mt-1">কলিং...</p>
-            </div>
-
-            <div id="videoContainer" class="relative w-full max-w-2xl h-80 bg-black rounded-2xl overflow-hidden my-4 border border-gray-800 hidden">
-                <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-                <video id="localVideo" autoplay playsinline muted class="absolute bottom-4 right-4 w-32 h-24 object-cover rounded-lg border-2 border-white shadow-md"></video>
-            </div>
-
-            <audio id="remoteAudio" autoplay class="hidden"></audio>
-
-            <div class="flex items-center gap-6 mb-8">
-                <div id="incomingCallControls" class="flex gap-8 hidden">
-                    <button id="rejectCallBtn" class="w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition">
-                        <i class="fa-solid fa-phone-slash"></i>
-                    </button>
-                    <button id="acceptCallBtn" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg transition animate-bounce">
-                        <i class="fa-solid fa-phone"></i>
-                    </button>
-                </div>
-
-                <div id="ongoingCallControls" class="flex gap-4">
-                    <button id="toggleMicBtn" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-microphone"></i>
-                    </button>
-                    <button id="toggleCamBtn" class="w-12 h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-full flex items-center justify-center text-lg">
-                        <i class="fa-solid fa-video"></i>
-                    </button>
-                    <button id="endCallBtn" class="w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xl shadow-lg">
-                        <i class="fa-solid fa-phone-slash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== MAIN WHATSAPP APP UI ==================== -->
-        <div class="flex-1 flex h-full overflow-hidden">
-
-            <!-- SIDEBAR: Contact list & settings -->
-            <div id="sidebar" class="w-full md:w-96 bg-wa-panel border-r border-gray-800 flex flex-col h-full z-10 transition-all duration-300">
-                <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800">
-                    <div class="flex items-center gap-3 cursor-pointer" id="myProfileTrigger">
-                        <img id="myAvatarImg" src="https://placehold.co/100" class="w-10 h-10 rounded-full object-cover border border-wa-green">
-                        <div class="overflow-hidden">
-                            <h4 id="myNameTxt" class="font-bold text-sm text-white truncate">আমার নাম</h4>
-                            <p id="myPhoneTxt" class="text-xs text-wa-muted truncate">+8801700000000</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4 text-wa-muted">
-                        <button id="openSearchBtn" title="নতুন চ্যাট" class="hover:text-wa-green transition text-lg"><i class="fa-solid fa-message"></i></button>
-                        <button id="editProfileBtn" title="প্রোফাইল এডিট" class="hover:text-wa-green transition text-lg"><i class="fa-solid fa-user-pen"></i></button>
-                        <button id="logoutBtn" title="লগআউট" class="hover:text-red-400 transition text-lg"><i class="fa-solid fa-right-from-bracket"></i></button>
-                    </div>
-                </div>
-
-                <div class="p-2 bg-wa-dark border-b border-gray-800">
-                    <div class="relative">
-                        <input type="text" id="filterChatsInput" placeholder="চ্যাট খুঁজুন..." class="w-full bg-wa-panel text-white text-sm rounded-lg pl-9 pr-3 py-2 focus:outline-none">
-                        <i class="fa-solid fa-magnifying-glass text-wa-muted text-xs absolute left-3 top-3"></i>
-                    </div>
-                </div>
-
-                <div id="chatList" class="flex-1 overflow-y-auto divide-y divide-gray-800/40">
-                    <div class="p-8 text-center text-wa-muted text-sm">
-                        <i class="fa-solid fa-spinner fa-spin text-2xl text-wa-green mb-2 block"></i>
-                        চ্যাট লোড হচ্ছে...
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHAT AREA -->
-            <div id="chatArea" class="hidden md:flex flex-1 bg-wa-chatbg flex-col h-full relative chat-pattern">
-                
-                <div id="noChatSelectedView" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                    <div class="w-24 h-24 bg-wa-panel rounded-full flex items-center justify-center text-wa-green text-5xl mb-4 border border-gray-800">
-                        <i class="fa-brands fa-whatsapp"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white mb-2">WhatsApp Web for Windows / Mobile</h2>
-                    <p class="text-wa-muted max-w-md text-sm">যে কারো সাথে কথা বলতে বামপাশের তালিকা থেকে চ্যাট নির্বাচন করুন অথবা নতুন নম্বর সার্চ করে চ্যাট শুরু করুন।</p>
-                    <div class="mt-6 flex items-center text-xs text-wa-muted gap-2">
-                        <i class="fa-solid fa-lock text-wa-green"></i> এন্ড-টু-এন্ড এনক্রিপ্টেড রিয়েলটাইম চ্যাট
-                    </div>
-                </div>
-
-                <div id="activeChatView" class="hidden flex-1 flex flex-col h-full">
-                    <div class="h-16 bg-wa-header px-4 flex items-center justify-between border-b border-gray-800 z-10">
-                        <div class="flex items-center gap-3">
-                            <button id="backToChatListBtn" class="md:hidden text-wa-muted hover:text-white mr-1">
-                                <i class="fa-solid fa-arrow-left text-lg"></i>
-                            </button>
-                            <img id="activeChatAvatar" src="https://placehold.co/100" class="w-10 h-10 rounded-full object-cover border border-gray-700">
-                            <div>
-                                <h3 id="activeChatName" class="font-semibold text-white leading-tight text-base">ব্যবহারকারীর নাম</h3>
-                                <p id="activeChatStatus" class="text-xs text-wa-green">অনলাইন</p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-5 text-wa-muted">
-                            <button id="startAudioCallBtn" title="অডিও কল" class="hover:text-wa-green text-lg transition"><i class="fa-solid fa-phone"></i></button>
-                            <button id="startVideoCallBtn" title="ভিডিও কল" class="hover:text-wa-green text-lg transition"><i class="fa-solid fa-video"></i></button>
-                        </div>
-                    </div>
-
-                    <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-
-                    <div class="bg-wa-header p-3 flex items-center gap-2 border-t border-gray-800 relative">
-                        <div class="relative">
-                            <label title="ছবি বা ভিডিও সংযুক্ত করুন" class="cursor-pointer text-wa-muted hover:text-white text-xl p-2 rounded-full hover:bg-gray-800 transition block">
-                                <i class="fa-solid fa-paperclip"></i>
-                                <input type="file" id="mediaFileInput" accept="image/*,video/*" class="hidden">
-                            </label>
-                        </div>
-
-                        <div class="flex-1 relative">
-                            <input type="text" id="messageTextInput" placeholder="একটি বার্তা লিখুন..." class="w-full bg-wa-panel text-white placeholder-wa-muted rounded-xl px-4 py-3 text-sm focus:outline-none">
-                        </div>
-
-                        <div class="flex items-center gap-1">
-                            <button id="recordVoiceBtn" title="ভয়েস রেকর্ড করুন" class="text-wa-muted hover:text-wa-green text-xl p-2 rounded-full hover:bg-gray-800 transition">
-                                <i class="fa-solid fa-microphone"></i>
-                            </button>
-                            <button id="sendMessageBtn" title="পাঠান" class="bg-wa-green hover:bg-opacity-90 text-white rounded-full w-10 h-10 flex items-center justify-center shadow transition">
-                                <i class="fa-solid fa-paper-plane text-sm"></i>
-                            </button>
-                        </div>
-
-                        <div id="voiceRecordingOverlay" class="absolute inset-0 bg-wa-header px-4 flex items-center justify-between hidden z-20">
-                            <div class="flex items-center gap-3 text-red-500 animate-pulse">
-                                <i class="fa-solid fa-circle text-xs"></i>
-                                <span class="font-medium text-sm text-white">ভয়েস মেসেজ রেকর্ড হচ্ছে...</span>
-                                <span id="recordTimer" class="font-mono text-sm text-wa-muted">00:00</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <button id="cancelRecordBtn" class="text-gray-400 hover:text-red-400 p-2"><i class="fa-solid fa-trash-can text-lg"></i></button>
-                                <button id="sendVoiceRecordBtn" class="bg-wa-green text-white p-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2">
-                                    <span>পাঠান</span>
-                                    <i class="fa-solid fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { 
-            getAuth, 
-            RecaptchaVerifier, 
-            signInWithPhoneNumber, 
-            GoogleAuthProvider, 
-            signInWithRedirect, 
-            signOut, 
-            onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { 
-            getDatabase, 
-            ref, 
-            set, 
-            push, 
-            onValue, 
-            get, 
-            update, 
-            remove 
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-        import { 
-            getMessaging, 
-            getToken, 
-            onMessage 
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
-            authDomain: "ern-93752.firebaseapp.com",
-            databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
-            projectId: "ern-93752",
-            storageBucket: "ern-93752.firebasestorage.app",
-            messagingSenderId: "159583001756",
-            appId: "1:159583001756:web:c7c8380f88da94ba97e159",
-            measurementId: "G-S8FXSQMLR3"
-        };
-
-        const VAPID_KEY = "BC0MPvC6ZXBfg1weG9bqeVAOSB2Iwq2xW90k8qEBgmIDnkTHZjF6amecQL5WMV2otUb6MZDQU2pMO3E3PyPXJv8";
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-        const messaging = getMessaging(app);
-
-        let currentUser = null;
-        let currentUserData = null;
-        let activeChatUser = null;
-        let confirmationResult = null;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let recordTimerInterval = null;
-        let localStream = null;
-        let peerConnection = null;
-        let ringtoneTimer = null;
-        let ringtoneAudioContext = null;
-        let ringtoneGainNode = null;
-        let notificationTimeout = null;
-        let chatNotificationInitialised = false;
-        const lastSeenChatTimestamps = {};
-        const originalDocumentTitle = document.title;
-
-        const rtcConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ],
-            iceCandidatePoolSize: 10
-        };
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-
-            const toast = document.createElement('div');
-            const bgClass = type === 'error' ? 'bg-red-950/90 border-red-600 text-red-200' : 
-                            type === 'success' ? 'bg-emerald-950/90 border-emerald-600 text-emerald-200' : 
-                            'bg-wa-panel border-gray-700 text-white';
-            const icon = type === 'error' ? 'fa-circle-exclamation text-red-400' :
-                         type === 'success' ? 'fa-circle-check text-emerald-400' :
-                         'fa-circle-info text-wa-green';
-
-            toast.className = `pointer-events-auto flex items-center gap-3 p-4 rounded-xl border shadow-2xl backdrop-blur-md animate-toast ${bgClass}`;
-            toast.innerHTML = `
-                <i class="fa-solid ${icon} text-lg shrink-0"></i>
-                <span class="text-sm font-medium leading-snug">${message}</span>
-            `;
-
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        function showConfirm(title, message, onOk) {
-            const modal = document.getElementById('customConfirmModal');
-            document.getElementById('confirmTitle').innerText = title;
-            document.getElementById('confirmMessage').innerText = message;
-            modal.classList.remove('hidden');
-
-            const cancelBtn = document.getElementById('confirmCancelBtn');
-            const okBtn = document.getElementById('confirmOkBtn');
-
-            const cleanup = () => {
-                modal.classList.add('hidden');
-                cancelBtn.onclick = null;
-                okBtn.onclick = null;
-            };
-
-            cancelBtn.onclick = cleanup;
-            okBtn.onclick = () => {
-                cleanup();
-                if (onOk) onOk();
-            };
-        }
-
-        async function saveUserFcmToken(userId) {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-                    if (token) {
-                        await update(ref(db, `users/${userId}`), { fcmToken: token });
-                        console.log("FCM Token Saved:", token);
-                    }
-                }
-            } catch (err) {
-                console.error("Token Save Error:", err); 
-            }
-        }
-
-        window.setupRecaptcha = () => {
-            if (!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                    'size': 'normal',
-                    'callback': () => console.log("reCAPTCHA solved")
-                });
-            }
-        };
-
-        async function startLoudRingtone() {
-            stopRingtone();
-            try {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (!AC) return;
-                ringtoneAudioContext = new AC();
-                if (ringtoneAudioContext.state === 'suspended') {
-                    await ringtoneAudioContext.resume();
-                }
-
-                const compressor = ringtoneAudioContext.createDynamicsCompressor();
-                compressor.threshold.setValueAtTime(-10, ringtoneAudioContext.currentTime);
-                compressor.knee.setValueAtTime(40, ringtoneAudioContext.currentTime);
-                compressor.ratio.setValueAtTime(12, ringtoneAudioContext.currentTime);
-                compressor.attack.setValueAtTime(0, ringtoneAudioContext.currentTime);
-                compressor.release.setValueAtTime(0.25, ringtoneAudioContext.currentTime);
-
-                ringtoneGainNode = ringtoneAudioContext.createGain();
-                ringtoneGainNode.gain.setValueAtTime(1.0, ringtoneAudioContext.currentTime);
-
-                ringtoneGainNode.connect(compressor);
-                compressor.connect(ringtoneAudioContext.destination);
-
-                const ringCycle = () => {
-                    if (!ringtoneAudioContext || ringtoneAudioContext.state === 'closed') return;
-                    const now = ringtoneAudioContext.currentTime;
-
-                    const pulses = [
-                        { f1: 880, f2: 1320, start: now },
-                        { f1: 880, f2: 1320, start: now + 0.18 },
-                        { f1: 987.77, f2: 1479.98, start: now + 0.40 }
-                    ];
-
-                    pulses.forEach(p => {
-                        const osc1 = ringtoneAudioContext.createOscillator();
-                        const osc2 = ringtoneAudioContext.createOscillator();
-                        const g = ringtoneAudioContext.createGain();
-
-                        osc1.type = 'sine';
-                        osc2.type = 'triangle';
-
-                        osc1.frequency.setValueAtTime(p.f1, p.start);
-                        osc2.frequency.setValueAtTime(p.f2, p.start);
-
-                        g.gain.setValueAtTime(0.001, p.start);
-                        g.gain.exponentialRampToValueAtTime(0.9, p.start + 0.02);
-                        g.gain.exponentialRampToValueAtTime(0.001, p.start + 0.15);
-
-                        osc1.connect(g);
-                        osc2.connect(g);
-                        g.connect(ringtoneGainNode);
-
-                        osc1.start(p.start);
-                        osc2.start(p.start);
-                        osc1.stop(p.start + 0.16);
-                        osc2.stop(p.start + 0.16);
-                    });
-
-                    if (navigator.vibrate) {
-                        navigator.vibrate([400, 200, 400]);
-                    }
-                };
-
-                ringCycle();
-                ringtoneTimer = setInterval(ringCycle, 1600);
-            } catch (e) {
-                console.warn('Ringtone Audio error:', e);
-            }
-        }
-
-        function stopRingtone() {
-            if (ringtoneTimer) { clearInterval(ringtoneTimer); ringtoneTimer = null; }
-            if (ringtoneAudioContext) {
-                try { ringtoneAudioContext.close(); } catch (_) {}
-                ringtoneAudioContext = null;
-                ringtoneGainNode = null;
-            }
-            if (navigator.vibrate) {
-                navigator.vibrate(0);
-            }
-        }
-
-        async function setupPushNotifications(user) {
-            try {
-                await saveUserFcmToken(user.uid);
-
-                const swCode = `
-                    importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-                    importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
-
-                    firebase.initializeApp(${JSON.stringify(firebaseConfig)});
-                    const messaging = firebase.messaging();
-
-                    messaging.onBackgroundMessage((payload) => {
-                        const notificationTitle = payload.notification?.title || 'নতুন বার্তা';
-                        const notificationOptions = {
-                            body: payload.notification?.body || 'আপনার অ্যাপে একটি নতুন ইনকামিং বার্তা বা কল রয়েছে।',
-                            icon: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
-                            badge: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png',
-                            vibrate: [300, 100, 300, 100, 300],
-                            tag: 'safin-web-notification',
-                            renotify: true
-                        };
-                        self.registration.showNotification(notificationTitle, notificationOptions);
-                    });
-                `;
-
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                await navigator.serviceWorker.register(swUrl);
-
-                onMessage(messaging, (payload) => {
-                    notifyUser(payload.notification?.title || 'নতুন বার্তা', payload.notification?.body || '', 'message');
-                });
-            } catch (err) {
-                console.warn("FCM Service Worker initialization:", err);
-            }
-        }
-
-        function showInAppNotification(title, body, type = 'message', onClick = null) {
-            const box = document.getElementById('appNotification');
-            if (!box) return;
-            document.getElementById('notificationTitle').innerText = title;
-            document.getElementById('notificationBody').innerText = body;
-            document.getElementById('notificationIcon').innerHTML = type === 'call'
-                ? '<i class="fa-solid fa-phone"></i>'
-                : '<i class="fa-solid fa-message"></i>';
-            box.classList.remove('hidden');
-            box.onclick = (e) => {
-                if (e.target.closest('#closeNotificationBtn')) return;
-                if (onClick) onClick();
-                box.classList.add('hidden');
-            };
-            clearTimeout(notificationTimeout);
-            notificationTimeout = setTimeout(() => box.classList.add('hidden'), 6000);
-        }
-
-        function notifyUser(title, body, type = 'message', onClick = null) {
-            showInAppNotification(title, body, type, onClick);
-            try {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification(title, { body, tag: 'safin-web-' + type, renotify: true });
-                }
-            } catch (e) { console.warn('System notification error:', e); }
-        }
-
-        function flashTitle(title) {
-            let state = false;
-            const timer = setInterval(() => {
-                state = !state;
-                document.title = state ? title : originalDocumentTitle;
-            }, 800);
-            setTimeout(() => { clearInterval(timer); document.title = originalDocumentTitle; }, 10000);
-        }
-
-        document.getElementById('closeNotificationBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('appNotification').classList.add('hidden');
-        });
-
-        const authScreen = document.getElementById('authScreen');
-        const phoneTabBtn = document.getElementById('phoneTabBtn');
-        const googleTabBtn = document.getElementById('googleTabBtn');
-        const phoneAuthForm = document.getElementById('phoneAuthForm');
-        const googleAuthForm = document.getElementById('googleAuthForm');
-        const phoneInputGroup = document.getElementById('phoneInputGroup');
-        const otpInputGroup = document.getElementById('otpInputGroup');
-        const phoneNumberInput = document.getElementById('phoneNumberInput');
-        const sendOtpBtn = document.getElementById('sendOtpBtn');
-        const otpCodeInput = document.getElementById('otpCodeInput');
-        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-        const googleSignInBtn = document.getElementById('googleSignInBtn');
-
-        phoneTabBtn.addEventListener('click', () => {
-            phoneTabBtn.className = "flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition";
-            googleTabBtn.className = "flex-1 py-2 text-wa-muted hover:text-white font-semibold transition";
-            phoneAuthForm.classList.remove('hidden');
-            googleAuthForm.classList.add('hidden');
-        });
-
-        googleTabBtn.addEventListener('click', () => {
-            googleTabBtn.className = "flex-1 py-2 text-wa-green font-semibold border-b-2 border-wa-green transition";
-            phoneTabBtn.className = "flex-1 py-2 text-wa-muted hover:text-white font-semibold transition";
-            googleAuthForm.classList.remove('hidden');
-            phoneAuthForm.classList.add('hidden');
-        });
-
-        sendOtpBtn.addEventListener('click', async () => {
-            const phoneNumber = phoneNumberInput.value.trim();
-            if (!phoneNumber || phoneNumber.length < 10) {
-                showToast("দয়া করে একটি সঠিক ফোন নম্বর লিখুন (যেমন: +8801700000000)", 'error');
-                return;
-            }
-
-            try {
-                window.setupRecaptcha();
-                const appVerifier = window.recaptchaVerifier;
-                sendOtpBtn.disabled = true;
-                sendOtpBtn.innerText = "পাঠানো হচ্ছে...";
-
-                confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-                showToast("আপনার ফোনে OTP পাঠানো হয়েছে।", 'success');
-                phoneInputGroup.classList.add('hidden');
-                otpInputGroup.classList.remove('hidden');
-            } catch (error) {
-                console.error("Phone Auth Error:", error);
-                showToast("OTP পাঠাতে ব্যর্থ হয়েছে: " + error.message, 'error');
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.innerText = "OTP কোড পাঠান";
-            }
-        });
-
-        verifyOtpBtn.addEventListener('click', async () => {
-            const code = otpCodeInput.value.trim();
-            if (!code || code.length < 6) {
-                showToast("দয়া করে ৬ ডিজিটের কোড প্রদান করুন", 'error');
-                return;
-            }
-
-            try {
-                const result = await confirmationResult.confirm(code);
-                currentUser = result.user;
-                checkAndSetupUserProfile(currentUser);
-            } catch (error) {
-                showToast("ভুল OTP কোড: " + error.message, 'error');
-            }
-        });
-
-        googleSignInBtn.addEventListener('click', async () => {
-            try {
-                const provider = new GoogleAuthProvider();
-                const result = await signInWithRedirect(auth, provider);
-                currentUser = result.user;
-                checkAndSetupUserProfile(currentUser);
-            } catch (error) {
-                console.error("Google Signin Error:", error);
-                showToast("গুগল সাইন-ইন করতে ব্যর্থ: " + error.message, 'error');
-            }
-        });
-
-        async function checkAndSetupUserProfile(user) {
-            authScreen.classList.add('hidden');
-            const userRef = ref(db, 'users/' + user.uid);
-            const snapshot = await get(userRef);
-
-            if (snapshot.exists()) {
-                currentUserData = snapshot.val();
-                updateUserUI();
-            } else {
-                currentUserData = {
-                    uid: user.uid,
-                    name: user.displayName || "ইউজার " + user.uid.substring(0, 4),
-                    phone: user.phoneNumber || "+8801...",
-                    photo: user.photoURL || "https://placehold.co/150x150/202c33/00a884?text=User",
-                    status: "Hey there! I am using WhatsApp."
-                };
-                await set(userRef, currentUserData);
-                updateUserUI();
-                openProfileModal();
-            }
+    </header>
+
+    <!-- Main Arena Container -->
+    <main class="w-full max-w-lg flex flex-col items-center justify-center relative flex-1">
+        
+        <!-- Canvas Physics Ring -->
+        <div class="relative w-full aspect-square max-w-[420px] bg-slate-950/95 rounded-full border-2 border-cyan-500/40 p-1 flex items-center justify-center glow-box-cyan overflow-hidden">
             
-            setupPushNotifications(user);
-            listenForIncomingCalls();
-            loadRecentChats();
-        }
+            <!-- Dynamic Subtitle Badge -->
+            <div class="absolute top-3 z-10 bg-black/80 backdrop-blur-md px-3 py-1 rounded-full border border-cyan-500/40 text-[10px] text-cyan-300 font-mono-tech tracking-wider text-center">
+                CURRENT BATTLE: <span id="battleModeBadge" class="text-emerald-400 font-bold">MASS ALL-FLAG MODE</span>
+            </div>
 
-        function updateUserUI() {
-            document.getElementById('myNameTxt').innerText = currentUserData.name || "আমার নাম";
-            document.getElementById('myPhoneTxt').innerText = currentUserData.phone || "";
-            document.getElementById('myAvatarImg').src = currentUserData.photo || "https://placehold.co/100";
-        }
+            <!-- Canvas Element -->
+            <canvas id="battleCanvas" class="w-full h-full rounded-full cursor-pointer"></canvas>
 
-        const profileModal = document.getElementById('profileModal');
-        const openProfileModal = () => {
-            document.getElementById('profileNameInput').value = currentUserData.name || "";
-            document.getElementById('profilePhoneInput').value = currentUserData.phone || "";
-            document.getElementById('profileStatusInput').value = currentUserData.status || "";
-            document.getElementById('profileAvatarPreview').src = currentUserData.photo || "https://placehold.co/150";
-            profileModal.classList.remove('hidden');
-        };
+            <!-- Play Overlay Message -->
+            <div id="startOverlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center z-20 p-4 text-center">
+                <i class="fa-solid fa-flag text-cyan-400 text-4xl mb-2 animate-bounce"></i>
+                <h2 class="text-2xl font-bold font-teko text-cyan-400 tracking-wider">AUTOMATIC BATTLE READY</h2>
+                <p class="text-xs text-slate-300 mb-4 max-w-xs">কমেন্ট ছাড়াই অটোমেটিক ব্যাটেল চালু হবে। 'START / RESET' চাপুন!</p>
+                <button id="overlayStartBtn" class="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-sm px-6 py-2.5 rounded-xl shadow-lg glow-btn-green transition transform active:scale-95 uppercase font-mono-tech">
+                    <i class="fa-solid fa-play mr-1"></i> START BATTLE NOW
+                </button>
+            </div>
 
-        document.getElementById('editProfileBtn').addEventListener('click', openProfileModal);
-        document.getElementById('myProfileTrigger').addEventListener('click', openProfileModal);
-        document.getElementById('closeProfileBtn').addEventListener('click', () => profileModal.classList.add('hidden'));
-
-        document.getElementById('avatarFileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (evt) => {
-                    document.getElementById('profileAvatarPreview').src = evt.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
-            const name = document.getElementById('profileNameInput').value.trim();
-            const phone = document.getElementById('profilePhoneInput').value.trim();
-            const status = document.getElementById('profileStatusInput').value.trim();
-            const photo = document.getElementById('profileAvatarPreview').src;
-
-            if (!name) {
-                showToast("দয়া করে নাম প্রদান করুন", 'error');
-                return;
-            }
-
-            currentUserData = {
-                ...currentUserData,
-                name: name,
-                phone: phone,
-                status: status,
-                photo: photo
-            };
-
-            await set(ref(db, 'users/' + currentUser.uid), currentUserData);
-            updateUserUI();
-            profileModal.classList.add('hidden');
-            showToast("প্রোফাইল সফলভাবে আপডেট করা হয়েছে!", 'success');
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            showConfirm("লগআউট নিশ্চিতকরণ", "আপনি কি সত্যিই লগআউট করতে চান?", async () => {
-                await signOut(auth);
-                location.reload();
-            });
-        });
-
-        const searchModal = document.getElementById('searchModal');
-        const userSearchInput = document.getElementById('userSearchInput');
-        const searchResultsList = document.getElementById('searchResultsList');
-
-        document.getElementById('openSearchBtn').addEventListener('click', () => {
-            searchModal.classList.remove('hidden');
-            userSearchInput.focus();
-        });
-
-        document.getElementById('closeSearchBtn').addEventListener('click', () => searchModal.classList.add('hidden'));
-
-        userSearchInput.addEventListener('input', async () => {
-            const queryText = userSearchInput.value.trim().toLowerCase();
-            if (!queryText) {
-                searchResultsList.innerHTML = `<p class="text-center text-wa-muted text-sm py-4">সার্চ করার জন্য উপরে ফোন নম্বর বা নাম লিখুন</p>`;
-                return;
-            }
-
-            const usersRef = ref(db, 'users');
-            const snapshot = await get(usersRef);
-            if (snapshot.exists()) {
-                const users = snapshot.val();
-                searchResultsList.innerHTML = '';
-                let count = 0;
-
-                Object.keys(users).forEach(uid => {
-                    if (uid !== currentUser.uid) {
-                        const u = users[uid];
-                        const nameMatch = u.name && u.name.toLowerCase().includes(queryText);
-                        const phoneMatch = u.phone && u.phone.includes(queryText);
-
-                        if (nameMatch || phoneMatch) {
-                            count++;
-                            const item = document.createElement('div');
-                            item.className = "flex items-center justify-between p-3 hover:bg-wa-dark rounded-xl cursor-pointer transition border border-transparent hover:border-gray-800";
-                            item.innerHTML = `
-                                <div class="flex items-center gap-3">
-                                    <img src="${u.photo || 'https://placehold.co/100'}" class="w-10 h-10 rounded-full object-cover">
-                                    <div>
-                                        <h4 class="font-semibold text-white text-sm">${u.name}</h4>
-                                        <p class="text-xs text-wa-muted">${u.phone || 'নম্বর নেই'}</p>
-                                    </div>
-                                </div>
-                                <button class="bg-wa-green text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-opacity-90">চ্যাট করুন</button>
-                            `;
-                            item.addEventListener('click', () => {
-                                selectChatUser(u);
-                                searchModal.classList.add('hidden');
-                            });
-                            searchResultsList.appendChild(item);
-                        }
-                    }
-                });
-
-                if (count === 0) {
-                    searchResultsList.innerHTML = `<p class="text-center text-wa-muted text-sm py-4">কোনো ব্যবহারকারী পাওয়া যায়নি</p>`;
-                }
-            }
-        });
-
-        function loadRecentChats() {
-            const userChatsRef = ref(db, `user_chats/${currentUser.uid}`);
-            onValue(userChatsRef, async (snapshot) => {
-                const chatList = document.getElementById('chatList');
-                chatList.innerHTML = '';
-
-                if (!snapshot.exists()) {
-                    chatList.innerHTML = `<p class="text-center text-wa-muted text-sm p-6">আপনার কোনো চ্যাট নেই। নতুন চ্যাট চালু করুন!</p>`;
-                    return;
-                }
-
-                const chatsData = snapshot.val();
-                const uids = Object.keys(chatsData);
-
-                if (chatNotificationInitialised) {
-                    for (const peerUid of uids) {
-                        const chat = chatsData[peerUid] || {};
-                        const ts = Number(chat.timestamp || 0);
-                        const previous = lastSeenChatTimestamps[peerUid] || 0;
-                        if (ts > previous && chat.lastSenderId && chat.lastSenderId !== currentUser.uid) {
-                            const peerSnap = await get(ref(db, `users/${peerUid}`));
-                            if (peerSnap.exists() && (!activeChatUser || activeChatUser.uid !== peerUid)) {
-                                const peer = peerSnap.val();
-                                notifyUser(peer.name || 'নতুন বার্তা', chat.lastMessage || 'নতুন বার্তা এসেছে', 'message', () => selectChatUser(peer));
-                                flashTitle('💬 নতুন বার্তা — সাফিন ওয়েব');
-                            }
-                        }
-                    }
-                }
-                uids.forEach(uid => {
-                    lastSeenChatTimestamps[uid] = Math.max(lastSeenChatTimestamps[uid] || 0, Number(chatsData[uid]?.timestamp || 0));
-                });
-                chatNotificationInitialised = true;
-
-                for (let peerUid of uids) {
-                    const peerUserSnap = await get(ref(db, `users/${peerUid}`));
-                    if (peerUserSnap.exists()) {
-                        const peer = peerUserSnap.val();
-                        const lastMsg = chatsData[peerUid].lastMessage || "নতুন বার্তা";
-                        const timestamp = chatsData[peerUid].timestamp ? new Date(chatsData[peerUid].timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-
-                        const div = document.createElement('div');
-                        div.className = `p-3 flex items-center gap-3 cursor-pointer hover:bg-wa-dark transition ${activeChatUser && activeChatUser.uid === peer.uid ? 'bg-wa-dark border-l-4 border-wa-green' : ''}`;
-                        div.innerHTML = `
-                            <img src="${peer.photo || 'https://placehold.co/100'}" class="w-12 h-12 rounded-full object-cover">
-                            <div class="flex-1 overflow-hidden">
-                                <div class="flex justify-between items-baseline mb-1">
-                                    <h4 class="font-semibold text-white text-sm truncate">${peer.name}</h4>
-                                    <span class="text-[10px] text-wa-muted">${timestamp}</span>
-                                </div>
-                                <p class="text-xs text-wa-muted truncate">${lastMsg}</p>
-                            </div>
-                        `;
-                        div.addEventListener('click', () => selectChatUser(peer));
-                        chatList.appendChild(div);
-                    }
-                }
-            });
-        }
-
-        function selectChatUser(peerUser) {
-            activeChatUser = peerUser;
-            document.getElementById('noChatSelectedView').classList.add('hidden');
-            document.getElementById('activeChatView').classList.remove('hidden');
-
-            document.getElementById('activeChatName').innerText = peerUser.name;
-            document.getElementById('activeChatAvatar').src = peerUser.photo || 'https://placehold.co/100';
-            document.getElementById('activeChatStatus').innerText = peerUser.status || "অনলাইন";
-
-            document.getElementById('sidebar').classList.add('hidden', 'md:flex');
-            document.getElementById('chatArea').classList.remove('hidden');
-
-            loadMessages();
-        }
-
-        document.getElementById('backToChatListBtn').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('hidden');
-            document.getElementById('chatArea').classList.add('hidden');
-        });
-
-        function getChatRoomId(uid1, uid2) {
-            return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
-        }
-
-        function loadMessages() {
-            if (!currentUser || !activeChatUser) return;
-            const roomId = getChatRoomId(currentUser.uid, activeChatUser.uid);
-            const messagesRef = ref(db, `messages/${roomId}`);
-
-            onValue(messagesRef, (snapshot) => {
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = '';
-
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    Object.keys(data).forEach(msgKey => {
-                        const msg = data[msgKey];
-                        const isMe = msg.senderId === currentUser.uid;
-                        const msgEl = createMessageElement(msg, isMe);
-                        container.appendChild(msgEl);
-                    });
-                    container.scrollTop = container.scrollHeight;
-                }
-            });
-        }
-
-        function createMessageElement(msg, isMe) {
-            const wrap = document.createElement('div');
-            wrap.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-2`;
-
-            const bubble = document.createElement('div');
-            bubble.className = `max-w-[75%] rounded-2xl px-4 py-2 shadow-sm text-sm relative ${isMe ? 'bg-wa-bubbleOut text-white rounded-tr-none' : 'bg-wa-bubbleIn text-white rounded-tl-none'}`;
-
-            let contentHtml = '';
-            if (msg.type === 'text') {
-                contentHtml = `<p class="break-words leading-relaxed">${msg.content}</p>`;
-            } else if (msg.type === 'image') {
-                contentHtml = `<img src="${msg.content}" class="max-w-xs max-h-60 rounded-lg object-cover cursor-pointer mb-1" onclick="window.open('${msg.content}')">`;
-            } else if (msg.type === 'video') {
-                contentHtml = `<video src="${msg.content}" controls class="max-w-xs rounded-lg mb-1"></video>`;
-            } else if (msg.type === 'audio') {
-                contentHtml = `
-                    <div class="flex items-center gap-2 py-1">
-                        <i class="fa-solid fa-microphone text-wa-green text-lg"></i>
-                        <audio src="${msg.content}" controls class="h-8 max-w-[200px]"></audio>
-                    </div>
-                `;
-            }
-
-            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            bubble.innerHTML = `
-                ${contentHtml}
-                <div class="text-[10px] text-wa-muted text-right mt-1 flex items-center justify-end gap-1">
-                    <span>${timeStr}</span>
-                    ${isMe ? '<i class="fa-solid fa-check-double text-blue-400"></i>' : ''}
+            <!-- Victory Card Overlay -->
+            <div id="victoryOverlay" class="hidden absolute inset-0 z-30 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center">
+                <div class="text-4xl mb-1 animate-bounce">👑</div>
+                <h2 class="text-3xl font-extrabold text-amber-400 tracking-wider font-teko uppercase glow-title">VICTORY!</h2>
+                <div class="w-20 h-20 my-2 rounded-full overflow-hidden border-4 border-amber-400 shadow-2xl relative bg-slate-800 flex items-center justify-center" id="winnerFlagContainer">
                 </div>
-            `;
-            wrap.appendChild(bubble);
-            return wrap;
-        }
+                <h3 class="text-xl font-bold text-white mb-0.5" id="winnerCountryName">United States</h3>
+                <p class="text-[11px] text-emerald-400 font-mono-tech mb-4" id="winnerStatsText">CHAMPION OF THE ARENA!</p>
+                <button id="playAgainBtn" class="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs uppercase tracking-wider font-mono-tech transition shadow-lg">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> RESTART BATTLE
+                </button>
+            </div>
+        </div>
 
-        async function sendMessage(content, type = 'text') {
-            if (!currentUser || !activeChatUser) return;
-            const roomId = getChatRoomId(currentUser.uid, activeChatUser.uid);
-            const messagesRef = ref(db, `messages/${roomId}`);
+        <!-- Center Big Start & Mode Buttons -->
+        <div class="w-full max-w-[420px] flex flex-col items-center gap-2 mt-3">
+            
+            <!-- Big START / RESET Trigger -->
+            <button id="mainStartResetBtn" class="w-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:opacity-95 text-slate-950 font-extrabold py-3 px-4 rounded-2xl text-lg font-mono-tech tracking-wider uppercase shadow-xl glow-btn-green transition transform active:scale-98 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-power-off text-xl"></i> START / RESET BATTLE
+            </button>
 
-            const newMsg = {
-                senderId: currentUser.uid,
-                receiverId: activeChatUser.uid,
-                content: content,
-                type: type,
-                timestamp: Date.now()
-            };
+            <!-- Controls Row: Modes & Speed -->
+            <div class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl p-2 flex items-center justify-between gap-1 text-xs font-mono-tech">
+                
+                <!-- Mode Switcher -->
+                <div class="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
+                    <button id="modeMassBtn" class="mode-btn px-2.5 py-1 rounded-lg font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800 transition">
+                        MASS (98)
+                    </button>
+                    <button id="modeFinal4Btn" class="mode-btn px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition">
+                        FINAL FOUR (4)
+                    </button>
+                </div>
 
-            await push(messagesRef, newMsg);
+                <!-- Play/Pause Toggle -->
+                <button id="pauseBtn" class="bg-slate-900 hover:bg-slate-800 text-cyan-400 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-pause" id="pauseIcon"></i> <span id="pauseText">PAUSE</span>
+                </button>
 
-            const summary = type === 'text' ? content : `[${type.toUpperCase()} বার্তা]`;
-            const chatTimestamp = Date.now();
-            await set(ref(db, `user_chats/${currentUser.uid}/${activeChatUser.uid}`), {
-                lastMessage: summary, timestamp: chatTimestamp, lastSenderId: currentUser.uid
-            });
-            await set(ref(db, `user_chats/${activeChatUser.uid}/${currentUser.uid}`), {
-                lastMessage: summary, timestamp: chatTimestamp, lastSenderId: currentUser.uid
-            });
-        }
+                <!-- Speed Switcher -->
+                <div class="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
+                    <button class="speed-btn px-1.5 py-0.5 rounded text-cyan-400 font-bold" data-speed="1">1x</button>
+                    <button class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white" data-speed="2">2x</button>
+                    <button class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white" data-speed="4">4x</button>
+                </div>
+            </div>
+        </div>
 
-        document.getElementById('sendMessageBtn').addEventListener('click', () => {
-            const input = document.getElementById('messageTextInput');
-            const text = input.value.trim();
-            if (text) {
-                sendMessage(text, 'text');
-                input.value = '';
-            }
-        });
+        <!-- Automated Game Console Event Log (Like Screenshot) -->
+        <div class="w-full max-w-[420px] bg-slate-950/90 border border-slate-800 rounded-2xl p-2.5 mt-2 flex flex-col gap-1.5">
+            <div class="flex items-center justify-between text-[11px] font-mono-tech border-b border-slate-900 pb-1">
+                <span class="text-cyan-400 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-terminal"></i> AUTOMATIC BATTLE LOG
+                </span>
+                <span class="text-emerald-400 text-[10px]">AUTO NO-COMMENT ACTIVE</span>
+            </div>
+            
+            <div id="gameConsoleLog" class="h-16 overflow-y-auto font-mono-tech text-[11px] space-y-1 text-slate-300 pr-1">
+                <div class="text-cyan-400">*[Game] System initialized. Ready for automatic flag battle.</div>
+            </div>
 
-        document.getElementById('messageTextInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('sendMessageBtn').click();
-            }
-        });
+            <!-- Optional manual boost input -->
+            <form id="chatForm" class="flex items-center gap-1.5 pt-1 border-t border-slate-900">
+                <input type="text" id="chatInput" placeholder="ঐচ্ছিক: দেশের নাম দিয়ে ম্যানুয়ালি হাইলাইট করুন..." 
+                    class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 transition font-mono-tech">
+                <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 py-1 rounded-xl transition text-xs flex items-center justify-center">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </main>
 
-        document.getElementById('mediaFileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+    <!-- Eliminated Flag Grid Footer (Exactly as in screenshot) -->
+    <footer class="w-full max-w-lg bg-slate-950/90 border border-slate-800 rounded-2xl p-3 mt-3 shadow-xl">
+        <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono-tech font-bold text-red-400 flex items-center gap-1.5 uppercase">
+                <i class="fa-solid fa-ban"></i> ELIMINATED COUNTRIES (<span id="eliminatedCountNum">0</span>)
+            </span>
+            <button id="clearEliminatedBtn" class="text-[10px] text-slate-500 hover:text-slate-300 underline font-mono-tech">
+                RESET LIST
+            </button>
+        </div>
 
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
+        <!-- Flags Grid -->
+        <div id="eliminatedFlagGrid" class="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-1.5 bg-black/60 rounded-xl border border-slate-900 min-h-[46px] items-center">
+            <p id="emptyGridMsg" class="text-[11px] text-slate-600 font-mono-tech italic px-2">এখনও কোনো দেশ বাদ পড়েনি...</p>
+        </div>
+    </footer>
 
-            if (!isImage && !isVideo) {
-                showToast("শুধুমাত্র ছবি অথবা ভিডিও আপলোড করুন", 'error');
-                return;
-            }
+    <script>
+        // List of 98 Countries with Iso codes & aliases
+        const COUNTRIES = [
+            { name: "Afghanistan", code: "af", aliases: ["afghanistan", "afg"] },
+            { name: "Albania", code: "al", aliases: ["albania"] },
+            { name: "Algeria", code: "dz", aliases: ["algeria"] },
+            { name: "Argentina", code: "ar", aliases: ["argentina", "arg"] },
+            { name: "Armenia", code: "am", aliases: ["armenia"] },
+            { name: "Australia", code: "au", aliases: ["australia", "aus"] },
+            { name: "Austria", code: "at", aliases: ["austria"] },
+            { name: "Azerbaijan", code: "az", aliases: ["azerbaijan"] },
+            { name: "Bangladesh", code: "bd", aliases: ["bangladesh", "bd", "বাংলাদেশ"] },
+            { name: "Belarus", code: "by", aliases: ["belarus"] },
+            { name: "Belgium", code: "be", aliases: ["belgium"] },
+            { name: "Bolivia", code: "bo", aliases: ["bolivia"] },
+            { name: "Brazil", code: "br", aliases: ["brazil", "bra", "ব্রাজিল"] },
+            { name: "Bulgaria", code: "bg", aliases: ["bulgaria"] },
+            { name: "Cambodia", code: "kh", aliases: ["cambodia"] },
+            { name: "Cameroon", code: "cm", aliases: ["cameroon"] },
+            { name: "Canada", code: "ca", aliases: ["canada", "can"] },
+            { name: "Chile", code: "cl", aliases: ["chile"] },
+            { name: "China", code: "cn", aliases: ["china", "chn"] },
+            { name: "Colombia", code: "co", aliases: ["colombia"] },
+            { name: "Costa Rica", code: "cr", aliases: ["costa rica"] },
+            { name: "Croatia", code: "hr", aliases: ["croatia"] },
+            { name: "Cuba", code: "cu", aliases: ["cuba"] },
+            { name: "Czech Republic", code: "cz", aliases: ["czech"] },
+            { name: "Denmark", code: "dk", aliases: ["denmark"] },
+            { name: "Egypt", code: "eg", aliases: ["egypt"] },
+            { name: "Finland", code: "fi", aliases: ["finland"] },
+            { name: "France", code: "fr", aliases: ["france", "fra"] },
+            { name: "Georgia", code: "ge", aliases: ["georgia"] },
+            { name: "Germany", code: "de", aliases: ["germany", "ger"] },
+            { name: "Ghana", code: "gh", aliases: ["ghana"] },
+            { name: "Greece", code: "gr", aliases: ["greece"] },
+            { name: "India", code: "in", aliases: ["india", "ind", "ভারত"] },
+            { name: "Indonesia", code: "id", aliases: ["indonesia"] },
+            { name: "Iran", code: "ir", aliases: ["iran"] },
+            { name: "Iraq", code: "iq", aliases: ["iraq"] },
+            { name: "Ireland", code: "ie", aliases: ["ireland"] },
+            { name: "Israel", code: "il", aliases: ["israel"] },
+            { name: "Italy", code: "it", aliases: ["italy", "ita"] },
+            { name: "Jamaica", code: "jm", aliases: ["jamaica"] },
+            { name: "Japan", code: "jp", aliases: ["japan", "jpn"] },
+            { name: "Jordan", code: "jo", aliases: ["jordan"] },
+            { name: "Kenya", code: "ke", aliases: ["kenya"] },
+            { name: "Lebanon", code: "lb", aliases: ["lebanon"] },
+            { name: "Malaysia", code: "my", aliases: ["malaysia"] },
+            { name: "Mexico", code: "mx", aliases: ["mexico", "mex"] },
+            { name: "Morocco", code: "ma", aliases: ["morocco"] },
+            { name: "Nepal", code: "np", aliases: ["nepal"] },
+            { name: "Netherlands", code: "nl", aliases: ["netherlands"] },
+            { name: "New Zealand", code: "nz", aliases: ["new zealand"] },
+            { name: "Nigeria", code: "ng", aliases: ["nigeria"] },
+            { name: "Norway", code: "no", aliases: ["norway"] },
+            { name: "Pakistan", code: "pk", aliases: ["pakistan", "pak"] },
+            { name: "Palestine", code: "ps", aliases: ["palestine"] },
+            { name: "Peru", code: "pe", aliases: ["peru"] },
+            { name: "Philippines", code: "ph", aliases: ["philippines"] },
+            { name: "Poland", code: "pl", aliases: ["poland"] },
+            { name: "Portugal", code: "pt", aliases: ["portugal"] },
+            { name: "Qatar", code: "qa", aliases: ["qatar"] },
+            { name: "Romania", code: "ro", aliases: ["romania"] },
+            { name: "Russia", code: "ru", aliases: ["russia"] },
+            { name: "Saudi Arabia", code: "sa", aliases: ["saudi arabia"] },
+            { name: "Senegal", code: "sn", aliases: ["senegal"] },
+            { name: "South Africa", code: "za", aliases: ["south africa"] },
+            { name: "South Korea", code: "kr", aliases: ["korea"] },
+            { name: "Spain", code: "es", aliases: ["spain"] },
+            { name: "Sri Lanka", code: "lk", aliases: ["sri lanka"] },
+            { name: "Sweden", code: "se", aliases: ["sweden"] },
+            { name: "Switzerland", code: "ch", aliases: ["switzerland"] },
+            { name: "Thailand", code: "th", aliases: ["thailand"] },
+            { name: "Turkey", code: "tr", aliases: ["turkey"] },
+            { name: "Ukraine", code: "ua", aliases: ["ukraine"] },
+            { name: "UAE", code: "ae", aliases: ["uae", "dubai"] },
+            { name: "United Kingdom", code: "gb", aliases: ["uk", "england"] },
+            { name: "United States", code: "us", aliases: ["usa", "us"] },
+            { name: "Uruguay", code: "uy", aliases: ["uruguay"] },
+            { name: "Uzbekistan", code: "uz", aliases: ["uzbekistan"] },
+            { name: "Venezuela", code: "ve", aliases: ["venezuela"] },
+            { name: "Vietnam", code: "vn", aliases: ["vietnam"] },
+            { name: "Zambia", code: "zm", aliases: ["zambia"] },
+            { name: "Zimbabwe", code: "zw", aliases: ["zimbabwe"] },
+            { name: "Estonia", code: "ee", aliases: ["estonia"] },
+            { name: "Cyprus", code: "cy", aliases: ["cyprus"] },
+            { name: "Iceland", code: "is", aliases: ["iceland"] },
+            { name: "Latvia", code: "lv", aliases: ["latvia"] },
+            { name: "Lithuania", code: "lt", aliases: ["lithuania"] },
+            { name: "Luxembourg", code: "lu", aliases: ["luxembourg"] },
+            { name: "Malta", code: "mt", aliases: ["malta"] },
+            { name: "Moldova", code: "md", aliases: ["moldova"] },
+            { name: "Monaco", code: "mc", aliases: ["monaco"] },
+            { name: "Slovakia", code: "sk", aliases: ["slovakia"] },
+            { name: "Slovenia", code: "si", aliases: ["slovenia"] },
+            { name: "Tanzania", code: "tz", aliases: ["tanzania"] },
+            { name: "Tunisia", code: "tn", aliases: ["tunisia"] },
+            { name: "Uganda", code: "ug", aliases: ["uganda"] },
+            { name: "Panama", code: "pa", aliases: ["panama"] },
+            { name: "Ecuador", code: "ec", aliases: ["ecuador"] },
+            { name: "Paraguay", code: "py", aliases: ["paraguay"] }
+        ];
 
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const base64Data = evt.target.result;
-                sendMessage(base64Data, isImage ? 'image' : 'video');
-            };
-            reader.readAsDataURL(file);
-        });
+        const canvas = document.getElementById('battleCanvas');
+        const ctx = canvas.getContext('2d');
 
-        const recordVoiceBtn = document.getElementById('recordVoiceBtn');
-        const voiceRecordingOverlay = document.getElementById('voiceRecordingOverlay');
-        const cancelRecordBtn = document.getElementById('cancelRecordBtn');
-        const sendVoiceRecordBtn = document.getElementById('sendVoiceRecordBtn');
-        const recordTimer = document.getElementById('recordTimer');
+        let isRunning = false;
+        let currentMode = 'MASS'; // 'MASS' or 'FINAL4'
+        let speedMultiplier = 1;
+        
+        let arenaCenter = { x: 0, y: 0 };
+        let arenaRadius = 0;
+        let ringAngle = 0;
+        let ringRotationSpeed = 0.015;
+        let gapSize = Math.PI * 0.28;
 
-        recordVoiceBtn.addEventListener('click', async () => {
+        let bumpers = [];
+        let particles = [];
+        let balls = [];
+        let eliminatedCountries = [];
+        let totalCount = 98;
+        let winStats = JSON.parse(localStorage.getItem('flag_wins_tracker') || '{}');
+
+        const flagImages = {};
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
 
-                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
-                mediaRecorder.start();
-
-                voiceRecordingOverlay.classList.remove('hidden');
-
-                let seconds = 0;
-                recordTimerInterval = setInterval(() => {
-                    seconds++;
-                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-                    const secs = String(seconds % 60).padStart(2, '0');
-                    recordTimer.innerText = `${mins}:${secs}`;
-                }, 1000);
-
-            } catch (err) {
-                showToast("মাইক্রোফোন সংযোগ করা যায়নি: " + err.message, 'error');
-            }
-        });
-
-        cancelRecordBtn.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            clearInterval(recordTimerInterval);
-            voiceRecordingOverlay.classList.add('hidden');
-        });
-
-        sendVoiceRecordBtn.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        sendMessage(e.target.result, 'audio');
-                    };
-                    reader.readAsDataURL(audioBlob);
-                };
-                mediaRecorder.stop();
-            }
-            clearInterval(recordTimerInterval);
-            voiceRecordingOverlay.classList.add('hidden');
-        });
-
-        const callOverlay = document.getElementById('callOverlay');
-        const videoContainer = document.getElementById('videoContainer');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const localVideo = document.getElementById('localVideo');
-        const remoteAudio = document.getElementById('remoteAudio');
-
-        const startAudioCallBtn = document.getElementById('startAudioCallBtn');
-        const startVideoCallBtn = document.getElementById('startVideoCallBtn');
-        const endCallBtn = document.getElementById('endCallBtn');
-        const acceptCallBtn = document.getElementById('acceptCallBtn');
-        const rejectCallBtn = document.getElementById('rejectCallBtn');
-        const toggleMicBtn = document.getElementById('toggleMicBtn');
-        const toggleCamBtn = document.getElementById('toggleCamBtn');
-        const incomingCallControls = document.getElementById('incomingCallControls');
-        const ongoingCallControls = document.getElementById('ongoingCallControls');
-
-        let activeCallRef = null;
-        let activeCallType = null;
-        let activeCallPeerUid = null;
-        let activeCallRole = null;
-        let callListeners = [];
-        let pendingRemoteCandidates = [];
-
-        function showCallUI(type, peerName, peerPhoto, status, incoming = false) {
-            callOverlay.classList.remove('hidden');
-            document.getElementById('callUserName').innerText = peerName || 'ব্যবহারকারী';
-            document.getElementById('callUserAvatar').src = peerPhoto || 'https://placehold.co/120';
-            document.getElementById('callStatusText').innerText = status || 'কলিং...';
-
-            if (type === 'video') {
-                videoContainer.classList.remove('hidden');
-                toggleCamBtn.classList.remove('hidden');
-            } else {
-                videoContainer.classList.add('hidden');
-                toggleCamBtn.classList.add('hidden');
-            }
-
-            if (incoming) {
-                incomingCallControls.classList.remove('hidden');
-                ongoingCallControls.classList.add('hidden');
-            } else {
-                incomingCallControls.classList.add('hidden');
-                ongoingCallControls.classList.remove('hidden');
-            }
+                if (type === 'bounce') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220 + Math.random() * 80, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.03);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    osc.start(now);
+                    osc.stop(now + 0.03);
+                } else if (type === 'eliminate') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.18);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                }
+            } catch (e) {}
         }
 
-        function resetCallMedia() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    try { track.stop(); } catch (_) {}
-                });
-            }
-            localStream = null;
-
-            if (peerConnection) {
-                try { peerConnection.onicecandidate = null; } catch (_) {}
-                try { peerConnection.ontrack = null; } catch (_) {}
-                try { peerConnection.close(); } catch (_) {}
-            }
-
-            peerConnection = null;
-            remoteVideo.srcObject = null;
-            localVideo.srcObject = null;
-            remoteAudio.srcObject = null;
-            pendingRemoteCandidates = [];
-
-            toggleMicBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-            toggleCamBtn.innerHTML = '<i class="fa-solid fa-video"></i>';
-        }
-
-        function clearCallListeners() {
-            callListeners.forEach(fn => {
-                try { fn(); } catch (_) {}
+        function preloadFlags() {
+            COUNTRIES.forEach(c => {
+                const img = new Image();
+                img.src = `https://flagcdn.com/w80/${c.code}.png`;
+                flagImages[c.code] = img;
             });
-            callListeners = [];
         }
 
-        function closeCallUI(removeRemoteCall = false) {
-            stopRingtone();
-            const refToRemove = activeCallRef;
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
 
-            clearCallListeners();
-            resetCallMedia();
+            arenaCenter = { x: rect.width / 2, y: rect.height / 2 };
+            arenaRadius = (Math.min(rect.width, rect.height) / 2) - 12;
 
-            callOverlay.classList.add('hidden');
-            activeCallRef = null;
-            activeCallType = null;
-            activeCallPeerUid = null;
-            activeCallRole = null;
+            bumpers = [
+                { x: arenaCenter.x, y: arenaCenter.y - arenaRadius * 0.28, radius: arenaRadius * 0.075 },
+                { x: arenaCenter.x - arenaRadius * 0.28, y: arenaCenter.y + arenaRadius * 0.22, radius: arenaRadius * 0.075 },
+                { x: arenaCenter.x + arenaRadius * 0.28, y: arenaCenter.y + arenaRadius * 0.22, radius: arenaRadius * 0.075 }
+            ];
+        }
 
-            if (removeRemoteCall && refToRemove) {
-                remove(refToRemove).catch(err => console.warn('Call cleanup:', err));
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+
+        class Marble {
+            constructor(country, x, y, radius) {
+                this.country = country;
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                
+                // Continuous Initial Impulse Force
+                const speed = 3 + Math.random() * 4;
+                const angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                
+                this.isEliminated = false;
+                this.highlightTime = 0;
             }
-        }
 
-        async function addRemoteIceCandidate(candidateData) {
-            if (!peerConnection || !candidateData) return;
-            const candidate = new RTCIceCandidate(candidateData);
-            if (peerConnection.remoteDescription) {
-                try {
-                    await peerConnection.addIceCandidate(candidate);
-                } catch (err) {
-                    console.warn('ICE candidate error:', err);
-                }
-            } else {
-                pendingRemoteCandidates.push(candidate);
+            update(gravity = 0.06) {
+                if (this.isEliminated) return;
+
+                // Automatic Ambient Motion Force (Ensures balls never get stuck)
+                this.vy += gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Light Friction
+                this.vx *= 0.998;
+                this.vy *= 0.998;
+
+                // Prevent complete stop (Anti-stuck physics)
+                if (Math.abs(this.vx) < 0.2) this.vx += (Math.random() - 0.5) * 0.8;
+                if (Math.abs(this.vy) < 0.2) this.vy += (Math.random() - 0.5) * 0.8;
+
+                if (this.highlightTime > 0) this.highlightTime--;
             }
-        }
 
-        async function flushRemoteCandidates() {
-            if (!peerConnection || !peerConnection.remoteDescription) return;
-            const queued = [...pendingRemoteCandidates];
-            pendingRemoteCandidates = [];
-            for (const candidate of queued) {
-                try {
-                    await peerConnection.addIceCandidate(candidate);
-                } catch (err) {
-                    console.warn('Queued ICE error:', err);
-                }
+            boost() {
+                this.highlightTime = 100;
+                this.vy = -7 - Math.random() * 4;
+                this.vx = (Math.random() - 0.5) * 10;
             }
-        }
 
-        function setupPeerConnection(type) {
-            peerConnection = new RTCPeerConnection(rtcConfig);
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
 
-            peerConnection.onicecandidate = async (event) => {
-                if (!event.candidate || !activeCallRef) return;
-                try {
-                    const candidatePath = activeCallRole === 'caller'
-                        ? `${activeCallRef.toString()}/callerCandidates`
-                        : `${activeCallRef.toString()}/answerCandidates`;
-                    await push(ref(db, candidatePath), event.candidate.toJSON());
-                } catch (err) {
-                    console.warn('Save ICE candidate error:', err);
+                if (this.highlightTime > 0) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius + 5, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 255, 204, ${Math.min(1, this.highlightTime / 25)})`;
+                    ctx.fill();
                 }
-            };
 
-            peerConnection.ontrack = (event) => {
-                const stream = event.streams && event.streams[0];
-                if (!stream) return;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.clip();
 
-                if (type === 'video') {
-                    remoteVideo.srcObject = stream;
-                    remoteVideo.play().catch(() => {});
+                const img = flagImages[this.country.code];
+                if (img && img.complete) {
+                    ctx.drawImage(img, -this.radius, -this.radius, this.radius * 2, this.radius * 2);
                 } else {
-                    remoteAudio.srcObject = stream;
-                    remoteAudio.play().catch(() => {});
-                }
-            };
-
-            peerConnection.onconnectionstatechange = () => {
-                if (!peerConnection) return;
-                const state = peerConnection.connectionState;
-                if (state === 'connected') {
-                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হয়েছে';
-                } else if (state === 'connecting') {
-                    document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
-                } else if (state === 'failed') {
-                    document.getElementById('callStatusText').innerText = 'সংযোগ ব্যর্থ হয়েছে';
-                    setTimeout(() => {
-                        if (callOverlay && !callOverlay.classList.contains('hidden')) {
-                            closeCallUI(true);
-                        }
-                    }, 1200);
-                }
-            };
-        }
-
-        async function initiateCall(type) {
-            if (!currentUser || !activeChatUser) {
-                showToast('প্রথমে একজন চ্যাট ব্যবহারকারী নির্বাচন করুন।', 'error');
-                return;
-            }
-
-            if (activeCallRef) {
-                showToast('একটি কল ইতিমধ্যে চলছে।', 'error');
-                return;
-            }
-
-            activeCallType = type;
-            activeCallPeerUid = activeChatUser.uid;
-            activeCallRole = 'caller';
-
-            showCallUI(type, activeChatUser.name, activeChatUser.photo, 'কল দেওয়া হচ্ছে...', false);
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-                    video: type === 'video' ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false
-                });
-
-                if (type === 'video') {
-                    localVideo.srcObject = localStream;
-                    localVideo.play().catch(() => {});
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 9px Poppins';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.country.code.toUpperCase(), 0, 0);
                 }
 
-                activeCallRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}`);
+                // Marble Gloss Overlay
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                const grad = ctx.createRadialGradient(
+                    -this.radius * 0.35, -this.radius * 0.35, this.radius * 0.1,
+                    0, 0, this.radius
+                );
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+                ctx.fillStyle = grad;
+                ctx.fill();
 
-                setupPeerConnection(type);
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.highlightTime > 0 ? '#00ffcc' : 'rgba(255,255,255,0.7)';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
 
-                const offer = await peerConnection.createOffer({
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: type === 'video'
-                });
-
-                await peerConnection.setLocalDescription(offer);
-
-                await set(activeCallRef, {
-                    callerId: currentUser.uid,
-                    callerName: currentUserData?.name || currentUser.displayName || 'ব্যবহারকারী',
-                    callerPhoto: currentUserData?.photo || currentUser.photoURL || '',
-                    receiverId: activeChatUser.uid,
-                    type: type,
-                    offer: { type: offer.type, sdp: offer.sdp },
-                    status: 'calling',
-                    createdAt: Date.now()
-                });
-
-                const answerUnsubscribe = onValue(activeCallRef, async (snapshot) => {
-                    const data = snapshot.val();
-                    if (!data) {
-                        if (activeCallRole === 'caller') closeCallUI(false);
-                        return;
-                    }
-
-                    if (data.answer && peerConnection && !peerConnection.remoteDescription) {
-                        try {
-                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                            await flushRemoteCandidates();
-                            document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
-                        } catch (err) {
-                            console.error('Remote answer set error:', err);
-                        }
-                    }
-
-                    if (data.status === 'rejected') {
-                        document.getElementById('callStatusText').innerText = 'কল প্রত্যাখ্যান করা হয়েছে';
-                        setTimeout(() => closeCallUI(true), 900);
-                    }
-                });
-
-                callListeners.push(answerUnsubscribe);
-
-                const answerCandidatesRef = ref(db, `calls/${activeChatUser.uid}/${currentUser.uid}/answerCandidates`);
-                const candidateUnsubscribe = onValue(answerCandidatesRef, async (snapshot) => {
-                    if (!snapshot.exists()) return;
-                    const candidates = snapshot.val();
-                    for (const key of Object.keys(candidates)) {
-                        await addRemoteIceCandidate(candidates[key]);
-                    }
-                });
-
-                callListeners.push(candidateUnsubscribe);
-
-            } catch (err) {
-                console.error('Start call error:', err);
-                showToast('ক্যামেরা/মাইক্রোফোন চালু করা যায়নি: ' + (err.message || err), 'error');
-                closeCallUI(true);
+                ctx.restore();
             }
         }
 
-        startAudioCallBtn.addEventListener('click', () => initiateCall('audio'));
-        startVideoCallBtn.addEventListener('click', () => initiateCall('video'));
-
-        function listenForIncomingCalls() {
-            if (!currentUser) return;
-            const myCallsRef = ref(db, `calls/${currentUser.uid}`);
-
-            onValue(myCallsRef, async (snapshot) => {
-                if (!snapshot.exists()) return;
-                const calls = snapshot.val();
-
-                for (const callerId of Object.keys(calls)) {
-                    const data = calls[callerId];
-                    if (!data || data.status !== 'calling') continue;
-
-                    if (activeCallRef) {
-                        await update(ref(db, `calls/${currentUser.uid}/${callerId}`), { status: 'busy' });
-                        continue;
-                    }
-
-                    activeCallRef = ref(db, `calls/${currentUser.uid}/${callerId}`);
-                    activeCallPeerUid = callerId;
-                    activeCallType = data.type === 'video' ? 'video' : 'audio';
-                    activeCallRole = 'callee';
-
-                    startLoudRingtone();
-                    notifyUser(`${data.callerName || 'কেউ একজন'} কল করছেন`, `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল`, 'call');
-                    flashTitle('📞 ইনকামিং কল — সাফিন ওয়েব');
-
-                    showCallUI(activeCallType, data.callerName, data.callerPhoto, `ইনকামিং ${activeCallType === 'video' ? 'ভিডিও' : 'অডিও'} কল...`, true);
-                    break;
-                }
-            });
-        }
-
-        async function acceptIncomingCall(callData) {
-            stopRingtone();
-            if (!activeCallRef || activeCallRole !== 'callee') return;
-
-            incomingCallControls.classList.add('hidden');
-            ongoingCallControls.classList.remove('hidden');
-            document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-                    video: callData.type === 'video' ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false
-                });
-
-                if (callData.type === 'video') {
-                    localVideo.srcObject = localStream;
-                    localVideo.play().catch(() => {});
-                }
-
-                setupPeerConnection(callData.type);
-
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
-                await flushRemoteCandidates();
-
-                const callerCandidatesRef = ref(db, `calls/${currentUser.uid}/${activeCallPeerUid}/callerCandidates`);
-                const calleeCallStateUnsubscribe = onValue(activeCallRef, (snapshot) => {
-                    if (!snapshot.exists()) closeCallUI(false);
-                });
-                callListeners.push(calleeCallStateUnsubscribe);
-
-                const callerCandidateUnsubscribe = onValue(callerCandidatesRef, async (snapshot) => {
-                    if (!snapshot.exists()) return;
-                    const candidates = snapshot.val();
-                    for (const key of Object.keys(candidates)) {
-                        await addRemoteIceCandidate(candidates[key]);
-                    }
-                });
-
-                callListeners.push(callerCandidateUnsubscribe);
-
-                const answer = await peerConnection.createAnswer({
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: callData.type === 'video'
-                });
-
-                await peerConnection.setLocalDescription(answer);
-
-                await update(activeCallRef, {
-                    answer: { type: answer.type, sdp: answer.sdp },
-                    status: 'connected',
-                    answeredAt: Date.now()
-                });
-
-                document.getElementById('callStatusText').innerText = 'সংযুক্ত হচ্ছে...';
-
-            } catch (err) {
-                console.error('Accept call error:', err);
-                showToast('কল ধরতে সমস্যা হয়েছে: ' + (err.message || err), 'error');
-                closeCallUI(true);
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 7;
+                this.vy = (Math.random() - 0.5) * 7;
+                this.radius = Math.random() * 3.5 + 1.5;
+                this.life = 1.0;
+                this.color = color;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.035;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
             }
         }
 
-        acceptCallBtn.addEventListener('click', () => {
-            if (!activeCallRef) return;
-            get(activeCallRef).then(snapshot => {
-                const data = snapshot.val();
-                if (!data || !data.offer) {
-                    showToast('কলটি আর পাওয়া যাচ্ছে না।', 'error');
-                    closeCallUI(false);
-                    return;
-                }
-                acceptIncomingCall(data);
-            }).catch(err => {
-                console.error(err);
-                showToast('কলের তথ্য পাওয়া যায়নি।', 'error');
-                closeCallUI(false);
-            });
-        });
+        function logEvent(msg) {
+            const consoleLog = document.getElementById('gameConsoleLog');
+            const line = document.createElement('div');
+            line.innerHTML = `*[Game] ${msg}`;
+            consoleLog.appendChild(line);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
 
-        rejectCallBtn.addEventListener('click', async () => {
-            stopRingtone();
-            if (!activeCallRef) return;
-            try {
-                await update(activeCallRef, { status: 'rejected', rejectedAt: Date.now() });
-            } catch (err) {
-                console.warn('Reject call error:', err);
-            }
-            setTimeout(() => closeCallUI(true), 300);
-        });
+        function initGame(mode = currentMode) {
+            resizeCanvas();
+            currentMode = mode;
 
-        toggleMicBtn.addEventListener('click', () => {
-            if (!localStream) return;
-            const audioTrack = localStream.getAudioTracks()[0];
-            if (!audioTrack) return;
-
-            audioTrack.enabled = !audioTrack.enabled;
-            toggleMicBtn.innerHTML = audioTrack.enabled
-                ? '<i class="fa-solid fa-microphone"></i>'
-                : '<i class="fa-solid fa-microphone-slash"></i>';
-            toggleMicBtn.classList.toggle('bg-red-600', !audioTrack.enabled);
-            toggleMicBtn.classList.toggle('bg-gray-800', audioTrack.enabled);
-        });
-
-        toggleCamBtn.addEventListener('click', () => {
-            if (!localStream || activeCallType !== 'video') return;
-            const videoTrack = localStream.getVideoTracks()[0];
-            if (!videoTrack) return;
-
-            videoTrack.enabled = !videoTrack.enabled;
-            toggleCamBtn.innerHTML = videoTrack.enabled
-                ? '<i class="fa-solid fa-video"></i>'
-                : '<i class="fa-solid fa-video-slash"></i>';
-            toggleCamBtn.classList.toggle('bg-red-600', !videoTrack.enabled);
-            toggleCamBtn.classList.toggle('bg-gray-800', videoTrack.enabled);
-        });
-
-        endCallBtn.addEventListener('click', async () => {
-            const refToRemove = activeCallRef;
-            if (refToRemove) {
-                try {
-                    await remove(refToRemove);
-                } catch (err) {
-                    console.warn('End call cleanup error:', err);
-                }
-            }
-            closeCallUI(false);
-        });
-
-        window.addEventListener('beforeunload', () => {
-            if (activeCallRef) {
-                remove(activeCallRef).catch(() => {});
-            }
-        });
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                checkAndSetupUserProfile(user);
+            let selectedCountries = [];
+            if (mode === 'FINAL4') {
+                const pool = [...COUNTRIES].sort(() => Math.random() - 0.5);
+                selectedCountries = pool.slice(0, 4);
+                document.getElementById('battleModeBadge').innerText = 'FINAL FOUR (4) MODE';
             } else {
-                authScreen.classList.remove('hidden');
+                selectedCountries = [...COUNTRIES];
+                document.getElementById('battleModeBadge').innerText = 'MASS ALL-FLAG MODE (98)';
             }
+
+            const ballRadius = mode === 'FINAL4' 
+                ? Math.max(16, arenaRadius / 8) 
+                : Math.max(9, Math.min(13, arenaRadius / 17));
+
+            balls = [];
+            particles = [];
+            eliminatedCountries = [];
+            totalCount = selectedCountries.length;
+
+            document.getElementById('eliminatedFlagGrid').innerHTML = '<p id="emptyGridMsg" class="text-[11px] text-slate-600 font-mono-tech italic px-2">এখনও কোনো দেশ বাদ পড়েনি...</p>';
+            document.getElementById('victoryOverlay').classList.add('hidden');
+            document.getElementById('startOverlay').classList.add('hidden');
+
+            const startX = arenaCenter.x;
+            const startY = arenaCenter.y - 15;
+
+            selectedCountries.forEach((country) => {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * (arenaRadius * 0.45);
+                const x = startX + Math.cos(angle) * dist;
+                const y = startY + Math.sin(angle) * dist;
+
+                balls.push(new Marble(country, x, y, ballRadius));
+            });
+
+            updateMiniLeaderboard();
+            logEvent(`Battle reset in ${mode} mode with ${totalCount} flags.`);
+            draw();
+        }
+
+        function updatePhysics() {
+            ringAngle += ringRotationSpeed * speedMultiplier;
+            if (ringAngle > Math.PI * 2) ringAngle -= Math.PI * 2;
+
+            const gapStart = (ringAngle - gapSize / 2 + Math.PI * 2) % (Math.PI * 2);
+            const gapEnd = (ringAngle + gapSize / 2 + Math.PI * 2) % (Math.PI * 2);
+
+            // Particles update
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            // Marbles movement & ring collisions
+            for (let i = 0; i < balls.length; i++) {
+                const ball = balls[i];
+                if (ball.isEliminated) continue;
+
+                ball.update(0.06 * speedMultiplier);
+
+                // Center Bumpers bounce
+                bumpers.forEach(bumper => {
+                    const bdx = ball.x - bumper.x;
+                    const bdy = ball.y - bumper.y;
+                    const bdist = Math.sqrt(bdx * bdx + bdy * bdy);
+                    const bmin = ball.radius + bumper.radius;
+
+                    if (bdist < bmin) {
+                        const bnx = bdx / (bdist || 1);
+                        const bny = bdy / (bdist || 1);
+                        ball.x = bumper.x + bnx * bmin;
+                        ball.y = bumper.y + bny * bmin;
+                        const bdot = ball.vx * bnx + ball.vy * bny;
+                        ball.vx = (ball.vx - 2 * bdot * bnx) * 1.25;
+                        ball.vy = (ball.vy - 2 * bdot * bny) * 1.25;
+                        playSound('bounce');
+                    }
+                });
+
+                // Ring Wall collision / Gap elimination check
+                const dx = ball.x - arenaCenter.x;
+                const dy = ball.y - arenaCenter.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist + ball.radius >= arenaRadius) {
+                    let ballAngle = (Math.atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2);
+
+                    let inGap = false;
+                    if (gapStart < gapEnd) {
+                        inGap = ballAngle >= gapStart && ballAngle <= gapEnd;
+                    } else {
+                        inGap = ballAngle >= gapStart || ballAngle <= gapEnd;
+                    }
+
+                    if (inGap) {
+                        if (dist > arenaRadius + ball.radius * 1.1) {
+                            ball.isEliminated = true;
+                            createExplosion(ball.x, ball.y);
+                            eliminateCountry(ball.country);
+                            playSound('eliminate');
+                        }
+                    } else {
+                        const normalX = dx / dist;
+                        const normalY = dy / dist;
+
+                        ball.x = arenaCenter.x + normalX * (arenaRadius - ball.radius);
+
+                        const dot = ball.vx * normalX + ball.vy * normalY;
+                        ball.vx = (ball.vx - 2 * dot * normalX) * 0.92;
+                        ball.vy = (ball.vy - 2 * dot * normalY) * 0.92;
+
+                        // Add ring tangential force
+                        ball.vx += -normalY * ringRotationSpeed * arenaRadius * 0.15;
+                        ball.vy += normalX * ringRotationSpeed * arenaRadius * 0.15;
+
+                        playSound('bounce');
+                    }
+                }
+            }
+
+            // Ball vs Ball Collision
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const b1 = balls[i];
+                    const b2 = balls[j];
+                    if (b1.isEliminated || b2.isEliminated) continue;
+
+                    const dx = b2.x - b1.x;
+                    const dy = b2.y - b1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = b1.radius + b2.radius;
+
+                    if (dist < minDist) {
+                        const nx = dx / (dist || 1);
+                        const ny = dy / (dist || 1);
+                        const overlap = minDist - dist;
+
+                        b1.x -= nx * overlap * 0.5;
+                        b1.y -= ny * overlap * 0.5;
+                        b2.x += nx * overlap * 0.5;
+                        b2.y += ny * overlap * 0.5;
+
+                        const kx = b1.vx - b2.vx;
+                        const ky = b1.vy - b2.vy;
+                        const p = 2 * (nx * kx + ny * ky) / 2;
+
+                        b1.vx -= p * nx * 0.96;
+                        b1.vy -= p * ny * 0.96;
+                        b2.vx += p * nx * 0.96;
+                        b2.vy += p * ny * 0.96;
+
+                        if (Math.random() < 0.05) {
+                            logEvent(`${b1.country.name} marble hit ${b2.country.name} marble.`);
+                        }
+                    }
+                }
+            }
+
+            // Check Victory
+            const activeBalls = balls.filter(b => !b.isEliminated);
+            if (activeBalls.length === 1 && isRunning) {
+                handleVictory(activeBalls[0].country);
+            }
+        }
+
+        function createExplosion(x, y) {
+            const colors = ['#00ffcc', '#ff007f', '#ffe600', '#ffffff'];
+            for (let i = 0; i < 14; i++) {
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
+            }
+        }
+
+        function eliminateCountry(country) {
+            eliminatedCountries.push(country);
+            
+            const grid = document.getElementById('eliminatedFlagGrid');
+            const emptyMsg = document.getElementById('emptyGridMsg');
+            if (emptyMsg) emptyMsg.remove();
+
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'w-6 h-4 rounded overflow-hidden border border-slate-700 shrink-0 transform hover:scale-125 transition';
+            imgContainer.title = country.name;
+            imgContainer.innerHTML = `<img src="https://flagcdn.com/w40/${country.code}.png" class="w-full h-full object-cover">`;
+            
+            grid.appendChild(imgContainer);
+            grid.scrollTop = grid.scrollHeight;
+
+            logEvent(`<span class="text-red-400 font-bold">${country.name}</span> has been eliminated!`);
+            updateMiniLeaderboard();
+        }
+
+        function updateMiniLeaderboard() {
+            const active = balls.filter(b => !b.isEliminated);
+            document.getElementById('topRemainingCountText').innerText = `${active.length} / ${totalCount}`;
+            document.getElementById('eliminatedCountNum').innerText = eliminatedCountries.length;
+
+            const miniLeaderboard = document.getElementById('miniLeaderboard');
+            miniLeaderboard.innerHTML = '';
+
+            active.slice(0, 4).forEach((ball, idx) => {
+                const wins = winStats[ball.country.code] || 0;
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between bg-slate-900 px-2 py-0.5 rounded border border-slate-800';
+                row.innerHTML = `
+                    <div class="flex items-center gap-1.5 truncate">
+                        <span class="text-[10px] text-cyan-400 font-bold">#${idx + 1}</span>
+                        <img src="https://flagcdn.com/w20/${ball.country.code}.png" class="w-4 h-2.5 object-cover rounded-sm">
+                        <span class="text-[11px] text-slate-200 truncate">${ball.country.name}</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-400 font-bold">${wins} wins</span>
+                `;
+                miniLeaderboard.appendChild(row);
+            });
+        }
+
+        function handleVictory(winner) {
+            isRunning = false;
+            winStats[winner.code] = (winStats[winner.code] || 0) + 1;
+            localStorage.setItem('flag_wins_tracker', JSON.stringify(winStats));
+
+            updateMiniLeaderboard();
+            logEvent(`<span class="text-amber-400 font-bold">VICTORY! ${winner.name} won the battle!</span>`);
+
+            const modal = document.getElementById('victoryOverlay');
+            document.getElementById('winnerCountryName').innerText = winner.name;
+            document.getElementById('winnerStatsText').innerText = `TOTAL VICTORIES: ${winStats[winner.code]} WINS`;
+            document.getElementById('winnerFlagContainer').innerHTML = `
+                <img src="https://flagcdn.com/w160/${winner.code}.png" class="w-full h-full object-cover">
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+
+            // Background Radial Glow
+            const bgGrad = ctx.createRadialGradient(arenaCenter.x, arenaCenter.y, 5, arenaCenter.x, arenaCenter.y, arenaRadius + 20);
+            bgGrad.addColorStop(0, '#0a101d');
+            bgGrad.addColorStop(1, '#04060a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw Bumpers
+            bumpers.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#111827';
+                ctx.fill();
+                ctx.strokeStyle = '#00ffcc';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Draw Ring Wall with Gap
+            ctx.save();
+            ctx.translate(arenaCenter.x, arenaCenter.y);
+
+            const gapStart = ringAngle - gapSize / 2;
+            const gapEnd = ringAngle + gapSize / 2;
+
+            ctx.beginPath();
+            ctx.arc(0, 0, arenaRadius, gapEnd, gapStart);
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = '#00ffcc';
+            ctx.shadowColor = '#00ffcc';
+            ctx.shadowBlur = 12;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Gap Red Glow Nodes
+            const cap1X = Math.cos(gapStart) * arenaRadius;
+            const cap1Y = Math.sin(gapStart) * arenaRadius;
+            const cap2X = Math.cos(gapEnd) * arenaRadius;
+            const cap2Y = Math.sin(gapEnd) * arenaRadius;
+
+            ctx.beginPath();
+            ctx.arc(cap1X, cap1Y, 5, 0, Math.PI * 2);
+            ctx.arc(cap2X, cap2Y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff007f';
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+
+            ctx.restore();
+
+            // Particles & Marbles
+            particles.forEach(p => p.draw());
+            balls.forEach(ball => ball.draw());
+        }
+
+        function gameLoop() {
+            if (isRunning) {
+                const steps = Math.ceil(speedMultiplier);
+                for (let i = 0; i < steps; i++) {
+                    updatePhysics();
+                }
+            }
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start / Reset Trigger Function
+        function startOrResetBattle() {
+            initGame();
+            isRunning = true;
+            
+            // Give immediate random directional kinetic energy to all active marbles
+            balls.forEach(b => {
+                const speed = 4 + Math.random() * 5;
+                const angle = Math.random() * Math.PI * 2;
+                b.vx = Math.cos(angle) * speed;
+                b.vy = Math.sin(angle) * speed;
+            });
+
+            document.getElementById('pauseText').innerText = 'PAUSE';
+            document.getElementById('pauseIcon').className = 'fa-solid fa-pause';
+            logEvent(`Battle started automatically.`);
+        }
+
+        // Event Handlers
+        document.getElementById('mainStartResetBtn').addEventListener('click', startOrResetBattle);
+        document.getElementById('overlayStartBtn').addEventListener('click', startOrResetBattle);
+        document.getElementById('playAgainBtn').addEventListener('click', startOrResetBattle);
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isRunning = !isRunning;
+            document.getElementById('pauseText').innerText = isRunning ? 'PAUSE' : 'RESUME';
+            document.getElementById('pauseIcon').className = isRunning ? 'fa-solid fa-pause' : 'fa-solid fa-play';
         });
 
+        document.getElementById('modeMassBtn').addEventListener('click', () => {
+            document.getElementById('modeMassBtn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800 transition';
+            document.getElementById('modeFinal4Btn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition';
+            initGame('MASS');
+        });
+
+        document.getElementById('modeFinal4Btn').addEventListener('click', () => {
+            document.getElementById('modeFinal4Btn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800 transition';
+            document.getElementById('modeMassBtn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition';
+            initGame('FINAL4');
+        });
+
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.speed-btn').forEach(b => {
+                    b.classList.remove('text-cyan-400', 'font-bold');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('text-cyan-400', 'font-bold');
+                btn.classList.remove('text-slate-400');
+                speedMultiplier = parseFloat(btn.dataset.speed);
+            });
+        });
+
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const query = input.value.trim().toLowerCase();
+            if (!query) return;
+
+            const matchedCountry = COUNTRIES.find(c => 
+                c.name.toLowerCase() === query || 
+                c.code.toLowerCase() === query ||
+                c.aliases.some(alias => query.includes(alias))
+            );
+
+            if (matchedCountry) {
+                const matchedBall = balls.find(b => !b.isEliminated && b.country.code === matchedCountry.code);
+                if (matchedBall) {
+                    matchedBall.boost();
+                    logEvent(`Highlighted <span class="text-cyan-400 font-bold">${matchedBall.country.name}</span>!`);
+                }
+            }
+            input.value = '';
+        });
+
+        document.getElementById('clearEliminatedBtn').addEventListener('click', () => {
+            eliminatedCountries = [];
+            document.getElementById('eliminatedFlagGrid').innerHTML = '<p id="emptyGridMsg" class="text-[11px] text-slate-600 font-mono-tech italic px-2">এখনও কোনো দেশ বাদ পড়েনি...</p>';
+            document.getElementById('eliminatedCountNum').innerText = '0';
+        });
+
+        window.onload = () => {
+            preloadFlags();
+            initGame('MASS');
+            requestAnimationFrame(gameLoop);
+        };
     </script>
 </body>
 </html>
