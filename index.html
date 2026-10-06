@@ -1,1566 +1,839 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ShieldCheck, ShieldAlert, Cpu, Wallet, Gift, PlayCircle, RotateCw, Users, 
-  Settings, Database, Lock, AlertTriangle, CheckCircle2, Globe, Sun, Moon, 
-  Layers, CreditCard, UserCheck, Eye, EyeOff, Activity, RefreshCw, Smartphone,
-  DollarSign, ArrowUpRight, ArrowDownLeft, Terminal, Sparkles, Filter, Check, X, LogOut, ChevronRight
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="bn" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EarnCash - Monetag Watch & Earn App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Hind Siliguri -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-const TRANSLATIONS = {
-  en: {
-    appName: "TaskPulse Pro",
-    dashboard: "Dashboard",
-    cpaTasks: "CPA Task Hub",
-    rewardedAds: "Rewarded Ads",
-    luckySpin: "Lucky Spin",
-    wallet: "Wallet & Ledger",
-    referral: "Referral Network",
-    profile: "Profile & KYC",
-    adminPanel: "Admin Panel",
-    fraudCenter: "Fraud Operations",
-    dbSchema: "Database Schema",
-    balance: "Available Balance",
-    points: "Reward Points",
-    fraudScore: "Triple-AI Risk Score",
-    trustLevel: "Account Status",
-    verified: "Verified Badge",
-    unverified: "Unverified",
-    dailyCheckin: "Daily Check-in Bonus",
-    claimReward: "Claim Reward",
-    deposit: "Deposit",
-    withdraw: "Withdraw",
-    recentLedger: "ACID Financial Ledger",
-    antiFraudStatus: "Triple-AI Sentinel Active",
-    langToggle: "বাংলা",
-    roles: {
-      user: "User Portal",
-      superAdmin: "Super Admin",
-      finMod: "Financial Moderator",
-      supportAgent: "Support Agent"
-    }
-  },
-  bn: {
-    appName: "টাস্কপালস প্রো",
-    dashboard: "ড্যাশবোর্ড",
-    cpaTasks: "সিপিএ টাস্ক হাব",
-    rewardedAds: "রিওয়ার্ডেড অ্যাডস",
-    luckySpin: "লকি স্পিন",
-    wallet: "ওয়ালেট ও লেজার",
-    referral: "রেফারেল নেটওয়ার্ক",
-    profile: "প্রোফাইল ও ভেরিফিকেশন",
-    adminPanel: "এডমিন প্যানেল",
-    fraudCenter: "ফ্রড অপারেশনস",
-    dbSchema: "ডাটাবেজ স্কিমা",
-    balance: "বর্তমান ব্যালেন্স",
-    points: "রিওয়ার্ড পয়েন্ট",
-    fraudScore: "ট্রিপল-AI রিস্ক স্কোর",
-    trustLevel: "একাউন্ট স্ট্যাটাস",
-    verified: "ভেরিফাইড ব্যাজ",
-    unverified: "আনভেরিফাইড",
-    dailyCheckin: "দৈনিক বোনাস",
-    claimReward: "বোনাস গ্রহণ করুন",
-    deposit: "ডিপোজিট",
-    withdraw: "উইথড্র",
-    recentLedger: "এসিড ফাইন্যান্সিয়াল লেজার",
-    antiFraudStatus: "ট্রিপল-AI সেন্টিনেল সক্রিয়",
-    langToggle: "English",
-    roles: {
-      user: "ইউজার পোর্টাল",
-      superAdmin: "সুপার এডমিন",
-      finMod: "ফাইন্যান্সিয়াল মডারেটর",
-      supportAgent: "সাপোর্ট এজেন্ট"
-    }
-  }
-};
-
-export default function App() {
-  // Navigation & Preferences
-  const [lang, setLang] = useState('en');
-  const [darkMode, setDarkMode] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [userRole, setUserRole] = useState('user'); // 'user', 'superAdmin', 'finMod', 'supportAgent'
-  const t = TRANSLATIONS[lang];
-
-  // Dynamic Site Settings (Admin CMS Controlled)
-  const [cmsSettings, setCmsSettings] = useState({
-    siteName: "TaskPulse Pro",
-    logoUrl: "⚡",
-    primaryColor: "#6366f1", // Indigo
-    accentColor: "#10b981",  // Emerald
-    announcement: "🎉 Welcome Bonus: Complete 3 CPA tasks today and receive a 100 PTS multiplier!",
-    features: {
-      cpaTasks: true,
-      rewardedAds: true,
-      luckySpin: true,
-      referrals: true,
-      dailyBonus: true
-    }
-  });
-
-  // User Profile & Authentication State
-  const [user, setUser] = useState({
-    id: "USR-882914",
-    name: "Tanvir Ahmed",
-    email: "tanvir@example.com",
-    country: "Bangladesh", // Auto-detects BD or INT
-    ip: "103.245.152.12",
-    deviceFingerprint: "FP-8A99-31XQ-9012",
-    isVerified: true,
-    verificationBadge: "Gold Earner",
-    balance: 142.50,
-    points: 1250,
-    dailyClaimed: false,
-    fraudScore: 12, // 0 - 100 score calculated by Triple-AI
-    banned: false,
-    warnings: []
-  });
-
-  // Anti-Fraud AI Telemetry State
-  const [aiTelemetry, setAiTelemetry] = useState({
-    mouseStraightness: 98,  // High = organic curve, Low = bot straight vector
-    clickVelocity: 240,     // ms between interactions
-    taskDurationAvg: 45,    // seconds
-    proxyDetected: false,
-    multiAccountRisk: "Low (1/2 allowed per IP)",
-    agent1NetworkScore: 8,  // Network Behavior AI
-    agent2BehaviorScore: 14,// Mouse/Keyboard Dynamics AI
-    agent3PatternScore: 12  // Task Pattern AI
-  });
-
-  // Financial Ledger State (ACID Compliance Simulation)
-  const [isProcessingLedger, setIsProcessingLedger] = useState(false);
-  const [ledger, setLedger] = useState([
-    { id: "TXN-9081", timestamp: "2026-10-06 18:42:10", type: "CREDIT", category: "CPA Task #104", amount: "+$2.50", status: "COMMITTED", lockId: "LOCK-A1" },
-    { id: "TXN-9080", timestamp: "2026-10-06 17:15:02", type: "CREDIT", category: "Rewarded Ad #88", amount: "+$0.15", status: "COMMITTED", lockId: "LOCK-A2" },
-    { id: "TXN-9079", timestamp: "2026-10-05 12:30:00", type: "DEBIT", category: "bKash Payout", amount: "-$20.00", status: "COMMITTED", lockId: "LOCK-A3" },
-  ]);
-
-  // Dynamic Payment Gateways
-  const [gateways, setGateways] = useState([
-    { id: 'bkash', name: 'bKash Auto', region: 'BD', currency: 'BDT', rate: 120, fee: '1.5%', active: true, icon: '📱' },
-    { id: 'nagad', name: 'Nagad Express', region: 'BD', currency: 'BDT', rate: 120, fee: '1.0%', active: true, icon: '📲' },
-    { id: 'binance', name: 'Binance Pay', region: 'INT', currency: 'USDT', rate: 1, fee: '0%', active: true, icon: '🟡' },
-    { id: 'usdt', name: 'USDT (TRC-20)', region: 'INT', currency: 'USDT', rate: 1, fee: '$1.00', active: true, icon: '🪙' },
-    { id: 'payeer', name: 'Payeer Global', region: 'INT', currency: 'USD', rate: 1, fee: '2.0%', active: true, icon: '🅿️' },
-    { id: 'ltc', name: 'Litecoin Direct', region: 'INT', currency: 'LTC', rate: 1, fee: '0.5%', active: true, icon: 'Ł' },
-  ]);
-
-  // Mouse & Keyboard movement listener simulating Agent 2 (Behavioral AI)
-  useEffect(() => {
-    let mouseMoves = [];
-    let lastTime = Date.now();
-
-    const handleMouseMove = (e) => {
-      const now = Date.now();
-      const timeDiff = now - lastTime;
-      lastTime = now;
-
-      mouseMoves.push({ x: e.clientX, y: e.clientY, dt: timeDiff });
-      if (mouseMoves.length > 20) {
-        mouseMoves.shift();
-        
-        // Calculate velocity variance and curvature to detect artificial mouse movements
-        let totalSpeed = 0;
-        let linearDeviations = 0;
-        for (let i = 1; i < mouseMoves.length; i++) {
-          const dx = mouseMoves[i].x - mouseMoves[i-1].x;
-          const dy = mouseMoves[i].y - mouseMoves[i-1].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          totalSpeed += dist / (mouseMoves[i].dt || 1);
-          if (dx === 0 || dy === 0) linearDeviations++;
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981',
+                        accent: '#f59e0b',
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b'
+                    },
+                    fontFamily: {
+                        sans: ['"Hind Siliguri"', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
         }
+    </script>
 
-        const avgVelocity = Math.round(totalSpeed / mouseMoves.length * 10);
-        const botProbability = linearDeviations > 15 ? 45 : 5;
+    <style>
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-button {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between items-center bg-slate-950 text-slate-100 overflow-x-hidden antialiased">
 
-        setAiTelemetry(prev => {
-          const newBehaviorScore = Math.min(100, Math.max(5, botProbability));
-          const newOverallScore = Math.round((prev.agent1NetworkScore + newBehaviorScore + prev.agent3PatternScore) / 3);
-          
-          // Auto warn or auto restriction trigger
-          if (newOverallScore > 75 && !user.banned) {
-            setUser(u => ({ ...u, warnings: [...u.warnings, "Rapid robotic mouse movement detected"] }));
-          }
+    <div id="app-container" class="w-full max-w-md min-h-screen flex flex-col justify-between bg-slate-900 border-x border-slate-800 relative shadow-2xl pb-20">
 
-          return {
-            ...prev,
-            clickVelocity: avgVelocity,
-            agent2BehaviorScore: newBehaviorScore
-          };
-        });
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [user.banned]);
-
-  const executeAtomicTransaction = async (type, category, amountVal) => {
-    if (isProcessingLedger) return;
-    setIsProcessingLedger(true);
-
-    // Lock Row Simulation
-    const lockId = `LOCK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    const txnId = `TXN-${Math.floor(1000 + Math.random() * 9000)}`;
-    const isCredit = type === 'CREDIT';
-
-    await new Promise(res => setTimeout(res, 600)); // Simulate DB Row Lock & Isolation Verification
-
-    // Double-Spend Check
-    if (!isCredit && user.balance < amountVal) {
-      alert("ACID Integrity Lock Error: Insufficient Ledger Balance!");
-      setIsProcessingLedger(false);
-      return;
-    }
-
-    // Atomic Balance Commit
-    setUser(prev => ({
-      ...prev,
-      balance: isCredit ? prev.balance + amountVal : prev.balance - amountVal
-    }));
-
-    const newLedgerEntry = {
-      id: txnId,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      type: type,
-      category: category,
-      amount: `${isCredit ? '+' : '-'}$${amountVal.toFixed(2)}`,
-      status: "COMMITTED",
-      lockId: lockId
-    };
-
-    setLedger(prev => [newLedgerEntry, ...prev]);
-    setIsProcessingLedger(false);
-  };
-
-  return (
-    <div className={`min-h-screen font-sans ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
-      
-      {/* Top Banner / Announcement */}
-      {cmsSettings.announcement && (
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs md:text-sm py-1.5 px-4 text-center font-medium flex justify-between items-center shadow-md">
-          <div className="flex-1 text-center truncate">
-            <span>{cmsSettings.announcement}</span>
-          </div>
-          <span className="bg-black/30 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold">
-            Live Promo
-          </span>
-        </div>
-      )}
-
-      {/* Main Top Navigation Header */}
-      <header className={`border-b ${darkMode ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white'} backdrop-blur-md sticky top-0 z-40`}>
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          
-          {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg" style={{ backgroundColor: cmsSettings.primaryColor }}>
-              {cmsSettings.logoUrl}
-            </div>
-            <div>
-              <h1 className="font-bold text-lg leading-tight flex items-center gap-1.5">
-                {cmsSettings.siteName}
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  v3.2 Enterprise
-                </span>
-              </h1>
-              <p className="text-[11px] text-slate-400 hidden sm:block">AI Anti-Fraud & Dynamic Micro-Earnings</p>
-            </div>
-          </div>
-
-          {/* Role Switcher & Security Indicators */}
-          <div className="flex items-center gap-2 md:gap-4">
-            
-            {/* Role Select Dropdown (For Testing RBAC) */}
-            <div className="relative">
-              <select 
-                value={userRole} 
-                onChange={(e) => {
-                  setUserRole(e.target.value);
-                  if (e.target.value !== 'user') setActiveTab('fraudCenter');
-                  else setActiveTab('dashboard');
-                }}
-                className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold cursor-pointer outline-none transition-all ${
-                  userRole === 'user' 
-                    ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' 
-                    : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                }`}
-              >
-                <option value="user" className="bg-slate-900 text-white">{t.roles.user}</option>
-                <option value="superAdmin" className="bg-slate-900 text-white">👑 {t.roles.superAdmin}</option>
-                <option value="finMod" className="bg-slate-900 text-white">⚖️ {t.roles.finMod}</option>
-                <option value="supportAgent" className="bg-slate-900 text-white">🎧 {t.roles.supportAgent}</option>
-              </select>
+        <!-- Header / Top Bar -->
+        <header class="sticky top-0 z-30 glass-card px-4 py-3 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-900 font-bold text-lg shadow-md">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                    <h1 class="text-xs text-slate-400 font-medium">আমার ব্যালেন্স</h1>
+                    <div class="flex items-center gap-1.5">
+                        <span id="user-coins" class="text-xl font-bold text-emerald-400">0</span>
+                        <span class="text-xs text-slate-400">কয়েন (৳<span id="user-taka">0.00</span>)</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Fraud Meter Badge */}
-            <div className={`hidden lg:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${
-              user.fraudScore < 25 
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-                : user.fraudScore < 60 
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-            }`}>
-              <Cpu className="w-3.5 h-3.5 animate-pulse" />
-              <span>AI Fraud Index: <strong>{user.fraudScore}%</strong></span>
+            <div class="flex items-center gap-2">
+                <button onclick="switchTab('settings')" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors" title="Monetag এডমিন সেটআপ">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <div class="relative">
+                    <button onclick="toggleNotificationModal()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+                        <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+                    </button>
+                </div>
             </div>
+        </header>
 
-            {/* Language Toggle */}
-            <button 
-              onClick={() => setLang(l => l === 'en' ? 'bn' : 'en')}
-              className={`p-2 rounded-lg border text-xs font-bold flex items-center gap-1 transition-colors ${darkMode ? 'border-slate-800 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-100'}`}
-              title="Change Language"
-            >
-              <Globe className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{t.langToggle}</span>
-            </button>
+        <!-- Main Content Views Container -->
+        <main class="flex-1 p-4 space-y-4 overflow-y-auto">
 
-            {/* Dark/Light Switch */}
-            <button 
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg border transition-colors ${darkMode ? 'border-slate-800 hover:bg-slate-800 text-amber-400' : 'border-slate-200 hover:bg-slate-100 text-slate-600'}`}
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
+            <!-- TAB 1: WATCH & EARN (HOME) -->
+            <section id="tab-home" class="tab-content space-y-4">
+                
+                <!-- Welcome Banner & Daily Check-in -->
+                <div class="glass-card rounded-2xl p-4 bg-gradient-to-br from-slate-800/80 via-slate-800/40 to-emerald-950/30 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">দৈনিক কাজের সুযোগ</span>
+                            <h2 class="text-lg font-bold mt-1 text-white">বিজ্ঞাপন দেখুন, পয়েন্ট জিতুন!</h2>
+                        </div>
+                        <button onclick="claimDailyBonus()" id="daily-btn" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-gift"></i>
+                            <span>দৈনিক বোনাস</span>
+                        </button>
+                    </div>
 
-            {/* User Profile Mini Badge */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-700/50">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-md">
-                TA
-              </div>
-              <div className="hidden xl:block text-left">
-                <p className="text-xs font-semibold leading-none">{user.name}</p>
-                <span className="text-[10px] text-emerald-400 font-medium">Gold Earner ✓</span>
-              </div>
-            </div>
+                    <!-- Progress Statistics -->
+                    <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-700/50">
+                        <div class="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/40">
+                            <span class="text-[11px] text-slate-400 block">আজকে দেখা অ্যাড</span>
+                            <span class="text-base font-bold text-amber-400" id="ads-watched-today">0</span>
+                            <span class="text-[10px] text-slate-500">/ ২০ টি লিমিট</span>
+                        </div>
+                        <div class="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/40">
+                            <span class="text-[11px] text-slate-400 block">মোট ইনকাম</span>
+                            <span class="text-base font-bold text-emerald-400">৳<span id="total-earned-taka">0.00</span></span>
+                            <span class="text-[10px] text-slate-500">লাইফটাইম আর্নিং</span>
+                        </div>
+                    </div>
+                </div>
 
-          </div>
+                <!-- Monetag Banner Ad Placeholder Container -->
+                <div class="w-full bg-slate-800/50 rounded-xl p-3 border border-slate-700/60 flex flex-col items-center justify-center text-center min-h-[100px] relative overflow-hidden" id="monetag-banner-container">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-widest mb-1">স্পন্সরড বিজ্ঞাপন (Monetag Ad Space)</span>
+                    <!-- Dynamic banner script will be injected here or demo message -->
+                    <div id="monetag-banner-content" class="w-full flex flex-col items-center justify-center py-2">
+                        <i class="fa-solid fa-rectangle-ad text-2xl text-emerald-400/60 mb-1"></i>
+                        <p class="text-xs text-slate-400">Monetag Banner Ad স্থান প্রস্তুত। Settings থেকে আপনার কোড বসান।</p>
+                    </div>
+                </div>
 
-        </div>
-      </header>
+                <!-- Ad Tasks Title -->
+                <div class="flex items-center justify-between pt-2">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-play-circle text-emerald-400"></i>
+                        উপলব্ধ অ্যাড টাস্ক
+                    </h3>
+                    <span class="text-xs text-slate-400">প্রতি এডে ৫০-১০০ পয়েন্ট</span>
+                </div>
 
-      {/* Main Container Layout */}
-      <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
-        
-        {}
-        <aside className="w-full md:w-64 shrink-0 space-y-6">
-          
-          {/* Navigation Group: User Options */}
-          <div className={`p-3 rounded-2xl border ${darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">Main Menu</p>
-            <nav className="space-y-1">
-              
-              <SidebarLink 
-                icon={<Activity className="w-4 h-4" />} 
-                label={t.dashboard} 
-                active={activeTab === 'dashboard'} 
-                onClick={() => setActiveTab('dashboard')} 
-                darkMode={darkMode}
-              />
+                <!-- Ad Tasks Grid -->
+                <div class="space-y-3">
+                    <!-- Task Card 1 -->
+                    <div class="glass-card rounded-xl p-3.5 flex items-center justify-between border border-slate-800 hover:border-slate-700 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold">
+                                <i class="fa-solid fa-bolt text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-100">প্রিমিয়াম স্পিড অ্যাড #১</h4>
+                                <p class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span class="text-emerald-400 font-medium">+৫০ পয়েন্ট</span>
+                                    <span>•</span>
+                                    <span>১৫ সেকেন্ড সময়</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="startAdWatchTask(1, 50, 15)" id="ad-btn-1" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1">
+                            <span>অ্যাড দেখুন</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
 
-              {cmsSettings.features.cpaTasks && (
-                <SidebarLink 
-                  icon={<Layers className="w-4 h-4" />} 
-                  label={t.cpaTasks} 
-                  badge="Hot"
-                  active={activeTab === 'cpaTasks'} 
-                  onClick={() => setActiveTab('cpaTasks')} 
-                  darkMode={darkMode}
-                />
-              )}
+                    <!-- Task Card 2 -->
+                    <div class="glass-card rounded-xl p-3.5 flex items-center justify-between border border-slate-800 hover:border-slate-700 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold">
+                                <i class="fa-solid fa-star text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-100">মেগা সুপার রিওয়ার্ড #২</h4>
+                                <p class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span class="text-emerald-400 font-medium">+১০০ পয়েন্ট</span>
+                                    <span>•</span>
+                                    <span>২৫ সেকেন্ড সময়</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="startAdWatchTask(2, 100, 25)" id="ad-btn-2" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1">
+                            <span>অ্যাড দেখুন</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
 
-              {cmsSettings.features.rewardedAds && (
-                <SidebarLink 
-                  icon={<PlayCircle className="w-4 h-4" />} 
-                  label={t.rewardedAds} 
-                  active={activeTab === 'rewardedAds'} 
-                  onClick={() => setActiveTab('rewardedAds')} 
-                  darkMode={darkMode}
-                />
-              )}
+                    <!-- Task Card 3 -->
+                    <div class="glass-card rounded-xl p-3.5 flex items-center justify-between border border-slate-800 hover:border-slate-700 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
+                                <i class="fa-solid fa-gem text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-100">গোল্ডেন বোনাস অ্যাড #৩</h4>
+                                <p class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span class="text-emerald-400 font-medium">+৭৫ পয়েন্ট</span>
+                                    <span>•</span>
+                                    <span>২০ সেকেন্ড সময়</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="startAdWatchTask(3, 75, 20)" id="ad-btn-3" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1">
+                            <span>অ্যাড দেখুন</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
 
-              {cmsSettings.features.luckySpin && (
-                <SidebarLink 
-                  icon={<RotateCw className="w-4 h-4" />} 
-                  label={t.luckySpin} 
-                  active={activeTab === 'luckySpin'} 
-                  onClick={() => setActiveTab('luckySpin')} 
-                  darkMode={darkMode}
-                />
-              )}
+                    <!-- Direct Link Special Task -->
+                    <div class="glass-card rounded-xl p-4 border border-emerald-500/30 bg-emerald-950/20 relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-link"></i>
+                                Monetag Direct Link স্পেশাল টাস্ক
+                            </span>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">আনলিমিটেড</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-3">স্পেশাল লিঙ্কে ক্লিক করে স্পন্সর পেজ ভিজিট করুন এবং বোনাস পয়েন্ট জিতুন।</p>
+                        <button onclick="openMonetagDirectLink()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-external-link"></i>
+                            <span>ডাইরেক্ট লিঙ্ক অ্যাড খুলুন (+৮০ পয়েন্ট)</span>
+                        </button>
+                    </div>
+                </div>
 
-              <SidebarLink 
-                icon={<Wallet className="w-4 h-4" />} 
-                label={t.wallet} 
-                active={activeTab === 'wallet'} 
-                onClick={() => setActiveTab('wallet')} 
-                darkMode={darkMode}
-              />
+            </section>
 
-              {cmsSettings.features.referrals && (
-                <SidebarLink 
-                  icon={<Users className="w-4 h-4" />} 
-                  label={t.referral} 
-                  active={activeTab === 'referral'} 
-                  onClick={() => setActiveTab('referral')} 
-                  darkMode={darkMode}
-                />
-              )}
+            <!-- TAB 2: WITHDRAW (টাকা তুলুন) -->
+            <section id="tab-withdraw" class="tab-content space-y-4 hidden">
+                <div class="glass-card rounded-2xl p-4 border border-slate-800">
+                    <h2 class="text-base font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-wallet text-emerald-400"></i>
+                        টাকা তোলার ক্যাশআউট রিকোয়েস্ট
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4">১০০০ পয়েন্ট = ১০ টাকা (সর্বনিম্ন ৫০ টাকা উত্তোলন করতে পারবেন)</p>
 
-              <SidebarLink 
-                icon={<UserCheck className="w-4 h-4" />} 
-                label={t.profile} 
-                active={activeTab === 'profile'} 
-                onClick={() => setActiveTab('profile')} 
-                darkMode={darkMode}
-              />
+                    <!-- Payment Gateway Selector -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-300">পেমেন্ট মেথড নির্বাচন করুন</label>
+                        <div class="grid grid-cols-2 gap-2" id="method-selector">
+                            <button onclick="selectWithdrawMethod('bkash')" id="method-bkash" class="method-btn p-3 rounded-xl border border-emerald-500 bg-emerald-500/10 flex items-center gap-3 transition-all">
+                                <div class="w-8 h-8 rounded-lg bg-pink-600 flex items-center justify-center text-white font-bold text-xs">bK</div>
+                                <div class="text-left">
+                                    <div class="text-xs font-bold text-white">বিকাশ (bKash)</div>
+                                    <div class="text-[10px] text-slate-400">সর্বনিম্ন ৳৫০</div>
+                                </div>
+                            </button>
+                            <button onclick="selectWithdrawMethod('nagad')" id="method-nagad" class="method-btn p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center gap-3 transition-all">
+                                <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold text-xs">নগদ</div>
+                                <div class="text-left">
+                                    <div class="text-xs font-bold text-white">নগদ (Nagad)</div>
+                                    <div class="text-[10px] text-slate-400">সর্বনিম্ন ৳৫০</div>
+                                </div>
+                            </button>
+                            <button onclick="selectWithdrawMethod('rocket')" id="method-rocket" class="method-btn p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center gap-3 transition-all">
+                                <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-xs">রকেট</div>
+                                <div class="text-left">
+                                    <div class="text-xs font-bold text-white">রকেট (Rocket)</div>
+                                    <div class="text-[10px] text-slate-400">সর্বনিম্ন ৳১০০</div>
+                                </div>
+                            </button>
+                            <button onclick="selectWithdrawMethod('recharge')" id="method-recharge" class="method-btn p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center gap-3 transition-all">
+                                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                                    <i class="fa-solid fa-mobile-screen-button"></i>
+                                </div>
+                                <div class="text-left">
+                                    <div class="text-xs font-bold text-white">রিচার্জ</div>
+                                    <div class="text-[10px] text-slate-400">সর্বনিম্ন ৳২০</div>
+                                </div>
+                            </button>
+                        </div>
 
-            </nav>
+                        <!-- Mobile Number Input -->
+                        <div class="mt-3 space-y-1">
+                            <label class="block text-xs font-medium text-slate-300">মোবাইল নম্বর (১১ ডিজিট)</label>
+                            <input type="tel" id="withdraw-account" placeholder="017XXXXXXXX" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
 
-            {/* Navigation Group: Admin & Security */}
-            {(userRole !== 'user') && (
-              <div className="mt-6 pt-4 border-t border-slate-800">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400 px-3 mb-2 flex items-center justify-between">
-                  <span>Admin Control</span>
-                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 rounded">{userRole}</span>
-                </p>
-                <nav className="space-y-1">
-                  
-                  <SidebarLink 
-                    icon={<ShieldAlert className="w-4 h-4 text-rose-400" />} 
-                    label={t.fraudCenter} 
-                    badge="AI"
-                    active={activeTab === 'fraudCenter'} 
-                    onClick={() => setActiveTab('fraudCenter')} 
-                    darkMode={darkMode}
-                  />
+                        <!-- Amount Input -->
+                        <div class="space-y-1">
+                            <label class="block text-xs font-medium text-slate-300">উত্তোলনের পরিমাণ (টাকায়)</label>
+                            <input type="number" id="withdraw-amount" placeholder="৫০" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
 
-                  {(userRole === 'superAdmin') && (
-                    <SidebarLink 
-                      icon={<Settings className="w-4 h-4 text-indigo-400" />} 
-                      label={t.adminPanel} 
-                      active={activeTab === 'adminPanel'} 
-                      onClick={() => setActiveTab('adminPanel')} 
-                      darkMode={darkMode}
-                    />
-                  )}
+                        <!-- Submit Button -->
+                        <button onclick="submitWithdrawal()" class="w-full mt-2 py-3 bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>উইথড্র রিকোয়েস্ট পাঠান</span>
+                        </button>
+                    </div>
+                </div>
 
-                  <SidebarLink 
-                    icon={<Database className="w-4 h-4 text-cyan-400" />} 
-                    label={t.dbSchema} 
-                    active={activeTab === 'dbSchema'} 
-                    onClick={() => setActiveTab('dbSchema')} 
-                    darkMode={darkMode}
-                  />
+                <!-- Withdrawal History -->
+                <div class="glass-card rounded-2xl p-4 border border-slate-800">
+                    <h3 class="text-xs font-bold text-slate-300 mb-3 uppercase tracking-wider">সর্বশেষ পেমেন্ট হিস্ট্রি</h3>
+                    <div id="withdraw-history" class="space-y-2 text-xs text-slate-400">
+                        <p class="text-center py-4 text-slate-500">এখনো কোনো উত্তোলন রিকোয়েস্ট করা হয়নি</p>
+                    </div>
+                </div>
+            </section>
 
-                </nav>
-              </div>
-            )}
-          </div>
+            <!-- TAB 3: REFERRAL (রেফার করুন) -->
+            <section id="tab-referral" class="tab-content space-y-4 hidden">
+                <div class="glass-card rounded-2xl p-5 text-center border border-slate-800 space-y-3">
+                    <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-white">বন্ধুদের ইনভাইট করুন!</h2>
+                    <p class="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                        আপনার রেফারেল লিঙ্ক দিয়ে বন্ধু রেজিস্টার করলেই পাবেন <strong class="text-emerald-400">২০০ পয়েন্ট বোনাস</strong> এবং তার মোট আয়ের ১০% আজীবন কমিশন!
+                    </p>
 
-          {/* Anti-Fraud Live Status Widget */}
-          <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-indigo-950/30 border-indigo-900/50' : 'bg-indigo-50 border-indigo-200'} relative overflow-hidden`}>
-            <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
-              <h4 className="text-xs font-bold text-indigo-300">Triple-AI Protection</h4>
-            </div>
-            <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">
-              Real-time protection against VPNs, bot scripts, linear mouse trajectories, and double-spend exploits.
-            </p>
-            <div className="space-y-1.5 text-[10px]">
-              <div className="flex justify-between">
-                <span className="text-slate-400">IP Reputation:</span>
-                <span className="text-emerald-400 font-semibold">100% Clean ({user.country})</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Mouse Velocity:</span>
-                <span className="text-indigo-300 font-mono">{aiTelemetry.clickVelocity} px/s</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Double-Spend Lock:</span>
-                <span className="text-emerald-400 font-semibold">ACID Active</span>
-              </div>
-            </div>
-          </div>
+                    <!-- Unique Referral Link Box -->
+                    <div class="pt-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1 text-left">আপনার রেফারেল লিঙ্ক</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="ref-link-input" readonly value="https://earncash.app/ref?code=EARN8831" class="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-emerald-400 font-mono">
+                            <button onclick="copyReferralLink()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition-colors flex items-center gap-1">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>কপি</span>
+                            </button>
+                        </div>
+                    </div>
 
-        </aside>
+                    <!-- Referred Users Count -->
+                    <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800">
+                        <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                            <span class="text-[10px] text-slate-400 block">মোট রেফারেল</span>
+                            <span class="text-base font-bold text-amber-400" id="total-referrals-count">০ জন</span>
+                        </div>
+                        <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                            <span class="text-[10px] text-slate-400 block">রেফারেল বোনাস</span>
+                            <span class="text-base font-bold text-emerald-400" id="total-ref-earnings">০ পয়েন্ট</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        {}
-        <main className="flex-1 min-w-0">
-          
-          {/* USER TAB 1: Dashboard Overview */}
-          {activeTab === 'dashboard' && (
-            <DashboardView 
-              user={user} 
-              setUser={setUser} 
-              t={t} 
-              darkMode={darkMode} 
-              cmsSettings={cmsSettings} 
-              executeAtomicTransaction={executeAtomicTransaction}
-              isProcessingLedger={isProcessingLedger}
-            />
-          )}
+            <!-- TAB 4: LEADERBOARD (লিডারবোর্ড) -->
+            <section id="tab-leaderboard" class="tab-content space-y-4 hidden">
+                <div class="glass-card rounded-2xl p-4 border border-slate-800">
+                    <h2 class="text-base font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i>
+                        সেরা ইনকামকারী লিডারবোর্ড
+                    </h2>
 
-          {/* USER TAB 2: CPA Task Hub */}
-          {activeTab === 'cpaTasks' && cmsSettings.features.cpaTasks && (
-            <CpaTasksView 
-              user={user} 
-              darkMode={darkMode} 
-              executeAtomicTransaction={executeAtomicTransaction}
-              isProcessingLedger={isProcessingLedger}
-            />
-          )}
+                    <div class="space-y-2">
+                        <!-- Top 1 -->
+                        <div class="flex items-center justify-between p-2.5 bg-slate-800/60 rounded-xl border border-amber-500/30">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-amber-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">1</span>
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">আরিফুল ইসলাম</h4>
+                                    <span class="text-[10px] text-slate-400">১৫০ টি অ্যাড সমাপ্ত</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-400">৳৮৫০.০০</span>
+                        </div>
 
-          {/* USER TAB 3: Rewarded Ads */}
-          {activeTab === 'rewardedAds' && cmsSettings.features.rewardedAds && (
-            <RewardedAdsView 
-              user={user} 
-              darkMode={darkMode} 
-              executeAtomicTransaction={executeAtomicTransaction}
-              isProcessingLedger={isProcessingLedger}
-            />
-          )}
+                        <!-- Top 2 -->
+                        <div class="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-slate-300 text-slate-950 font-extrabold text-xs flex items-center justify-center">2</span>
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">রাহাত হোসেন</h4>
+                                    <span class="text-[10px] text-slate-400">১২২ টি অ্যাড সমাপ্ত</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-400">৳৬২০.০০</span>
+                        </div>
 
-          {/* USER TAB 4: Lucky Spin Wheel */}
-          {activeTab === 'luckySpin' && cmsSettings.features.luckySpin && (
-            <LuckySpinView 
-              user={user} 
-              setUser={setUser} 
-              darkMode={darkMode} 
-              executeAtomicTransaction={executeAtomicTransaction}
-            />
-          )}
+                        <!-- Top 3 -->
+                        <div class="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-xl border border-slate-700/50">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-amber-700 text-white font-extrabold text-xs flex items-center justify-center">3</span>
+                                <div>
+                                    <h4 class="text-xs font-bold text-white">মেহেদী হাসান</h4>
+                                    <span class="text-[10px] text-slate-400">৯৮ টি অ্যাড সমাপ্ত</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-400">৳৪৯০.০০</span>
+                        </div>
 
-          {/* USER TAB 5: Wallet & Ledger */}
-          {activeTab === 'wallet' && (
-            <WalletView 
-              user={user} 
-              ledger={ledger} 
-              gateways={gateways} 
-              darkMode={darkMode} 
-              executeAtomicTransaction={executeAtomicTransaction}
-              isProcessingLedger={isProcessingLedger}
-            />
-          )}
+                        <!-- User Position -->
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
+                            <span class="text-xs text-slate-400">আপনার অবস্থান: <strong class="text-amber-400">#৪৮</strong></span>
+                            <span class="text-xs text-emerald-400 font-semibold">আয় বাড়াতে বিজ্ঞাপন দেখুন</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-          {/* USER TAB 6: Referral Network */}
-          {activeTab === 'referral' && cmsSettings.features.referrals && (
-            <ReferralView user={user} darkMode={darkMode} />
-          )}
+            <!-- TAB 5: SETTINGS / MONETAG ADMIN SETUP -->
+            <section id="tab-settings" class="tab-content space-y-4 hidden">
+                <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-emerald-400"></i>
+                                Monetag অ্যাড সেটআপ প্যানেল
+                            </h2>
+                            <p class="text-[11px] text-slate-400">এখানে আপনার Monetag অ্যাড লিংক ও স্ক্রিপ্ট কাস্টমাইজ করুন</p>
+                        </div>
+                    </div>
 
-          {/* USER TAB 7: Profile & Verification */}
-          {activeTab === 'profile' && (
-            <ProfileView user={user} setUser={setUser} darkMode={darkMode} aiTelemetry={aiTelemetry} />
-          )}
+                    <!-- Monetag Direct Link Input -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-200">
+                            Monetag Direct Link URL
+                        </label>
+                        <input type="url" id="monetag-direct-link-input" placeholder="https://otieu.com/4/xxxxxx" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
+                        <p class="text-[10px] text-slate-500">Monetag ড্যাশবোর্ড থেকে আপনার Direct Link / Smartlink কপি করে এখানে পেস্ট করুন।</p>
+                    </div>
 
-          {/* ADMIN TAB 1: Fraud Operations Center */}
-          {activeTab === 'fraudCenter' && (
-            <FraudCenterView 
-              user={user} 
-              setUser={setUser} 
-              aiTelemetry={aiTelemetry} 
-              darkMode={darkMode} 
-            />
-          )}
+                    <!-- Monetag Banner Script Tag Input -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-200">
+                            Monetag Banner / In-Page Push Code
+                        </label>
+                        <textarea id="monetag-script-input" rows="3" placeholder='<script src="//thubanoa.com/1..."></script>' class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500"></textarea>
+                        <p class="text-[10px] text-slate-500">Monetag ইন-পেজ পুশ বা ব্যানার স্ক্রিপ্ট ট্যাগটি সরাসরি এখানে বসান।</p>
+                    </div>
 
-          {/* ADMIN TAB 2: Site Settings CMS */}
-          {activeTab === 'adminPanel' && userRole === 'superAdmin' && (
-            <AdminCmsView 
-              cmsSettings={cmsSettings} 
-              setCmsSettings={setCmsSettings} 
-              gateways={gateways}
-              setGateways={setGateways}
-              darkMode={darkMode} 
-            />
-          )}
+                    <!-- Save Configuration Button -->
+                    <button onclick="saveMonetagSettings()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-98 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>সেটিংস সেভ করুন</span>
+                    </button>
 
-          {/* ADMIN TAB 3: Relational Database Schema */}
-          {activeTab === 'dbSchema' && (
-            <DbSchemaView darkMode={darkMode} />
-          )}
+                    <!-- Setup Guide Instructions -->
+                    <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-info"></i>
+                            কীভাবে Monetag অ্যাকাউন্ট চালু করবেন?
+                        </h3>
+                        <ol class="text-[11px] text-slate-400 list-decimal list-inside space-y-1 leading-relaxed">
+                            <li><a href="https://monetag.com" target="_blank" class="text-emerald-400 underline">Monetag.com</a> ওয়েবসাইট এ গিয়ে ফ্রী অ্যাকাউন্ট খুলুন।</li>
+                            <li>অ্যাপ্রুভাল পাবার পর <strong class="text-slate-200">Add Zone</strong> এ ক্লিক করে Direct Link তৈরি করুন।</li>
+                            <li>Direct Link টি কপি করে ওপরের ঘরে সেভ করে দিন।</li>
+                            <li>ইউজার যত বেশি এড দেখবে আপনার Monetag ড্যাশবোর্ডে ডলার (USD) জমা হবে!</li>
+                        </ol>
+                    </div>
+
+                    <!-- Reset Demo Data -->
+                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                        <span class="text-xs text-slate-400">অ্যাপ ডেটা রিসেট</span>
+                        <button onclick="resetData()" class="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[11px] font-semibold rounded-lg border border-red-500/30">
+                            রিসেট ডেটা
+                        </button>
+                    </div>
+                </div>
+            </section>
 
         </main>
 
-      </div>
-
-    </div>
-  );
-}
-
-function SidebarLink({ icon, label, badge, active, onClick, darkMode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-        active 
-          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
-          : darkMode 
-          ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white' 
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-      }`}
-    >
-      <div className="flex items-center gap-2.5">
-        {icon}
-        <span>{label}</span>
-      </div>
-      {badge && (
-        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function DashboardView({ user, setUser, t, darkMode, cmsSettings, executeAtomicTransaction, isProcessingLedger }) {
-  
-  const handleDailyClaim = () => {
-    if (user.dailyClaimed) return;
-    executeAtomicTransaction('CREDIT', 'Daily Check-in Reward', 1.00);
-    setUser(prev => ({ ...prev, points: prev.points + 50, dailyClaimed: true }));
-  };
-
-  return (
-    <div className="space-y-6">
-      
-      {/* Top Banner Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Balance Card */}
-        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm relative overflow-hidden`}>
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-xs font-medium text-slate-400">{t.balance}</p>
-              <h3 className="text-2xl font-black text-emerald-400 mt-1">${user.balance.toFixed(2)}</h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-[11px] text-slate-400 flex items-center gap-1">
-            <span className="text-emerald-400 font-semibold flex items-center">
-              <ArrowUpRight className="w-3 h-3" /> +12.4%
-            </span>
-            <span>from yesterday</span>
-          </div>
-        </div>
-
-        {/* Reward Points */}
-        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-xs font-medium text-slate-400">{t.points}</p>
-              <h3 className="text-2xl font-black text-indigo-400 mt-1">{user.points.toLocaleString()} PTS</h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              <Sparkles className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-400">1,000 PTS = $1.00 Cash Conversion</p>
-        </div>
-
-        {/* AI Fraud Score */}
-        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-xs font-medium text-slate-400">{t.fraudScore}</p>
-              <h3 className={`text-2xl font-black mt-1 ${user.fraudScore < 25 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {user.fraudScore}%
-              </h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-[11px] text-emerald-400 font-medium">✓ Safe for Instant Auto-Payouts</p>
-        </div>
-
-        {/* Verification Status */}
-        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-xs font-medium text-slate-400">{t.trustLevel}</p>
-              <h3 className="text-lg font-bold text-amber-400 mt-1 flex items-center gap-1.5">
-                {user.verificationBadge}
-              </h3>
-            </div>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <UserCheck className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-400">KYC Status: Verified Badge</p>
-        </div>
-
-      </div>
-
-      {/* Daily Reward Box */}
-      {cmsSettings.features.dailyBonus && (
-        <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-gradient-to-r from-indigo-950/80 to-purple-950/80 border-indigo-800/50' : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200'} flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg`}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-2xl text-indigo-400 shadow-inner">
-              🎁
-            </div>
-            <div>
-              <h3 className="font-bold text-base">{t.dailyCheckin}</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Claim your daily streak reward: <strong>$1.00 + 50 PTS</strong></p>
-            </div>
-          </div>
-          <button
-            onClick={handleDailyClaim}
-            disabled={user.dailyClaimed || isProcessingLedger}
-            className={`px-6 py-3 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2 ${
-              user.dailyClaimed 
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
-                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30 active:scale-95'
-            }`}
-          >
-            {user.dailyClaimed ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Bonus Claimed Today</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                <span>{isProcessingLedger ? 'Processing Ledger...' : t.claimReward}</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Task Quick-Start Section */}
-      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="font-bold text-base">Recommended Quick Micro-Tasks</h3>
-            <p className="text-xs text-slate-400">Protected by Triple-AI Anti-Bot Verification Engine</p>
-          </div>
-          <span className="text-xs text-indigo-400 font-semibold cursor-pointer hover:underline">View All Tasks →</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-sm">
-                CPA
-              </div>
-              <div>
-                <h4 className="font-bold text-xs">App Installation & Sign Up</h4>
-                <p className="text-[11px] text-slate-400">Financial App • 2 mins completion time</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-black text-emerald-400 block">+$2.50</span>
-              <span className="text-[10px] text-slate-400">12 Spots Left</span>
-            </div>
-          </div>
-
-          <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm">
-                SUR
-              </div>
-              <div>
-                <h4 className="font-bold text-xs">E-Commerce Feedback Survey</h4>
-                <p className="text-[11px] text-slate-400">Consumer Feedback • 3 mins</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-black text-indigo-400 block">+$1.80</span>
-              <span className="text-[10px] text-slate-400">High Approval</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-  );
-}
-
-function CpaTasksView({ user, darkMode, executeAtomicTransaction, isProcessingLedger }) {
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [proofText, setProofText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const tasks = [
-    { id: 101, title: "Download & Register FinTech App", reward: 3.50, network: "AdGate Media", time: "3 mins", instructions: "Install app, verify phone number, upload screenshot proof." },
-    { id: 102, title: "Complete Crypto Exchange Survey", reward: 1.75, network: "CPAGrip", time: "5 mins", instructions: "Answer 10 short questions regarding crypto preferences." },
-    { id: 103, title: "Subscribe to Premium Tech Newsletter", reward: 0.90, network: "Offertoro", time: "1 min", instructions: "Submit work email and click confirmation link." },
-    { id: 104, title: "Test E-Commerce Checkout Flow", reward: 4.20, network: "Lootably", time: "6 mins", instructions: "Create test account and submit order ID string." },
-  ];
-
-  const handleSubmitProof = async () => {
-    if (!proofText.trim()) return;
-    setSubmitting(true);
-    await new Promise(res => setTimeout(res, 1200)); // Server side API key validation simulation
-    await executeAtomicTransaction('CREDIT', `CPA Task #${selectedTask.id}`, selectedTask.reward);
-    setSubmitting(false);
-    setSelectedTask(null);
-    setProofText("");
-  };
-
-  return (
-    <div className="space-y-6">
-      
-      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-lg font-bold">CPA Offerwall & Micro-Tasks</h2>
-            <p className="text-xs text-slate-400">All CPA API keys are encrypted server-side to prevent client tamper.</p>
-          </div>
-          <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
-            Proxy API Shielded
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tasks.map(task => (
-            <div key={task.id} className={`p-5 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col justify-between gap-4 hover:border-indigo-500/40 transition-all`}>
-              <div>
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    {task.network}
-                  </span>
-                  <span className="text-xs text-slate-400 flex items-center gap-1">
-                    ⏱️ {task.time}
-                  </span>
+        <!-- Dynamic Timer Progress Overlay Modal -->
+        <div id="ad-timer-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+            <div class="glass-card rounded-2xl p-6 w-full max-w-xs text-center border border-slate-700 space-y-4 shadow-2xl relative">
+                <div class="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 mx-auto flex items-center justify-center text-2xl animate-pulse">
+                    <i class="fa-solid fa-clock"></i>
                 </div>
-                <h3 className="font-bold text-sm">{task.title}</h3>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-2">{task.instructions}</p>
-              </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">বিজ্ঞাপন প্রসেস হচ্ছে...</h3>
+                    <p class="text-xs text-slate-400 mt-1">কয়েন রিওয়ার্ড পেতে টাইমার শেষ হওয়া পর্যন্ত অপেক্ষা করুন</p>
+                </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-slate-800/50">
-                <span className="text-base font-black text-emerald-400">${task.reward.toFixed(2)}</span>
-                <button
-                  onClick={() => setSelectedTask(task)}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all"
-                >
-                  Start Task
+                <div class="my-4">
+                    <span id="countdown-number" class="text-4xl font-extrabold text-emerald-400">15</span>
+                    <span class="text-xs text-slate-400 block mt-1">সেকেন্ড বাকি</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                    <div id="timer-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-0 transition-all duration-1000 ease-linear"></div>
+                </div>
+
+                <p class="text-[10px] text-amber-400 bg-amber-500/10 py-1.5 px-2 rounded-lg border border-amber-500/20">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    সতর্কতা: পেজটি বন্ধ করলে পয়েন্ট যোগ হবে না!
+                </p>
+            </div>
+        </div>
+
+        <!-- Notification Toast Popup -->
+        <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-800 border border-emerald-500/50 text-slate-100 text-xs shadow-2xl flex items-center gap-2 transform transition-all duration-300 opacity-0 -translate-y-10 pointer-events-none">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-sm" id="toast-icon"></i>
+            <span id="toast-message">অপারেশন সফল হয়েছে</span>
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="fixed bottom-0 w-full max-w-md bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 z-40 px-3 py-2">
+            <div class="flex justify-around items-center">
+                <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center gap-1 text-emerald-400 font-semibold transition-colors">
+                    <i class="fa-solid fa-house text-lg"></i>
+                    <span class="text-[10px]">অ্যাড ওয়াচ</span>
                 </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Task Proof Submission Modal */}
-      {selectedTask && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`max-w-md w-full p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-2xl space-y-4`}>
-            <div className="flex justify-between items-center">
-              <h3 className="font-bold text-base">Submit Proof: {selectedTask.title}</h3>
-              <button onClick={() => setSelectedTask(null)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-3 rounded-lg bg-indigo-500/10 text-indigo-300 text-xs">
-              <strong>Instructions:</strong> {selectedTask.instructions}
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-400 block mb-1">Upload Confirmation Code or Order ID</label>
-              <textarea
-                value={proofText}
-                onChange={(e) => setProofText(e.target.value)}
-                placeholder="Paste transaction code, screenshot URL or reference string here..."
-                className={`w-full h-24 p-3 rounded-xl border text-xs outline-none focus:border-indigo-500 ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'}`}
-              />
-            </div>
-
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-xs font-bold text-emerald-400">Payout: ${selectedTask.reward.toFixed(2)}</span>
-              <button
-                onClick={handleSubmitProof}
-                disabled={submitting || !proofText.trim() || isProcessingLedger}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-bold text-xs transition-all shadow-md"
-              >
-                {submitting ? 'Verifying with CPA API...' : 'Submit Proof'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-function RewardedAdsView({ user, darkMode, executeAtomicTransaction, isProcessingLedger }) {
-  const [adState, setAdState] = useState('idle'); // 'idle', 'playing', 'captcha', 'rewarded'
-  const [countdown, setCountdown] = useState(10);
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-
-  const startAdVideo = () => {
-    setAdState('playing');
-    setCountdown(10);
-  };
-
-  useEffect(() => {
-    let timer;
-    if (adState === 'playing' && countdown > 0) {
-      timer = setInterval(() => setCountdown(c => c - 1), 1000);
-    } else if (adState === 'playing' && countdown === 0) {
-      setAdState('captcha');
-    }
-    return () => clearInterval(timer);
-  }, [adState, countdown]);
-
-  const handleVerifyCaptcha = () => {
-    if (captchaAnswer === '7') {
-      executeAtomicTransaction('CREDIT', 'Rewarded Video Ad #109', 0.25);
-      setAdState('rewarded');
-    } else {
-      alert("Incorrect Captcha! Fraud Sentinel Flagged Fake Click Attempt.");
-    }
-  };
-
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
-      
-      <div>
-        <h2 className="text-lg font-bold">Rewarded Video Ads</h2>
-        <p className="text-xs text-slate-400">Watch 10-second sponsor video ads to earn direct balance credits.</p>
-      </div>
-
-      <div className={`p-8 rounded-2xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[260px]`}>
-        
-        {adState === 'idle' && (
-          <div className="space-y-4 max-w-sm">
-            <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto text-2xl">
-              🎬
-            </div>
-            <h3 className="font-bold text-base">High-CPM Tech Ad Stream</h3>
-            <p className="text-xs text-slate-400">Reward: <strong>$0.25 USD</strong> per completed view.</p>
-            <button
-              onClick={startAdVideo}
-              disabled={isProcessingLedger}
-              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all"
-            >
-              Watch Video Ad
-            </button>
-          </div>
-        )}
-
-        {adState === 'playing' && (
-          <div className="space-y-4">
-            <div className="w-16 h-16 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin flex items-center justify-center mx-auto">
-              <span className="text-sm font-bold">{countdown}s</span>
-            </div>
-            <h3 className="font-bold text-sm">Streaming Sponsor Video...</h3>
-            <p className="text-xs text-slate-400">Do not close this tab. Anti-bot overlay verification active.</p>
-          </div>
-        )}
-
-        {adState === 'captcha' && (
-          <div className="space-y-4 max-w-xs">
-            <h3 className="font-bold text-sm text-amber-400">Human Verification Check</h3>
-            <p className="text-xs text-slate-400">Solve simple math captcha to claim reward: <strong>4 + 3 = ?</strong></p>
-            <input
-              type="number"
-              value={captchaAnswer}
-              onChange={(e) => setCaptchaAnswer(e.target.value)}
-              placeholder="Enter answer"
-              className={`w-full p-2.5 rounded-xl border text-center text-sm font-bold outline-none ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300'}`}
-            />
-            <button
-              onClick={handleVerifyCaptcha}
-              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
-            >
-              Verify & Claim $0.25
-            </button>
-          </div>
-        )}
-
-        {adState === 'rewarded' && (
-          <div className="space-y-3">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
-              ✓
-            </div>
-            <h3 className="font-bold text-base text-emerald-400">+$0.25 Added to Ledger!</h3>
-            <p className="text-xs text-slate-400">ACID double-entry ledger lock released successfully.</p>
-            <button
-              onClick={() => setAdState('idle')}
-              className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold"
-            >
-              Watch Next Ad
-            </button>
-          </div>
-        )}
-
-      </div>
-
-    </div>
-  );
-}
-
-function LuckySpinView({ user, setUser, darkMode, executeAtomicTransaction }) {
-  const [spinning, setSpinning] = useState(false);
-  const [rotation, setRotation] = useState(0);
-  const [spinResult, setSpinResult] = useState(null);
-
-  const prizes = [
-    { label: "$0.10", val: 0.10, color: "#6366f1" },
-    { label: "$0.50", val: 0.50, color: "#10b981" },
-    { label: "$1.00", val: 1.00, color: "#f59e0b" },
-    { label: "$0.05", val: 0.05, color: "#ec4899" },
-    { label: "100 PTS", val: 0.10, color: "#8b5cf6" },
-    { label: "JACKPOT $5", val: 5.00, color: "#ef4444" },
-  ];
-
-  const handleSpin = async () => {
-    if (spinning) return;
-    setSpinning(true);
-    setSpinResult(null);
-
-    const randomDeg = 1440 + Math.floor(Math.random() * 360);
-    setRotation(randomDeg);
-
-    setTimeout(async () => {
-      setSpinning(false);
-      const prizeIndex = Math.floor(Math.random() * prizes.length);
-      const prize = prizes[prizeIndex];
-      setSpinResult(prize);
-      await executeAtomicTransaction('CREDIT', `Lucky Spin (${prize.label})`, prize.val);
-    }, 3500);
-  };
-
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6 text-center`}>
-      
-      <div>
-        <h2 className="text-lg font-bold">Daily Lucky Spin Wheel</h2>
-        <p className="text-xs text-slate-400">Spin to win instant cash credits or points bonuses.</p>
-      </div>
-
-      <div className="relative w-64 h-64 mx-auto my-4 flex items-center justify-center">
-        {/* Wheel SVG */}
-        <div 
-          className="w-full h-full rounded-full border-4 border-slate-700 shadow-2xl overflow-hidden transition-all duration-[3500ms] cubic-bezier(0.15, 0.9, 0.25, 1)"
-          style={{ transform: `rotate(${rotation}deg)` }}
-        >
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            {prizes.map((p, i) => {
-              const angle = 360 / prizes.length;
-              const startAngle = i * angle;
-              const endAngle = (i + 1) * angle;
-              const x1 = 50 + 50 * Math.cos((Math.PI * startAngle) / 180);
-              const y1 = 50 + 50 * Math.sin((Math.PI * startAngle) / 180);
-              const x2 = 50 + 50 * Math.cos((Math.PI * endAngle) / 180);
-              const y2 = 50 + 50 * Math.sin((Math.PI * endAngle) / 180);
-
-              return (
-                <g key={i}>
-                  <path
-                    d={`M50,50 L${x1},${y1} A50,50 0 0,1 ${x2},${y2} Z`}
-                    fill={p.color}
-                  />
-                  <text
-                    x="65"
-                    y="52"
-                    fill="#ffffff"
-                    fontSize="5"
-                    fontWeight="bold"
-                    transform={`rotate(${startAngle + angle / 2}, 50, 50)`}
-                  >
-                    {p.label}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-
-        {/* Wheel Pointer */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-amber-400 z-10 drop-shadow-md" />
-      </div>
-
-      <button
-        onClick={handleSpin}
-        disabled={spinning}
-        className="px-8 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition-all"
-      >
-        {spinning ? 'Spinning...' : 'SPIN WHEEL NOW'}
-      </button>
-
-      {spinResult && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-sm animate-bounce max-w-xs mx-auto">
-          🎉 Congratulations! You won {spinResult.label}!
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-function WalletView({ user, ledger, gateways, darkMode, executeAtomicTransaction, isProcessingLedger }) {
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [selectedGateway, setSelectedGateway] = useState(gateways[0].id);
-  const [accountNo, setAccountNo] = useState("");
-
-  const isBDUser = user.country === 'Bangladesh';
-  const availableGateways = gateways.filter(g => g.active && (isBDUser ? g.region === 'BD' : g.region === 'INT'));
-
-  const handleWithdraw = async (e) => {
-    e.preventDefault();
-    const amountVal = parseFloat(withdrawAmount);
-    if (!amountVal || amountVal > user.balance) {
-      alert("Invalid balance or amount exceeds ledger limits.");
-      return;
-    }
-
-    await executeAtomicTransaction('DEBIT', `Payout via ${selectedGateway}`, amountVal);
-    setWithdrawAmount("");
-    setAccountNo("");
-    alert("Withdrawal request committed to ACID transaction queue!");
-  };
-
-  return (
-    <div className="space-y-6">
-      
-      {/* Wallet Balance Header */}
-      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
-        <div>
-          <span className="text-xs text-slate-400 font-medium">Verified Ledger Balance</span>
-          <h2 className="text-3xl font-black text-emerald-400">${user.balance.toFixed(2)} USD</h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">Approx. ৳{(user.balance * 120).toLocaleString()} BDT</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-            ACID Ledger Syncing
-          </span>
-        </div>
-      </div>
-
-      {/* Adaptive Payment Form */}
-      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold text-base">Request Withdrawal</h3>
-          <span className="text-xs text-slate-400">
-            Detected Region: <strong>{user.country} ({isBDUser ? 'bKash/Nagad Only' : 'Global Crypto/Payeer'})</strong>
-          </span>
-        </div>
-
-        <form onSubmit={handleWithdraw} className="space-y-4">
-          
-          {/* Gateway Selector */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 block mb-2">Select Payment Gateway</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {availableGateways.map(g => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setSelectedGateway(g.id)}
-                  className={`p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${
-                    selectedGateway === g.id 
-                      ? 'border-indigo-500 bg-indigo-500/10 text-white' 
-                      : darkMode ? 'border-slate-800 bg-slate-950 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <span className="text-xl">{g.icon}</span>
-                  <div>
-                    <h4 className="font-bold text-xs leading-none">{g.name}</h4>
-                    <span className="text-[10px] text-slate-400 mt-1 block">Fee: {g.fee}</span>
-                  </div>
+                <button onclick="switchTab('withdraw')" id="nav-withdraw" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-hand-holding-dollar text-lg"></i>
+                    <span class="text-[10px]">উইথড্র</span>
                 </button>
-              ))}
+                <button onclick="switchTab('referral')" id="nav-referral" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-users text-lg"></i>
+                    <span class="text-[10px]">রেফার</span>
+                </button>
+                <button onclick="switchTab('leaderboard')" id="nav-leaderboard" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-trophy text-lg"></i>
+                    <span class="text-[10px]">লিডারবোর্ড</span>
+                </button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-400 block mb-1">Withdraw Amount ($ USD)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                placeholder="Min $5.00"
-                className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-indigo-500 ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-400 block mb-1">Account / Wallet Address</label>
-              <input
-                type="text"
-                value={accountNo}
-                onChange={(e) => setAccountNo(e.target.value)}
-                placeholder={isBDUser ? "017XXXXXXXX" : "T... Address or Email"}
-                className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-indigo-500 ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isProcessingLedger || !withdrawAmount || !accountNo}
-            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 transition-all"
-          >
-            {isProcessingLedger ? 'Acquiring Ledger Row Lock...' : 'Confirm Withdrawal Request'}
-          </button>
-
-        </form>
-      </div>
-
-      {/* Financial Ledger Audit Trail Table */}
-      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
-        <h3 className="font-bold text-base">ACID Double-Entry Ledger Logs</h3>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className={`border-b ${darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-                <th className="p-2.5">TXN Hash</th>
-                <th className="p-2.5">Timestamp</th>
-                <th className="p-2.5">Category</th>
-                <th className="p-2.5">Type</th>
-                <th className="p-2.5">Amount</th>
-                <th className="p-2.5">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/40">
-              {ledger.map(row => (
-                <tr key={row.id} className="hover:bg-slate-800/20">
-                  <td className="p-2.5 font-mono text-indigo-400">{row.id}</td>
-                  <td className="p-2.5 text-slate-400">{row.timestamp}</td>
-                  <td className="p-2.5 font-medium">{row.category}</td>
-                  <td className="p-2.5">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                      {row.type}
-                    </span>
-                  </td>
-                  <td className={`p-2.5 font-bold ${row.type === 'CREDIT' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {row.amount}
-                  </td>
-                  <td className="p-2.5">
-                    <span className="text-slate-400 flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-emerald-400" /> {row.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        </nav>
 
     </div>
-  );
-}
 
-function ReferralView({ user, darkMode }) {
-  const refLink = `https://taskpulse.pro/ref/${user.id}`;
+    <!-- JavaScript Application State & Logic -->
+    <script>
+        // State Storage Keys
+        const STORAGE_KEY = 'monetag_watch_earn_app_state';
 
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
-      <div>
-        <h2 className="text-lg font-bold">Referral Tree & Network</h2>
-        <p className="text-xs text-slate-400">Earn 10% lifetime commission on every CPA task completed by your referred network.</p>
-      </div>
+        // Default App State
+        let state = {
+            coins: 150,
+            adsWatchedToday: 0,
+            lastWatchDate: new Date().toDateString(),
+            totalEarnedCoins: 150,
+            referrals: 0,
+            selectedWithdrawMethod: 'bkash',
+            withdrawHistory: [],
+            monetagDirectLink: 'https://otieu.com/4/example_link', // Default demo link
+            monetagScript: '',
+            dailyClaimedDate: ''
+        };
 
-      <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex justify-between items-center gap-3`}>
-        <span className="font-mono text-xs text-indigo-400 truncate">{refLink}</span>
-        <button
-          onClick={() => alert("Referral link copied to clipboard!")}
-          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 shadow-md"
-        >
-          Copy Link
-        </button>
-      </div>
+        // Initialize App on DOM Load
+        window.onload = function() {
+            loadState();
+            updateUI();
+            checkNewDayReset();
+            renderMonetagBanner();
+        };
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-          <span className="text-xs text-slate-400">Total Referrals</span>
-          <h3 className="text-xl font-bold mt-1">24 Users</h3>
-        </div>
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-          <span className="text-xs text-slate-400">Referral Earnings</span>
-          <h3 className="text-xl font-bold text-emerald-400 mt-1">$48.20</h3>
-        </div>
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-          <span className="text-xs text-slate-400">Fingerprint Checks</span>
-          <h3 className="text-xl font-bold text-indigo-400 mt-1">0 Multi-Accounts</h3>
-        </div>
-      </div>
-    </div>
-  );
-}
+        // Save State to LocalStorage
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            updateUI();
+        }
 
-function ProfileView({ user, setUser, darkMode, aiTelemetry }) {
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
-      <div>
-        <h2 className="text-lg font-bold">Profile & Device Fingerprint Details</h2>
-        <p className="text-xs text-slate-400">View security parameters registered for this active account session.</p>
-      </div>
+        // Load State from LocalStorage
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    state = { ...state, ...JSON.parse(saved) };
+                } catch(e) {
+                    console.error("Error loading state", e);
+                }
+            }
+            // Sync settings form inputs
+            document.getElementById('monetag-direct-link-input').value = state.monetagDirectLink || '';
+            document.getElementById('monetag-script-input').value = state.monetagScript || '';
+        }
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
-          <h3 className="font-bold text-slate-300">Identity Status</h3>
-          <p><strong>Account ID:</strong> {user.id}</p>
-          <p><strong>Name:</strong> {user.name}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Verification Badge:</strong> <span className="text-amber-400">{user.verificationBadge}</span></p>
-        </div>
+        // Reset Day Counters if new day
+        function checkNewDayReset() {
+            const today = new Date().toDateString();
+            if (state.lastWatchDate !== today) {
+                state.adsWatchedToday = 0;
+                state.lastWatchDate = today;
+                saveState();
+            }
+        }
 
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
-          <h3 className="font-bold text-slate-300">Device Fingerprint</h3>
-          <p><strong>IP Address:</strong> {user.ip}</p>
-          <p><strong>Fingerprint Hash:</strong> {user.deviceFingerprint}</p>
-          <p><strong>Proxy / VPN:</strong> {aiTelemetry.proxyDetected ? "Flagged ❌" : "Clean ✓"}</p>
-          <p><strong>Multi-Account Limit:</strong> {aiTelemetry.multiAccountRisk}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+        // UI Update Function
+        function updateUI() {
+            // Calculate Taka (1000 Coins = 10 BDT -> 1 Coin = 0.01 BDT)
+            const taka = (state.coins * 0.01).toFixed(2);
+            const totalTaka = (state.totalEarnedCoins * 0.01).toFixed(2);
 
-function FraudCenterView({ user, setUser, aiTelemetry, darkMode }) {
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
-      
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-bold text-rose-400 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5" /> Triple-AI Fraud Sentinel Dashboard
-          </h2>
-          <p className="text-xs text-slate-400">Monitoring Network Behavior, Mouse Dynamics & Task Completion Vectors</p>
-        </div>
-        <span className="px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold">
-          Active Real-time Telemetry
-        </span>
-      </div>
+            document.getElementById('user-coins').innerText = state.coins.toLocaleString('bn-BD');
+            document.getElementById('user-taka').innerText = taka;
+            document.getElementById('ads-watched-today').innerText = state.adsWatchedToday;
+            document.getElementById('total-earned-taka').innerText = totalTaka;
+            document.getElementById('total-referrals-count').innerText = `${state.referrals} জন`;
+            document.getElementById('total-ref-earnings').innerText = `${state.referrals * 200} পয়েন্ট`;
 
-      {/* AI Agents Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-xs">Agent 1: Network AI</h3>
-            <span className="text-emerald-400 font-bold text-xs">{aiTelemetry.agent1NetworkScore}% Risk</span>
-          </div>
-          <p className="text-[11px] text-slate-400">Analyzes residential vs datacenter IP proxies and ASN reputation.</p>
-        </div>
+            renderWithdrawHistory();
+        }
 
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-xs">Agent 2: Mouse AI</h3>
-            <span className="text-amber-400 font-bold text-xs">{aiTelemetry.agent2BehaviorScore}% Risk</span>
-          </div>
-          <p className="text-[11px] text-slate-400">Detects linear mouse paths, rapid automated scripts and click speeds.</p>
-        </div>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show target tab
+            const target = document.getElementById(`tab-${tabName}`);
+            if (target) target.classList.remove('hidden');
 
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-xs">Agent 3: Task Pattern AI</h3>
-            <span className="text-emerald-400 font-bold text-xs">{aiTelemetry.agent3PatternScore}% Risk</span>
-          </div>
-          <p className="text-[11px] text-slate-400">Evaluates sub-second task submissions and fake screenshot patterns.</p>
-        </div>
+            // Reset navigation tab button styling
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-emerald-400', 'font-semibold');
+                btn.classList.add('text-slate-400');
+            });
 
-      </div>
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('text-emerald-400', 'font-semibold');
+            }
+        }
 
-      {/* Flagged Live Actions */}
-      <div className="space-y-3">
-        <h3 className="font-bold text-sm">Active User Risk Profile ({user.name})</h3>
-        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
-          <div>
-            <h4 className="font-bold text-xs">{user.name} ({user.id})</h4>
-            <p className="text-[11px] text-slate-400">IP: {user.ip} • Device: {user.deviceFingerprint}</p>
-            {user.warnings.map((w, idx) => (
-              <span key={idx} className="inline-block mt-1 mr-2 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">
-                ⚠️ {w}
-              </span>
-            ))}
-          </div>
+        let adWatchTimer = null;
+        function startAdWatchTask(taskId, rewardCoins, durationSeconds) {
+            if (state.adsWatchedToday >= 20) {
+                showToast("আজকের ২০টি বিজ্ঞাপনের দৈনিক সীমা শেষ!", "warning");
+                return;
+            }
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setUser(u => ({ ...u, banned: !u.banned }))}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                user.banned 
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
-                  : 'bg-rose-600 hover:bg-rose-500 text-white shadow-md'
-              }`}
-            >
-              {user.banned ? 'Unban Account' : 'Force Permanent Ban'}
-            </button>
-          </div>
-        </div>
-      </div>
+            // Open Monetag Direct Link in new window if available
+            openAdWindow();
 
-    </div>
-  );
-}
+            // Open Countdown Overlay
+            const modal = document.getElementById('ad-timer-modal');
+            const countdownEl = document.getElementById('countdown-number');
+            const progressBar = document.getElementById('timer-progress-bar');
+            
+            let timeLeft = durationSeconds;
+            countdownEl.innerText = timeLeft;
+            progressBar.style.width = '0%';
+            modal.classList.remove('hidden');
 
-function AdminCmsView({ cmsSettings, setCmsSettings, gateways, setGateways, darkMode }) {
-  const [newGatewayName, setNewGatewayName] = useState("");
-  const [newGatewayRegion, setNewGatewayRegion] = useState("BD");
+            if (adWatchTimer) clearInterval(adWatchTimer);
 
-  const handleToggleFeature = (featKey) => {
-    setCmsSettings(prev => ({
-      ...prev,
-      features: {
-        ...prev.features,
-        [featKey]: !prev.features[featKey]
-      }
-    }));
-  };
+            const totalDuration = durationSeconds;
+            adWatchTimer = setInterval(() => {
+                timeLeft--;
+                countdownEl.innerText = timeLeft;
+                
+                const progressPercentage = ((totalDuration - timeLeft) / totalDuration) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
 
-  const handleAddGateway = (e) => {
-    e.preventDefault();
-    if (!newGatewayName.trim()) return;
-    const newG = {
-      id: newGatewayName.toLowerCase().replace(/\s+/g, '-'),
-      name: newGatewayName,
-      region: newGatewayRegion,
-      currency: newGatewayRegion === 'BD' ? 'BDT' : 'USD',
-      rate: newGatewayRegion === 'BD' ? 120 : 1,
-      fee: '1.0%',
-      active: true,
-      icon: '💳'
-    };
-    setGateways(prev => [...prev, newG]);
-    setNewGatewayName("");
-  };
+                if (timeLeft <= 0) {
+                    clearInterval(adWatchTimer);
+                    modal.classList.add('hidden');
+                    
+                    // Reward user
+                    state.coins += rewardCoins;
+                    state.totalEarnedCoins += rewardCoins;
+                    state.adsWatchedToday += 1;
+                    saveState();
 
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
-      
-      <div>
-        <h2 className="text-lg font-bold">Dynamic Site CMS & Feature Customizer</h2>
-        <p className="text-xs text-slate-400">Modify branding, site text, dynamic colors, and toggle platform modules live without code edits.</p>
-      </div>
+                    showToast(`অভিনন্দন! +${rewardCoins} পয়েন্ট অর্জিত হয়েছে!`);
+                }
+            }, 1000);
+        }
 
-      {/* Feature Toggles */}
-      <div className="space-y-3">
-        <h3 className="font-bold text-sm">Module & Feature Switches</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {Object.keys(cmsSettings.features).map(featKey => (
-            <button
-              key={featKey}
-              onClick={() => handleToggleFeature(featKey)}
-              className={`p-3 rounded-xl border text-left flex justify-between items-center transition-all ${
-                cmsSettings.features[featKey] 
-                  ? 'border-indigo-500 bg-indigo-500/10 text-white' 
-                  : 'border-slate-800 bg-slate-950 text-slate-500'
-              }`}
-            >
-              <span className="text-xs font-bold capitalize">{featKey}</span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${cmsSettings.features[featKey] ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
-                {cmsSettings.features[featKey] ? 'ON' : 'OFF'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
+        function openAdWindow() {
+            const url = state.monetagDirectLink || 'https://monetag.com';
+            try {
+                window.open(url, '_blank');
+            } catch (e) {
+                console.log("Pop-up blocked or opened");
+            }
+        }
 
-      {/* Dynamic Payment Gateways Config */}
-      <div className="space-y-3 pt-4 border-t border-slate-800">
-        <h3 className="font-bold text-sm">Dynamic Payment Gateway Manager</h3>
-        
-        <form onSubmit={handleAddGateway} className="flex gap-2">
-          <input
-            type="text"
-            value={newGatewayName}
-            onChange={(e) => setNewGatewayName(e.target.value)}
-            placeholder="New Gateway Name (e.g. Rocket, Upay)"
-            className={`flex-1 p-2.5 rounded-xl border text-xs outline-none ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
-          />
-          <select
-            value={newGatewayRegion}
-            onChange={(e) => setNewGatewayRegion(e.target.value)}
-            className={`p-2.5 rounded-xl border text-xs outline-none ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
-          >
-            <option value="BD">Bangladesh (BD)</option>
-            <option value="INT">International (INT)</option>
-          </select>
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
-          >
-            Add Gateway
-          </button>
-        </form>
-      </div>
+        function openMonetagDirectLink() {
+            startAdWatchTask(99, 80, 20);
+        }
 
-    </div>
-  );
-}
+        function claimDailyBonus() {
+            const today = new Date().toDateString();
+            if (state.dailyClaimedDate === today) {
+                showToast("আপনি আজকের দৈনিক বোনাস আগেই সংগ্রহ করেছেন!", "info");
+                return;
+            }
 
-function DbSchemaView({ darkMode }) {
-  const sqlDdl = `-- ============================================================
--- PRODUCTION RELATIONAL DATABASE SCHEMA (PostgreSQL / MySQL)
--- Includes Foreign Keys, Indexes, Constraints & ACID Integrity Rules
--- ============================================================
+            const bonusCoins = 100;
+            state.coins += bonusCoins;
+            state.totalEarnedCoins += bonusCoins;
+            state.dailyClaimedDate = today;
+            saveState();
 
--- 1. Site Dynamic Configuration Table (CMS)
-CREATE TABLE site_settings (
-    setting_key VARCHAR(50) PRIMARY KEY,
-    setting_value JSONB NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+            showToast("দৈনিক বোনাস +১০০ পয়েন্ট আপনার ব্যালেন্স এ যোগ হয়েছে!");
+        }
 
--- 2. Users Table with Device Fingerprinting & Risk Score
-CREATE TABLE users (
-    id VARCHAR(36) PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    country VARCHAR(50) NOT NULL,
-    last_ip VARCHAR(45) NOT NULL,
-    device_fingerprint VARCHAR(128) NOT NULL,
-    is_verified BOOLEAN DEFAULT FALSE,
-    fraud_score INT DEFAULT 0 CHECK (fraud_score BETWEEN 0 AND 100),
-    is_banned BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_device_ip UNIQUE(device_fingerprint, last_ip)
-);
+        function selectWithdrawMethod(method) {
+            state.selectedWithdrawMethod = method;
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.remove('border-emerald-500', 'bg-emerald-500/10');
+                btn.classList.add('border-slate-700', 'bg-slate-800/50');
+            });
 
--- 3. User Wallets Table (Strict Non-Negative Balance Constraint)
-CREATE TABLE user_wallets (
-    user_id VARCHAR(36) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    balance NUMERIC(15, 4) DEFAULT 0.0000 CHECK (balance >= 0.0000),
-    reward_points INT DEFAULT 0 CHECK (reward_points >= 0),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+            const activeBtn = document.getElementById(`method-${method}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-slate-700', 'bg-slate-800/50');
+                activeBtn.classList.add('border-emerald-500', 'bg-emerald-500/10');
+            }
+        }
 
--- 4. Financial Ledger Table (ACID Double-Entry Auditing)
-CREATE TABLE financial_ledger (
-    transaction_id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36) NOT NULL REFERENCES users(id),
-    transaction_type VARCHAR(10) CHECK (transaction_type IN ('CREDIT', 'DEBIT')),
-    category VARCHAR(100) NOT NULL,
-    amount NUMERIC(15, 4) NOT NULL,
-    lock_id VARCHAR(64) NOT NULL,
-    status VARCHAR(20) DEFAULT 'COMMITTED',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+        function submitWithdrawal() {
+            const account = document.getElementById('withdraw-account').value.trim();
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
 
--- Indexes for Ultra-Fast Anti-Fraud & Transaction Querying
-CREATE INDEX idx_users_ip_fingerprint ON users(last_ip, device_fingerprint);
-CREATE INDEX idx_ledger_user_time ON financial_ledger(user_id, created_at DESC);
-`;
+            if (!account || account.length < 11) {
+                showToast("সঠিক ১১ ডিজিটের নম্বর লিখুন", "error");
+                return;
+            }
 
-  return (
-    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-cyan-400" /> Relational Database Schema & DDL
-          </h2>
-          <p className="text-xs text-slate-400">PostgreSQL Schema definition with row lock rules and non-negative financial constraints.</p>
-        </div>
-      </div>
+            if (!amount || amount < 20) {
+                showToast("সর্বনিম্ন ক্যাশআউট ২০ টাকা", "error");
+                return;
+            }
 
-      <pre className={`p-4 rounded-xl text-xs font-mono overflow-x-auto leading-relaxed ${darkMode ? 'bg-slate-950 text-emerald-400 border border-slate-800' : 'bg-slate-900 text-emerald-300'}`}>
-        {sqlDdl}
-      </pre>
-    </div>
-  );
-}
+            const requiredCoins = amount * 100; // 1 BDT = 100 Coins
+            if (state.coins < requiredCoins) {
+                showToast(`পর্যাপ্ত পয়েন্ট নেই! দরকার ${requiredCoins} পয়েন্ট।`, "error");
+                return;
+            }
+
+            // Deduct Coins
+            state.coins -= requiredCoins;
+            
+            // Add to history
+            const requestItem = {
+                id: 'TXN' + Math.floor(100000 + Math.random() * 900000),
+                method: state.selectedWithdrawMethod.toUpperCase(),
+                account: account,
+                amount: amount,
+                date: new Date().toLocaleDateString('bn-BD'),
+                status: 'পেন্ডিং'
+            };
+
+            if (!state.withdrawHistory) state.withdrawHistory = [];
+            state.withdrawHistory.unshift(requestItem);
+
+            saveState();
+
+            document.getElementById('withdraw-account').value = '';
+            document.getElementById('withdraw-amount').value = '';
+
+            showToast("উইথড্র রিকোয়েস্ট সফলভাবে জমা হয়েছে!");
+        }
+
+        function renderWithdrawHistory() {
+            const container = document.getElementById('withdraw-history');
+            if (!state.withdrawHistory || state.withdrawHistory.length === 0) {
+                container.innerHTML = `<p class="text-center py-4 text-slate-500">এখনো কোনো উত্তোলন রিকোয়েস্ট করা হয়নি</p>`;
+                return;
+            }
+
+            container.innerHTML = state.withdrawHistory.map(item => `
+                <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-slate-200 text-xs">${item.method} (${item.account})</div>
+                        <div class="text-[10px] text-slate-500">${item.date} • আইডি: ${item.id}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-emerald-400 text-xs">৳${item.amount.toFixed(2)}</div>
+                        <span class="inline-block text-[9px] px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded-full border border-amber-500/20">${item.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copyReferralLink() {
+            const linkInput = document.getElementById('ref-link-input');
+            linkInput.select();
+            document.execCommand('copy');
+            showToast("রেফারেল লিঙ্ক কপি করা হয়েছে!");
+        }
+
+        function saveMonetagSettings() {
+            const link = document.getElementById('monetag-direct-link-input').value.trim();
+            const script = document.getElementById('monetag-script-input').value.trim();
+
+            state.monetagDirectLink = link || 'https://otieu.com/4/example_link';
+            state.monetagScript = script;
+
+            saveState();
+            renderMonetagBanner();
+            showToast("Monetag সেটিংস সফলভাবে আপডেট করা হয়েছে!");
+        }
+
+        function renderMonetagBanner() {
+            const bannerContainer = document.getElementById('monetag-banner-content');
+            if (state.monetagScript && state.monetagScript.length > 5) {
+                // If developer pasted script tags
+                bannerContainer.innerHTML = `<div class="text-xs text-emerald-400 py-2"><i class="fa-solid fa-circle-check"></i> Monetag লাইভ ব্যানার যুক্ত আছে</div>`;
+                try {
+                    const range = document.createRange();
+                    range.selectNode(bannerContainer);
+                    const fragment = range.createContextualFragment(state.monetagScript);
+                    bannerContainer.appendChild(fragment);
+                } catch(e) {
+                    console.error("Script execution error", e);
+                }
+            } else {
+                bannerContainer.innerHTML = `
+                    <i class="fa-solid fa-rectangle-ad text-2xl text-emerald-400/60 mb-1"></i>
+                    <p class="text-xs text-slate-400">Monetag Banner Ad স্থান প্রস্তুত। Settings থেকে আপনার স্ক্রিপ্ট বসান।</p>
+                `;
+            }
+        }
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+            
+            if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-xmark text-red-400 text-sm";
+            } else if (type === "warning") {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400 text-sm";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-sm";
+            }
+
+            toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-10', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function toggleNotificationModal() {
+            showToast("নতুন আপডেট: প্রতিদিন সর্বোচ্চ ২০টি কাজ সম্পন্ন করা যাবে।");
+        }
+
+        function resetData() {
+            if (confirm("আপনি কি নিশ্চিত আপনার পয়েন্ট ও হিস্ট্রি রিসেট করতে চান?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
