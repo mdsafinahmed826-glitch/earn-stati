@@ -1,908 +1,1566 @@
-<!DOCTYPE html>
-<html lang="bn" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Country Flag Battle Game - Auto Battle</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        neonCyan: '#00ffcc',
-                        neonPink: '#ff007f',
-                        neonGreen: '#39ff14',
-                        neonYellow: '#ffe600',
-                        darkBg: '#05070c',
-                        cardBg: '#0d1322'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Share+Tech+Mono&family=Poppins:wght@400;600;700;800&display=swap');
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  ShieldCheck, ShieldAlert, Cpu, Wallet, Gift, PlayCircle, RotateCw, Users, 
+  Settings, Database, Lock, AlertTriangle, CheckCircle2, Globe, Sun, Moon, 
+  Layers, CreditCard, UserCheck, Eye, EyeOff, Activity, RefreshCw, Smartphone,
+  DollarSign, ArrowUpRight, ArrowDownLeft, Terminal, Sparkles, Filter, Check, X, LogOut, ChevronRight
+} from 'lucide-react';
+
+const TRANSLATIONS = {
+  en: {
+    appName: "TaskPulse Pro",
+    dashboard: "Dashboard",
+    cpaTasks: "CPA Task Hub",
+    rewardedAds: "Rewarded Ads",
+    luckySpin: "Lucky Spin",
+    wallet: "Wallet & Ledger",
+    referral: "Referral Network",
+    profile: "Profile & KYC",
+    adminPanel: "Admin Panel",
+    fraudCenter: "Fraud Operations",
+    dbSchema: "Database Schema",
+    balance: "Available Balance",
+    points: "Reward Points",
+    fraudScore: "Triple-AI Risk Score",
+    trustLevel: "Account Status",
+    verified: "Verified Badge",
+    unverified: "Unverified",
+    dailyCheckin: "Daily Check-in Bonus",
+    claimReward: "Claim Reward",
+    deposit: "Deposit",
+    withdraw: "Withdraw",
+    recentLedger: "ACID Financial Ledger",
+    antiFraudStatus: "Triple-AI Sentinel Active",
+    langToggle: "বাংলা",
+    roles: {
+      user: "User Portal",
+      superAdmin: "Super Admin",
+      finMod: "Financial Moderator",
+      supportAgent: "Support Agent"
+    }
+  },
+  bn: {
+    appName: "টাস্কপালস প্রো",
+    dashboard: "ড্যাশবোর্ড",
+    cpaTasks: "সিপিএ টাস্ক হাব",
+    rewardedAds: "রিওয়ার্ডেড অ্যাডস",
+    luckySpin: "লকি স্পিন",
+    wallet: "ওয়ালেট ও লেজার",
+    referral: "রেফারেল নেটওয়ার্ক",
+    profile: "প্রোফাইল ও ভেরিফিকেশন",
+    adminPanel: "এডমিন প্যানেল",
+    fraudCenter: "ফ্রড অপারেশনস",
+    dbSchema: "ডাটাবেজ স্কিমা",
+    balance: "বর্তমান ব্যালেন্স",
+    points: "রিওয়ার্ড পয়েন্ট",
+    fraudScore: "ট্রিপল-AI রিস্ক স্কোর",
+    trustLevel: "একাউন্ট স্ট্যাটাস",
+    verified: "ভেরিফাইড ব্যাজ",
+    unverified: "আনভেরিফাইড",
+    dailyCheckin: "দৈনিক বোনাস",
+    claimReward: "বোনাস গ্রহণ করুন",
+    deposit: "ডিপোজিট",
+    withdraw: "উইথড্র",
+    recentLedger: "এসিড ফাইন্যান্সিয়াল লেজার",
+    antiFraudStatus: "ট্রিপল-AI সেন্টিনেল সক্রিয়",
+    langToggle: "English",
+    roles: {
+      user: "ইউজার পোর্টাল",
+      superAdmin: "সুপার এডমিন",
+      finMod: "ফাইন্যান্সিয়াল মডারেটর",
+      supportAgent: "সাপোর্ট এজেন্ট"
+    }
+  }
+};
+
+export default function App() {
+  // Navigation & Preferences
+  const [lang, setLang] = useState('en');
+  const [darkMode, setDarkMode] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [userRole, setUserRole] = useState('user'); // 'user', 'superAdmin', 'finMod', 'supportAgent'
+  const t = TRANSLATIONS[lang];
+
+  // Dynamic Site Settings (Admin CMS Controlled)
+  const [cmsSettings, setCmsSettings] = useState({
+    siteName: "TaskPulse Pro",
+    logoUrl: "⚡",
+    primaryColor: "#6366f1", // Indigo
+    accentColor: "#10b981",  // Emerald
+    announcement: "🎉 Welcome Bonus: Complete 3 CPA tasks today and receive a 100 PTS multiplier!",
+    features: {
+      cpaTasks: true,
+      rewardedAds: true,
+      luckySpin: true,
+      referrals: true,
+      dailyBonus: true
+    }
+  });
+
+  // User Profile & Authentication State
+  const [user, setUser] = useState({
+    id: "USR-882914",
+    name: "Tanvir Ahmed",
+    email: "tanvir@example.com",
+    country: "Bangladesh", // Auto-detects BD or INT
+    ip: "103.245.152.12",
+    deviceFingerprint: "FP-8A99-31XQ-9012",
+    isVerified: true,
+    verificationBadge: "Gold Earner",
+    balance: 142.50,
+    points: 1250,
+    dailyClaimed: false,
+    fraudScore: 12, // 0 - 100 score calculated by Triple-AI
+    banned: false,
+    warnings: []
+  });
+
+  // Anti-Fraud AI Telemetry State
+  const [aiTelemetry, setAiTelemetry] = useState({
+    mouseStraightness: 98,  // High = organic curve, Low = bot straight vector
+    clickVelocity: 240,     // ms between interactions
+    taskDurationAvg: 45,    // seconds
+    proxyDetected: false,
+    multiAccountRisk: "Low (1/2 allowed per IP)",
+    agent1NetworkScore: 8,  // Network Behavior AI
+    agent2BehaviorScore: 14,// Mouse/Keyboard Dynamics AI
+    agent3PatternScore: 12  // Task Pattern AI
+  });
+
+  // Financial Ledger State (ACID Compliance Simulation)
+  const [isProcessingLedger, setIsProcessingLedger] = useState(false);
+  const [ledger, setLedger] = useState([
+    { id: "TXN-9081", timestamp: "2026-10-06 18:42:10", type: "CREDIT", category: "CPA Task #104", amount: "+$2.50", status: "COMMITTED", lockId: "LOCK-A1" },
+    { id: "TXN-9080", timestamp: "2026-10-06 17:15:02", type: "CREDIT", category: "Rewarded Ad #88", amount: "+$0.15", status: "COMMITTED", lockId: "LOCK-A2" },
+    { id: "TXN-9079", timestamp: "2026-10-05 12:30:00", type: "DEBIT", category: "bKash Payout", amount: "-$20.00", status: "COMMITTED", lockId: "LOCK-A3" },
+  ]);
+
+  // Dynamic Payment Gateways
+  const [gateways, setGateways] = useState([
+    { id: 'bkash', name: 'bKash Auto', region: 'BD', currency: 'BDT', rate: 120, fee: '1.5%', active: true, icon: '📱' },
+    { id: 'nagad', name: 'Nagad Express', region: 'BD', currency: 'BDT', rate: 120, fee: '1.0%', active: true, icon: '📲' },
+    { id: 'binance', name: 'Binance Pay', region: 'INT', currency: 'USDT', rate: 1, fee: '0%', active: true, icon: '🟡' },
+    { id: 'usdt', name: 'USDT (TRC-20)', region: 'INT', currency: 'USDT', rate: 1, fee: '$1.00', active: true, icon: '🪙' },
+    { id: 'payeer', name: 'Payeer Global', region: 'INT', currency: 'USD', rate: 1, fee: '2.0%', active: true, icon: '🅿️' },
+    { id: 'ltc', name: 'Litecoin Direct', region: 'INT', currency: 'LTC', rate: 1, fee: '0.5%', active: true, icon: 'Ł' },
+  ]);
+
+  // Mouse & Keyboard movement listener simulating Agent 2 (Behavioral AI)
+  useEffect(() => {
+    let mouseMoves = [];
+    let lastTime = Date.now();
+
+    const handleMouseMove = (e) => {
+      const now = Date.now();
+      const timeDiff = now - lastTime;
+      lastTime = now;
+
+      mouseMoves.push({ x: e.clientX, y: e.clientY, dt: timeDiff });
+      if (mouseMoves.length > 20) {
+        mouseMoves.shift();
         
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #04060a;
-            color: #ffffff;
-            overflow-x: hidden;
-            user-select: none;
+        // Calculate velocity variance and curvature to detect artificial mouse movements
+        let totalSpeed = 0;
+        let linearDeviations = 0;
+        for (let i = 1; i < mouseMoves.length; i++) {
+          const dx = mouseMoves[i].x - mouseMoves[i-1].x;
+          const dy = mouseMoves[i].y - mouseMoves[i-1].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          totalSpeed += dist / (mouseMoves[i].dt || 1);
+          if (dx === 0 || dy === 0) linearDeviations++;
         }
-        .font-teko { font-family: 'Teko', sans-serif; }
-        .font-mono-tech { font-family: 'Share Tech Mono', monospace; }
-        
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: #060911; }
-        ::-webkit-scrollbar-thumb { background: #1a2640; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00ffcc; }
-        
-        .glow-title {
-            text-shadow: 0 0 12px rgba(0, 255, 204, 0.8), 0 0 25px rgba(0, 255, 204, 0.4);
-        }
-        .glow-box-cyan {
-            box-shadow: 0 0 25px rgba(0, 255, 204, 0.25), inset 0 0 15px rgba(0, 255, 204, 0.1);
-        }
-        .glow-btn-green {
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
-        }
-        .bg-flag-pattern {
-            background-size: 40px 40px;
-            background-image: linear-gradient(to right, rgba(0, 255, 204, 0.04) 1px, transparent 1px),
-                              linear-gradient(to bottom, rgba(0, 255, 204, 0.04) 1px, transparent 1px);
-        }
-        .neon-border {
-            border: 1.5px solid #00ffcc;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
-        }
-    </style>
-</head>
-<body class="bg-flag-pattern min-h-screen flex flex-col justify-between items-center text-slate-100 p-2 md:p-3">
 
-    <!-- Streamer Top Banner (PRISM Live Style) -->
-    <header class="w-full max-w-lg flex flex-col items-center gap-1.5 mb-2">
-        <div class="w-full bg-black/90 border border-emerald-500/50 rounded-2xl px-4 py-1.5 flex justify-between items-center shadow-lg">
-            <div class="flex items-center gap-2">
-                <span class="inline-block w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-xs font-bold font-mono-tech text-emerald-400 uppercase tracking-widest">LIVE FLAG BATTLE</span>
-            </div>
-            <div class="text-[11px] font-mono-tech text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded-full border border-cyan-800">
-                REMAINING: <span id="topRemainingCountText" class="text-white font-bold">98 / 98</span>
-            </div>
+        const avgVelocity = Math.round(totalSpeed / mouseMoves.length * 10);
+        const botProbability = linearDeviations > 15 ? 45 : 5;
+
+        setAiTelemetry(prev => {
+          const newBehaviorScore = Math.min(100, Math.max(5, botProbability));
+          const newOverallScore = Math.round((prev.agent1NetworkScore + newBehaviorScore + prev.agent3PatternScore) / 3);
+          
+          // Auto warn or auto restriction trigger
+          if (newOverallScore > 75 && !user.banned) {
+            setUser(u => ({ ...u, warnings: [...u.warnings, "Rapid robotic mouse movement detected"] }));
+          }
+
+          return {
+            ...prev,
+            clickVelocity: avgVelocity,
+            agent2BehaviorScore: newBehaviorScore
+          };
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [user.banned]);
+
+  const executeAtomicTransaction = async (type, category, amountVal) => {
+    if (isProcessingLedger) return;
+    setIsProcessingLedger(true);
+
+    // Lock Row Simulation
+    const lockId = `LOCK-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const txnId = `TXN-${Math.floor(1000 + Math.random() * 9000)}`;
+    const isCredit = type === 'CREDIT';
+
+    await new Promise(res => setTimeout(res, 600)); // Simulate DB Row Lock & Isolation Verification
+
+    // Double-Spend Check
+    if (!isCredit && user.balance < amountVal) {
+      alert("ACID Integrity Lock Error: Insufficient Ledger Balance!");
+      setIsProcessingLedger(false);
+      return;
+    }
+
+    // Atomic Balance Commit
+    setUser(prev => ({
+      ...prev,
+      balance: isCredit ? prev.balance + amountVal : prev.balance - amountVal
+    }));
+
+    const newLedgerEntry = {
+      id: txnId,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      type: type,
+      category: category,
+      amount: `${isCredit ? '+' : '-'}$${amountVal.toFixed(2)}`,
+      status: "COMMITTED",
+      lockId: lockId
+    };
+
+    setLedger(prev => [newLedgerEntry, ...prev]);
+    setIsProcessingLedger(false);
+  };
+
+  return (
+    <div className={`min-h-screen font-sans ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
+      
+      {/* Top Banner / Announcement */}
+      {cmsSettings.announcement && (
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs md:text-sm py-1.5 px-4 text-center font-medium flex justify-between items-center shadow-md">
+          <div className="flex-1 text-center truncate">
+            <span>{cmsSettings.announcement}</span>
+          </div>
+          <span className="bg-black/30 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold">
+            Live Promo
+          </span>
         </div>
+      )}
 
-        <!-- Top Leaderboard Preview Window -->
-        <div class="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-2 text-xs font-mono-tech">
-            <div id="miniLeaderboard" class="grid grid-cols-2 gap-x-3 gap-y-1">
-                <!-- Dynamically populated top 4 active countries -->
+      {/* Main Top Navigation Header */}
+      <header className={`border-b ${darkMode ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white'} backdrop-blur-md sticky top-0 z-40`}>
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          
+          {/* Brand Logo & Name */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg" style={{ backgroundColor: cmsSettings.primaryColor }}>
+              {cmsSettings.logoUrl}
             </div>
-        </div>
-    </header>
-
-    <!-- Main Arena Container -->
-    <main class="w-full max-w-lg flex flex-col items-center justify-center relative flex-1">
-        
-        <!-- Canvas Physics Ring -->
-        <div class="relative w-full aspect-square max-w-[420px] bg-slate-950/95 rounded-full border-2 border-cyan-500/40 p-1 flex items-center justify-center glow-box-cyan overflow-hidden">
-            
-            <!-- Dynamic Subtitle Badge -->
-            <div class="absolute top-3 z-10 bg-black/80 backdrop-blur-md px-3 py-1 rounded-full border border-cyan-500/40 text-[10px] text-cyan-300 font-mono-tech tracking-wider text-center">
-                CURRENT BATTLE: <span id="battleModeBadge" class="text-emerald-400 font-bold">MASS ALL-FLAG MODE</span>
-            </div>
-
-            <!-- Canvas Element -->
-            <canvas id="battleCanvas" class="w-full h-full rounded-full cursor-pointer"></canvas>
-
-            <!-- Play Overlay Message -->
-            <div id="startOverlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center z-20 p-4 text-center">
-                <i class="fa-solid fa-flag text-cyan-400 text-4xl mb-2 animate-bounce"></i>
-                <h2 class="text-2xl font-bold font-teko text-cyan-400 tracking-wider">AUTOMATIC BATTLE READY</h2>
-                <p class="text-xs text-slate-300 mb-4 max-w-xs">কমেন্ট ছাড়াই অটোমেটিক ব্যাটেল চালু হবে। 'START / RESET' চাপুন!</p>
-                <button id="overlayStartBtn" class="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-sm px-6 py-2.5 rounded-xl shadow-lg glow-btn-green transition transform active:scale-95 uppercase font-mono-tech">
-                    <i class="fa-solid fa-play mr-1"></i> START BATTLE NOW
-                </button>
-            </div>
-
-            <!-- Victory Card Overlay -->
-            <div id="victoryOverlay" class="hidden absolute inset-0 z-30 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center">
-                <div class="text-4xl mb-1 animate-bounce">👑</div>
-                <h2 class="text-3xl font-extrabold text-amber-400 tracking-wider font-teko uppercase glow-title">VICTORY!</h2>
-                <div class="w-20 h-20 my-2 rounded-full overflow-hidden border-4 border-amber-400 shadow-2xl relative bg-slate-800 flex items-center justify-center" id="winnerFlagContainer">
-                </div>
-                <h3 class="text-xl font-bold text-white mb-0.5" id="winnerCountryName">United States</h3>
-                <p class="text-[11px] text-emerald-400 font-mono-tech mb-4" id="winnerStatsText">CHAMPION OF THE ARENA!</p>
-                <button id="playAgainBtn" class="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs uppercase tracking-wider font-mono-tech transition shadow-lg">
-                    <i class="fa-solid fa-rotate-right mr-1"></i> RESTART BATTLE
-                </button>
-            </div>
-        </div>
-
-        <!-- Center Big Start & Mode Buttons -->
-        <div class="w-full max-w-[420px] flex flex-col items-center gap-2 mt-3">
-            
-            <!-- Big START / RESET Trigger -->
-            <button id="mainStartResetBtn" class="w-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:opacity-95 text-slate-950 font-extrabold py-3 px-4 rounded-2xl text-lg font-mono-tech tracking-wider uppercase shadow-xl glow-btn-green transition transform active:scale-98 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-power-off text-xl"></i> START / RESET BATTLE
-            </button>
-
-            <!-- Controls Row: Modes & Speed -->
-            <div class="w-full bg-slate-950/90 border border-slate-800 rounded-2xl p-2 flex items-center justify-between gap-1 text-xs font-mono-tech">
-                
-                <!-- Mode Switcher -->
-                <div class="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
-                    <button id="modeMassBtn" class="mode-btn px-2.5 py-1 rounded-lg font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800 transition">
-                        MASS (98)
-                    </button>
-                    <button id="modeFinal4Btn" class="mode-btn px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition">
-                        FINAL FOUR (4)
-                    </button>
-                </div>
-
-                <!-- Play/Pause Toggle -->
-                <button id="pauseBtn" class="bg-slate-900 hover:bg-slate-800 text-cyan-400 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1 font-bold">
-                    <i class="fa-solid fa-pause" id="pauseIcon"></i> <span id="pauseText">PAUSE</span>
-                </button>
-
-                <!-- Speed Switcher -->
-                <div class="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
-                    <button class="speed-btn px-1.5 py-0.5 rounded text-cyan-400 font-bold" data-speed="1">1x</button>
-                    <button class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white" data-speed="2">2x</button>
-                    <button class="speed-btn px-1.5 py-0.5 rounded text-slate-400 hover:text-white" data-speed="4">4x</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Automated Game Console Event Log (Like Screenshot) -->
-        <div class="w-full max-w-[420px] bg-slate-950/90 border border-slate-800 rounded-2xl p-2.5 mt-2 flex flex-col gap-1.5">
-            <div class="flex items-center justify-between text-[11px] font-mono-tech border-b border-slate-900 pb-1">
-                <span class="text-cyan-400 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-terminal"></i> AUTOMATIC BATTLE LOG
+            <div>
+              <h1 className="font-bold text-lg leading-tight flex items-center gap-1.5">
+                {cmsSettings.siteName}
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  v3.2 Enterprise
                 </span>
-                <span class="text-emerald-400 text-[10px]">AUTO NO-COMMENT ACTIVE</span>
+              </h1>
+              <p className="text-[11px] text-slate-400 hidden sm:block">AI Anti-Fraud & Dynamic Micro-Earnings</p>
             </div>
+          </div>
+
+          {/* Role Switcher & Security Indicators */}
+          <div className="flex items-center gap-2 md:gap-4">
             
-            <div id="gameConsoleLog" class="h-16 overflow-y-auto font-mono-tech text-[11px] space-y-1 text-slate-300 pr-1">
-                <div class="text-cyan-400">*[Game] System initialized. Ready for automatic flag battle.</div>
+            {/* Role Select Dropdown (For Testing RBAC) */}
+            <div className="relative">
+              <select 
+                value={userRole} 
+                onChange={(e) => {
+                  setUserRole(e.target.value);
+                  if (e.target.value !== 'user') setActiveTab('fraudCenter');
+                  else setActiveTab('dashboard');
+                }}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border font-semibold cursor-pointer outline-none transition-all ${
+                  userRole === 'user' 
+                    ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' 
+                    : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                }`}
+              >
+                <option value="user" className="bg-slate-900 text-white">{t.roles.user}</option>
+                <option value="superAdmin" className="bg-slate-900 text-white">👑 {t.roles.superAdmin}</option>
+                <option value="finMod" className="bg-slate-900 text-white">⚖️ {t.roles.finMod}</option>
+                <option value="supportAgent" className="bg-slate-900 text-white">🎧 {t.roles.supportAgent}</option>
+              </select>
             </div>
 
-            <!-- Optional manual boost input -->
-            <form id="chatForm" class="flex items-center gap-1.5 pt-1 border-t border-slate-900">
-                <input type="text" id="chatInput" placeholder="ঐচ্ছিক: দেশের নাম দিয়ে ম্যানুয়ালি হাইলাইট করুন..." 
-                    class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 transition font-mono-tech">
-                <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 py-1 rounded-xl transition text-xs flex items-center justify-center">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </form>
-        </div>
-    </main>
+            {/* Fraud Meter Badge */}
+            <div className={`hidden lg:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${
+              user.fraudScore < 25 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                : user.fraudScore < 60 
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+            }`}>
+              <Cpu className="w-3.5 h-3.5 animate-pulse" />
+              <span>AI Fraud Index: <strong>{user.fraudScore}%</strong></span>
+            </div>
 
-    <!-- Eliminated Flag Grid Footer (Exactly as in screenshot) -->
-    <footer class="w-full max-w-lg bg-slate-950/90 border border-slate-800 rounded-2xl p-3 mt-3 shadow-xl">
-        <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-mono-tech font-bold text-red-400 flex items-center gap-1.5 uppercase">
-                <i class="fa-solid fa-ban"></i> ELIMINATED COUNTRIES (<span id="eliminatedCountNum">0</span>)
-            </span>
-            <button id="clearEliminatedBtn" class="text-[10px] text-slate-500 hover:text-slate-300 underline font-mono-tech">
-                RESET LIST
+            {/* Language Toggle */}
+            <button 
+              onClick={() => setLang(l => l === 'en' ? 'bn' : 'en')}
+              className={`p-2 rounded-lg border text-xs font-bold flex items-center gap-1 transition-colors ${darkMode ? 'border-slate-800 hover:bg-slate-800' : 'border-slate-200 hover:bg-slate-100'}`}
+              title="Change Language"
+            >
+              <Globe className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{t.langToggle}</span>
             </button>
+
+            {/* Dark/Light Switch */}
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-2 rounded-lg border transition-colors ${darkMode ? 'border-slate-800 hover:bg-slate-800 text-amber-400' : 'border-slate-200 hover:bg-slate-100 text-slate-600'}`}
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            {/* User Profile Mini Badge */}
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-700/50">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-md">
+                TA
+              </div>
+              <div className="hidden xl:block text-left">
+                <p className="text-xs font-semibold leading-none">{user.name}</p>
+                <span className="text-[10px] text-emerald-400 font-medium">Gold Earner ✓</span>
+              </div>
+            </div>
+
+          </div>
+
         </div>
+      </header>
 
-        <!-- Flags Grid -->
-        <div id="eliminatedFlagGrid" class="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-1.5 bg-black/60 rounded-xl border border-slate-900 min-h-[46px] items-center">
-            <p id="emptyGridMsg" class="text-[11px] text-slate-600 font-mono-tech italic px-2">এখনও কোনো দেশ বাদ পড়েনি...</p>
-        </div>
-    </footer>
-
-    <script>
-        // List of 98 Countries with Iso codes & aliases
-        const COUNTRIES = [
-            { name: "Afghanistan", code: "af", aliases: ["afghanistan", "afg"] },
-            { name: "Albania", code: "al", aliases: ["albania"] },
-            { name: "Algeria", code: "dz", aliases: ["algeria"] },
-            { name: "Argentina", code: "ar", aliases: ["argentina", "arg"] },
-            { name: "Armenia", code: "am", aliases: ["armenia"] },
-            { name: "Australia", code: "au", aliases: ["australia", "aus"] },
-            { name: "Austria", code: "at", aliases: ["austria"] },
-            { name: "Azerbaijan", code: "az", aliases: ["azerbaijan"] },
-            { name: "Bangladesh", code: "bd", aliases: ["bangladesh", "bd", "বাংলাদেশ"] },
-            { name: "Belarus", code: "by", aliases: ["belarus"] },
-            { name: "Belgium", code: "be", aliases: ["belgium"] },
-            { name: "Bolivia", code: "bo", aliases: ["bolivia"] },
-            { name: "Brazil", code: "br", aliases: ["brazil", "bra", "ব্রাজিল"] },
-            { name: "Bulgaria", code: "bg", aliases: ["bulgaria"] },
-            { name: "Cambodia", code: "kh", aliases: ["cambodia"] },
-            { name: "Cameroon", code: "cm", aliases: ["cameroon"] },
-            { name: "Canada", code: "ca", aliases: ["canada", "can"] },
-            { name: "Chile", code: "cl", aliases: ["chile"] },
-            { name: "China", code: "cn", aliases: ["china", "chn"] },
-            { name: "Colombia", code: "co", aliases: ["colombia"] },
-            { name: "Costa Rica", code: "cr", aliases: ["costa rica"] },
-            { name: "Croatia", code: "hr", aliases: ["croatia"] },
-            { name: "Cuba", code: "cu", aliases: ["cuba"] },
-            { name: "Czech Republic", code: "cz", aliases: ["czech"] },
-            { name: "Denmark", code: "dk", aliases: ["denmark"] },
-            { name: "Egypt", code: "eg", aliases: ["egypt"] },
-            { name: "Finland", code: "fi", aliases: ["finland"] },
-            { name: "France", code: "fr", aliases: ["france", "fra"] },
-            { name: "Georgia", code: "ge", aliases: ["georgia"] },
-            { name: "Germany", code: "de", aliases: ["germany", "ger"] },
-            { name: "Ghana", code: "gh", aliases: ["ghana"] },
-            { name: "Greece", code: "gr", aliases: ["greece"] },
-            { name: "India", code: "in", aliases: ["india", "ind", "ভারত"] },
-            { name: "Indonesia", code: "id", aliases: ["indonesia"] },
-            { name: "Iran", code: "ir", aliases: ["iran"] },
-            { name: "Iraq", code: "iq", aliases: ["iraq"] },
-            { name: "Ireland", code: "ie", aliases: ["ireland"] },
-            { name: "Israel", code: "il", aliases: ["israel"] },
-            { name: "Italy", code: "it", aliases: ["italy", "ita"] },
-            { name: "Jamaica", code: "jm", aliases: ["jamaica"] },
-            { name: "Japan", code: "jp", aliases: ["japan", "jpn"] },
-            { name: "Jordan", code: "jo", aliases: ["jordan"] },
-            { name: "Kenya", code: "ke", aliases: ["kenya"] },
-            { name: "Lebanon", code: "lb", aliases: ["lebanon"] },
-            { name: "Malaysia", code: "my", aliases: ["malaysia"] },
-            { name: "Mexico", code: "mx", aliases: ["mexico", "mex"] },
-            { name: "Morocco", code: "ma", aliases: ["morocco"] },
-            { name: "Nepal", code: "np", aliases: ["nepal"] },
-            { name: "Netherlands", code: "nl", aliases: ["netherlands"] },
-            { name: "New Zealand", code: "nz", aliases: ["new zealand"] },
-            { name: "Nigeria", code: "ng", aliases: ["nigeria"] },
-            { name: "Norway", code: "no", aliases: ["norway"] },
-            { name: "Pakistan", code: "pk", aliases: ["pakistan", "pak"] },
-            { name: "Palestine", code: "ps", aliases: ["palestine"] },
-            { name: "Peru", code: "pe", aliases: ["peru"] },
-            { name: "Philippines", code: "ph", aliases: ["philippines"] },
-            { name: "Poland", code: "pl", aliases: ["poland"] },
-            { name: "Portugal", code: "pt", aliases: ["portugal"] },
-            { name: "Qatar", code: "qa", aliases: ["qatar"] },
-            { name: "Romania", code: "ro", aliases: ["romania"] },
-            { name: "Russia", code: "ru", aliases: ["russia"] },
-            { name: "Saudi Arabia", code: "sa", aliases: ["saudi arabia"] },
-            { name: "Senegal", code: "sn", aliases: ["senegal"] },
-            { name: "South Africa", code: "za", aliases: ["south africa"] },
-            { name: "South Korea", code: "kr", aliases: ["korea"] },
-            { name: "Spain", code: "es", aliases: ["spain"] },
-            { name: "Sri Lanka", code: "lk", aliases: ["sri lanka"] },
-            { name: "Sweden", code: "se", aliases: ["sweden"] },
-            { name: "Switzerland", code: "ch", aliases: ["switzerland"] },
-            { name: "Thailand", code: "th", aliases: ["thailand"] },
-            { name: "Turkey", code: "tr", aliases: ["turkey"] },
-            { name: "Ukraine", code: "ua", aliases: ["ukraine"] },
-            { name: "UAE", code: "ae", aliases: ["uae", "dubai"] },
-            { name: "United Kingdom", code: "gb", aliases: ["uk", "england"] },
-            { name: "United States", code: "us", aliases: ["usa", "us"] },
-            { name: "Uruguay", code: "uy", aliases: ["uruguay"] },
-            { name: "Uzbekistan", code: "uz", aliases: ["uzbekistan"] },
-            { name: "Venezuela", code: "ve", aliases: ["venezuela"] },
-            { name: "Vietnam", code: "vn", aliases: ["vietnam"] },
-            { name: "Zambia", code: "zm", aliases: ["zambia"] },
-            { name: "Zimbabwe", code: "zw", aliases: ["zimbabwe"] },
-            { name: "Estonia", code: "ee", aliases: ["estonia"] },
-            { name: "Cyprus", code: "cy", aliases: ["cyprus"] },
-            { name: "Iceland", code: "is", aliases: ["iceland"] },
-            { name: "Latvia", code: "lv", aliases: ["latvia"] },
-            { name: "Lithuania", code: "lt", aliases: ["lithuania"] },
-            { name: "Luxembourg", code: "lu", aliases: ["luxembourg"] },
-            { name: "Malta", code: "mt", aliases: ["malta"] },
-            { name: "Moldova", code: "md", aliases: ["moldova"] },
-            { name: "Monaco", code: "mc", aliases: ["monaco"] },
-            { name: "Slovakia", code: "sk", aliases: ["slovakia"] },
-            { name: "Slovenia", code: "si", aliases: ["slovenia"] },
-            { name: "Tanzania", code: "tz", aliases: ["tanzania"] },
-            { name: "Tunisia", code: "tn", aliases: ["tunisia"] },
-            { name: "Uganda", code: "ug", aliases: ["uganda"] },
-            { name: "Panama", code: "pa", aliases: ["panama"] },
-            { name: "Ecuador", code: "ec", aliases: ["ecuador"] },
-            { name: "Paraguay", code: "py", aliases: ["paraguay"] }
-        ];
-
-        const canvas = document.getElementById('battleCanvas');
-        const ctx = canvas.getContext('2d');
-
-        let isRunning = false;
-        let currentMode = 'MASS'; // 'MASS' or 'FINAL4'
-        let speedMultiplier = 1;
+      {/* Main Container Layout */}
+      <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
         
-        let arenaCenter = { x: 0, y: 0 };
-        let arenaRadius = 0;
-        let ringAngle = 0;
-        let ringRotationSpeed = 0.015;
-        let gapSize = Math.PI * 0.28;
-
-        let bumpers = [];
-        let particles = [];
-        let balls = [];
-        let eliminatedCountries = [];
-        let totalCount = 98;
-        let winStats = JSON.parse(localStorage.getItem('flag_wins_tracker') || '{}');
-
-        const flagImages = {};
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-        function playSound(type) {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                const now = audioCtx.currentTime;
-
-                if (type === 'bounce') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(220 + Math.random() * 80, now);
-                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.03);
-                    gain.gain.setValueAtTime(0.05, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
-                    osc.start(now);
-                    osc.stop(now + 0.03);
-                } else if (type === 'eliminate') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(300, now);
-                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.18);
-                    gain.gain.setValueAtTime(0.12, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-                    osc.start(now);
-                    osc.stop(now + 0.18);
-                }
-            } catch (e) {}
-        }
-
-        function preloadFlags() {
-            COUNTRIES.forEach(c => {
-                const img = new Image();
-                img.src = `https://flagcdn.com/w80/${c.code}.png`;
-                flagImages[c.code] = img;
-            });
-        }
-
-        function resizeCanvas() {
-            const rect = canvas.parentElement.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-
-            arenaCenter = { x: rect.width / 2, y: rect.height / 2 };
-            arenaRadius = (Math.min(rect.width, rect.height) / 2) - 12;
-
-            bumpers = [
-                { x: arenaCenter.x, y: arenaCenter.y - arenaRadius * 0.28, radius: arenaRadius * 0.075 },
-                { x: arenaCenter.x - arenaRadius * 0.28, y: arenaCenter.y + arenaRadius * 0.22, radius: arenaRadius * 0.075 },
-                { x: arenaCenter.x + arenaRadius * 0.28, y: arenaCenter.y + arenaRadius * 0.22, radius: arenaRadius * 0.075 }
-            ];
-        }
-
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            draw();
-        });
-
-        class Marble {
-            constructor(country, x, y, radius) {
-                this.country = country;
-                this.x = x;
-                this.y = y;
-                this.radius = radius;
-                
-                // Continuous Initial Impulse Force
-                const speed = 3 + Math.random() * 4;
-                const angle = Math.random() * Math.PI * 2;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                
-                this.isEliminated = false;
-                this.highlightTime = 0;
-            }
-
-            update(gravity = 0.06) {
-                if (this.isEliminated) return;
-
-                // Automatic Ambient Motion Force (Ensures balls never get stuck)
-                this.vy += gravity;
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Light Friction
-                this.vx *= 0.998;
-                this.vy *= 0.998;
-
-                // Prevent complete stop (Anti-stuck physics)
-                if (Math.abs(this.vx) < 0.2) this.vx += (Math.random() - 0.5) * 0.8;
-                if (Math.abs(this.vy) < 0.2) this.vy += (Math.random() - 0.5) * 0.8;
-
-                if (this.highlightTime > 0) this.highlightTime--;
-            }
-
-            boost() {
-                this.highlightTime = 100;
-                this.vy = -7 - Math.random() * 4;
-                this.vx = (Math.random() - 0.5) * 10;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-
-                if (this.highlightTime > 0) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.radius + 5, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(0, 255, 204, ${Math.min(1, this.highlightTime / 25)})`;
-                    ctx.fill();
-                }
-
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.clip();
-
-                const img = flagImages[this.country.code];
-                if (img && img.complete) {
-                    ctx.drawImage(img, -this.radius, -this.radius, this.radius * 2, this.radius * 2);
-                } else {
-                    ctx.fillStyle = '#1e293b';
-                    ctx.fill();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 9px Poppins';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(this.country.code.toUpperCase(), 0, 0);
-                }
-
-                // Marble Gloss Overlay
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                const grad = ctx.createRadialGradient(
-                    -this.radius * 0.35, -this.radius * 0.35, this.radius * 0.1,
-                    0, 0, this.radius
-                );
-                grad.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
-                grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
-                grad.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
-                ctx.fillStyle = grad;
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = this.highlightTime > 0 ? '#00ffcc' : 'rgba(255,255,255,0.7)';
-                ctx.lineWidth = 1.2;
-                ctx.stroke();
-
-                ctx.restore();
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 7;
-                this.vy = (Math.random() - 0.5) * 7;
-                this.radius = Math.random() * 3.5 + 1.5;
-                this.life = 1.0;
-                this.color = color;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= 0.035;
-            }
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, this.life);
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function logEvent(msg) {
-            const consoleLog = document.getElementById('gameConsoleLog');
-            const line = document.createElement('div');
-            line.innerHTML = `*[Game] ${msg}`;
-            consoleLog.appendChild(line);
-            consoleLog.scrollTop = consoleLog.scrollHeight;
-        }
-
-        function initGame(mode = currentMode) {
-            resizeCanvas();
-            currentMode = mode;
-
-            let selectedCountries = [];
-            if (mode === 'FINAL4') {
-                const pool = [...COUNTRIES].sort(() => Math.random() - 0.5);
-                selectedCountries = pool.slice(0, 4);
-                document.getElementById('battleModeBadge').innerText = 'FINAL FOUR (4) MODE';
-            } else {
-                selectedCountries = [...COUNTRIES];
-                document.getElementById('battleModeBadge').innerText = 'MASS ALL-FLAG MODE (98)';
-            }
-
-            const ballRadius = mode === 'FINAL4' 
-                ? Math.max(16, arenaRadius / 8) 
-                : Math.max(9, Math.min(13, arenaRadius / 17));
-
-            balls = [];
-            particles = [];
-            eliminatedCountries = [];
-            totalCount = selectedCountries.length;
-
-            document.getElementById('eliminatedFlagGrid').innerHTML = '<p id="emptyGridMsg" class="text-[11px] text-slate-600 font-mono-tech italic px-2">এখনও কোনো দেশ বাদ পড়েনি...</p>';
-            document.getElementById('victoryOverlay').classList.add('hidden');
-            document.getElementById('startOverlay').classList.add('hidden');
-
-            const startX = arenaCenter.x;
-            const startY = arenaCenter.y - 15;
-
-            selectedCountries.forEach((country) => {
-                const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * (arenaRadius * 0.45);
-                const x = startX + Math.cos(angle) * dist;
-                const y = startY + Math.sin(angle) * dist;
-
-                balls.push(new Marble(country, x, y, ballRadius));
-            });
-
-            updateMiniLeaderboard();
-            logEvent(`Battle reset in ${mode} mode with ${totalCount} flags.`);
-            draw();
-        }
-
-        function updatePhysics() {
-            ringAngle += ringRotationSpeed * speedMultiplier;
-            if (ringAngle > Math.PI * 2) ringAngle -= Math.PI * 2;
-
-            const gapStart = (ringAngle - gapSize / 2 + Math.PI * 2) % (Math.PI * 2);
-            const gapEnd = (ringAngle + gapSize / 2 + Math.PI * 2) % (Math.PI * 2);
-
-            // Particles update
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                if (particles[i].life <= 0) particles.splice(i, 1);
-            }
-
-            // Marbles movement & ring collisions
-            for (let i = 0; i < balls.length; i++) {
-                const ball = balls[i];
-                if (ball.isEliminated) continue;
-
-                ball.update(0.06 * speedMultiplier);
-
-                // Center Bumpers bounce
-                bumpers.forEach(bumper => {
-                    const bdx = ball.x - bumper.x;
-                    const bdy = ball.y - bumper.y;
-                    const bdist = Math.sqrt(bdx * bdx + bdy * bdy);
-                    const bmin = ball.radius + bumper.radius;
-
-                    if (bdist < bmin) {
-                        const bnx = bdx / (bdist || 1);
-                        const bny = bdy / (bdist || 1);
-                        ball.x = bumper.x + bnx * bmin;
-                        ball.y = bumper.y + bny * bmin;
-                        const bdot = ball.vx * bnx + ball.vy * bny;
-                        ball.vx = (ball.vx - 2 * bdot * bnx) * 1.25;
-                        ball.vy = (ball.vy - 2 * bdot * bny) * 1.25;
-                        playSound('bounce');
-                    }
-                });
-
-                // Ring Wall collision / Gap elimination check
-                const dx = ball.x - arenaCenter.x;
-                const dy = ball.y - arenaCenter.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist + ball.radius >= arenaRadius) {
-                    let ballAngle = (Math.atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2);
-
-                    let inGap = false;
-                    if (gapStart < gapEnd) {
-                        inGap = ballAngle >= gapStart && ballAngle <= gapEnd;
-                    } else {
-                        inGap = ballAngle >= gapStart || ballAngle <= gapEnd;
-                    }
-
-                    if (inGap) {
-                        if (dist > arenaRadius + ball.radius * 1.1) {
-                            ball.isEliminated = true;
-                            createExplosion(ball.x, ball.y);
-                            eliminateCountry(ball.country);
-                            playSound('eliminate');
-                        }
-                    } else {
-                        const normalX = dx / dist;
-                        const normalY = dy / dist;
-
-                        ball.x = arenaCenter.x + normalX * (arenaRadius - ball.radius);
-
-                        const dot = ball.vx * normalX + ball.vy * normalY;
-                        ball.vx = (ball.vx - 2 * dot * normalX) * 0.92;
-                        ball.vy = (ball.vy - 2 * dot * normalY) * 0.92;
-
-                        // Add ring tangential force
-                        ball.vx += -normalY * ringRotationSpeed * arenaRadius * 0.15;
-                        ball.vy += normalX * ringRotationSpeed * arenaRadius * 0.15;
-
-                        playSound('bounce');
-                    }
-                }
-            }
-
-            // Ball vs Ball Collision
-            for (let i = 0; i < balls.length; i++) {
-                for (let j = i + 1; j < balls.length; j++) {
-                    const b1 = balls[i];
-                    const b2 = balls[j];
-                    if (b1.isEliminated || b2.isEliminated) continue;
-
-                    const dx = b2.x - b1.x;
-                    const dy = b2.y - b1.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const minDist = b1.radius + b2.radius;
-
-                    if (dist < minDist) {
-                        const nx = dx / (dist || 1);
-                        const ny = dy / (dist || 1);
-                        const overlap = minDist - dist;
-
-                        b1.x -= nx * overlap * 0.5;
-                        b1.y -= ny * overlap * 0.5;
-                        b2.x += nx * overlap * 0.5;
-                        b2.y += ny * overlap * 0.5;
-
-                        const kx = b1.vx - b2.vx;
-                        const ky = b1.vy - b2.vy;
-                        const p = 2 * (nx * kx + ny * ky) / 2;
-
-                        b1.vx -= p * nx * 0.96;
-                        b1.vy -= p * ny * 0.96;
-                        b2.vx += p * nx * 0.96;
-                        b2.vy += p * ny * 0.96;
-
-                        if (Math.random() < 0.05) {
-                            logEvent(`${b1.country.name} marble hit ${b2.country.name} marble.`);
-                        }
-                    }
-                }
-            }
-
-            // Check Victory
-            const activeBalls = balls.filter(b => !b.isEliminated);
-            if (activeBalls.length === 1 && isRunning) {
-                handleVictory(activeBalls[0].country);
-            }
-        }
-
-        function createExplosion(x, y) {
-            const colors = ['#00ffcc', '#ff007f', '#ffe600', '#ffffff'];
-            for (let i = 0; i < 14; i++) {
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)]));
-            }
-        }
-
-        function eliminateCountry(country) {
-            eliminatedCountries.push(country);
-            
-            const grid = document.getElementById('eliminatedFlagGrid');
-            const emptyMsg = document.getElementById('emptyGridMsg');
-            if (emptyMsg) emptyMsg.remove();
-
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'w-6 h-4 rounded overflow-hidden border border-slate-700 shrink-0 transform hover:scale-125 transition';
-            imgContainer.title = country.name;
-            imgContainer.innerHTML = `<img src="https://flagcdn.com/w40/${country.code}.png" class="w-full h-full object-cover">`;
-            
-            grid.appendChild(imgContainer);
-            grid.scrollTop = grid.scrollHeight;
-
-            logEvent(`<span class="text-red-400 font-bold">${country.name}</span> has been eliminated!`);
-            updateMiniLeaderboard();
-        }
-
-        function updateMiniLeaderboard() {
-            const active = balls.filter(b => !b.isEliminated);
-            document.getElementById('topRemainingCountText').innerText = `${active.length} / ${totalCount}`;
-            document.getElementById('eliminatedCountNum').innerText = eliminatedCountries.length;
-
-            const miniLeaderboard = document.getElementById('miniLeaderboard');
-            miniLeaderboard.innerHTML = '';
-
-            active.slice(0, 4).forEach((ball, idx) => {
-                const wins = winStats[ball.country.code] || 0;
-                const row = document.createElement('div');
-                row.className = 'flex items-center justify-between bg-slate-900 px-2 py-0.5 rounded border border-slate-800';
-                row.innerHTML = `
-                    <div class="flex items-center gap-1.5 truncate">
-                        <span class="text-[10px] text-cyan-400 font-bold">#${idx + 1}</span>
-                        <img src="https://flagcdn.com/w20/${ball.country.code}.png" class="w-4 h-2.5 object-cover rounded-sm">
-                        <span class="text-[11px] text-slate-200 truncate">${ball.country.name}</span>
-                    </div>
-                    <span class="text-[10px] text-emerald-400 font-bold">${wins} wins</span>
-                `;
-                miniLeaderboard.appendChild(row);
-            });
-        }
-
-        function handleVictory(winner) {
-            isRunning = false;
-            winStats[winner.code] = (winStats[winner.code] || 0) + 1;
-            localStorage.setItem('flag_wins_tracker', JSON.stringify(winStats));
-
-            updateMiniLeaderboard();
-            logEvent(`<span class="text-amber-400 font-bold">VICTORY! ${winner.name} won the battle!</span>`);
-
-            const modal = document.getElementById('victoryOverlay');
-            document.getElementById('winnerCountryName').innerText = winner.name;
-            document.getElementById('winnerStatsText').innerText = `TOTAL VICTORIES: ${winStats[winner.code]} WINS`;
-            document.getElementById('winnerFlagContainer').innerHTML = `
-                <img src="https://flagcdn.com/w160/${winner.code}.png" class="w-full h-full object-cover">
-            `;
-            modal.classList.remove('hidden');
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const width = canvas.width / (window.devicePixelRatio || 1);
-            const height = canvas.height / (window.devicePixelRatio || 1);
-
-            // Background Radial Glow
-            const bgGrad = ctx.createRadialGradient(arenaCenter.x, arenaCenter.y, 5, arenaCenter.x, arenaCenter.y, arenaRadius + 20);
-            bgGrad.addColorStop(0, '#0a101d');
-            bgGrad.addColorStop(1, '#04060a');
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, width, height);
-
-            // Draw Bumpers
-            bumpers.forEach(b => {
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-                ctx.fillStyle = '#111827';
-                ctx.fill();
-                ctx.strokeStyle = '#00ffcc';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
-
-            // Draw Ring Wall with Gap
-            ctx.save();
-            ctx.translate(arenaCenter.x, arenaCenter.y);
-
-            const gapStart = ringAngle - gapSize / 2;
-            const gapEnd = ringAngle + gapSize / 2;
-
-            ctx.beginPath();
-            ctx.arc(0, 0, arenaRadius, gapEnd, gapStart);
-            ctx.lineWidth = 7;
-            ctx.strokeStyle = '#00ffcc';
-            ctx.shadowColor = '#00ffcc';
-            ctx.shadowBlur = 12;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-
-            // Gap Red Glow Nodes
-            const cap1X = Math.cos(gapStart) * arenaRadius;
-            const cap1Y = Math.sin(gapStart) * arenaRadius;
-            const cap2X = Math.cos(gapEnd) * arenaRadius;
-            const cap2Y = Math.sin(gapEnd) * arenaRadius;
-
-            ctx.beginPath();
-            ctx.arc(cap1X, cap1Y, 5, 0, Math.PI * 2);
-            ctx.arc(cap2X, cap2Y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#ff007f';
-            ctx.shadowColor = '#ff007f';
-            ctx.shadowBlur = 8;
-            ctx.fill();
-
-            ctx.restore();
-
-            // Particles & Marbles
-            particles.forEach(p => p.draw());
-            balls.forEach(ball => ball.draw());
-        }
-
-        function gameLoop() {
-            if (isRunning) {
-                const steps = Math.ceil(speedMultiplier);
-                for (let i = 0; i < steps; i++) {
-                    updatePhysics();
-                }
-            }
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Start / Reset Trigger Function
-        function startOrResetBattle() {
-            initGame();
-            isRunning = true;
-            
-            // Give immediate random directional kinetic energy to all active marbles
-            balls.forEach(b => {
-                const speed = 4 + Math.random() * 5;
-                const angle = Math.random() * Math.PI * 2;
-                b.vx = Math.cos(angle) * speed;
-                b.vy = Math.sin(angle) * speed;
-            });
-
-            document.getElementById('pauseText').innerText = 'PAUSE';
-            document.getElementById('pauseIcon').className = 'fa-solid fa-pause';
-            logEvent(`Battle started automatically.`);
-        }
-
-        // Event Handlers
-        document.getElementById('mainStartResetBtn').addEventListener('click', startOrResetBattle);
-        document.getElementById('overlayStartBtn').addEventListener('click', startOrResetBattle);
-        document.getElementById('playAgainBtn').addEventListener('click', startOrResetBattle);
-
-        document.getElementById('pauseBtn').addEventListener('click', () => {
-            isRunning = !isRunning;
-            document.getElementById('pauseText').innerText = isRunning ? 'PAUSE' : 'RESUME';
-            document.getElementById('pauseIcon').className = isRunning ? 'fa-solid fa-pause' : 'fa-solid fa-play';
-        });
-
-        document.getElementById('modeMassBtn').addEventListener('click', () => {
-            document.getElementById('modeMassBtn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800 transition';
-            document.getElementById('modeFinal4Btn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition';
-            initGame('MASS');
-        });
-
-        document.getElementById('modeFinal4Btn').addEventListener('click', () => {
-            document.getElementById('modeFinal4Btn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-cyan-400 bg-cyan-950/80 border border-cyan-800 transition';
-            document.getElementById('modeMassBtn').className = 'mode-btn px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white transition';
-            initGame('FINAL4');
-        });
-
-        document.querySelectorAll('.speed-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.speed-btn').forEach(b => {
-                    b.classList.remove('text-cyan-400', 'font-bold');
-                    b.classList.add('text-slate-400');
-                });
-                btn.classList.add('text-cyan-400', 'font-bold');
-                btn.classList.remove('text-slate-400');
-                speedMultiplier = parseFloat(btn.dataset.speed);
-            });
-        });
-
-        document.getElementById('chatForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('chatInput');
-            const query = input.value.trim().toLowerCase();
-            if (!query) return;
-
-            const matchedCountry = COUNTRIES.find(c => 
-                c.name.toLowerCase() === query || 
-                c.code.toLowerCase() === query ||
-                c.aliases.some(alias => query.includes(alias))
-            );
-
-            if (matchedCountry) {
-                const matchedBall = balls.find(b => !b.isEliminated && b.country.code === matchedCountry.code);
-                if (matchedBall) {
-                    matchedBall.boost();
-                    logEvent(`Highlighted <span class="text-cyan-400 font-bold">${matchedBall.country.name}</span>!`);
-                }
-            }
-            input.value = '';
-        });
-
-        document.getElementById('clearEliminatedBtn').addEventListener('click', () => {
-            eliminatedCountries = [];
-            document.getElementById('eliminatedFlagGrid').innerHTML = '<p id="emptyGridMsg" class="text-[11px] text-slate-600 font-mono-tech italic px-2">এখনও কোনো দেশ বাদ পড়েনি...</p>';
-            document.getElementById('eliminatedCountNum').innerText = '0';
-        });
-
-        window.onload = () => {
-            preloadFlags();
-            initGame('MASS');
-            requestAnimationFrame(gameLoop);
-        };
-    </script>
-</body>
-</html>
+        {}
+        <aside className="w-full md:w-64 shrink-0 space-y-6">
+          
+          {/* Navigation Group: User Options */}
+          <div className={`p-3 rounded-2xl border ${darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">Main Menu</p>
+            <nav className="space-y-1">
+              
+              <SidebarLink 
+                icon={<Activity className="w-4 h-4" />} 
+                label={t.dashboard} 
+                active={activeTab === 'dashboard'} 
+                onClick={() => setActiveTab('dashboard')} 
+                darkMode={darkMode}
+              />
+
+              {cmsSettings.features.cpaTasks && (
+                <SidebarLink 
+                  icon={<Layers className="w-4 h-4" />} 
+                  label={t.cpaTasks} 
+                  badge="Hot"
+                  active={activeTab === 'cpaTasks'} 
+                  onClick={() => setActiveTab('cpaTasks')} 
+                  darkMode={darkMode}
+                />
+              )}
+
+              {cmsSettings.features.rewardedAds && (
+                <SidebarLink 
+                  icon={<PlayCircle className="w-4 h-4" />} 
+                  label={t.rewardedAds} 
+                  active={activeTab === 'rewardedAds'} 
+                  onClick={() => setActiveTab('rewardedAds')} 
+                  darkMode={darkMode}
+                />
+              )}
+
+              {cmsSettings.features.luckySpin && (
+                <SidebarLink 
+                  icon={<RotateCw className="w-4 h-4" />} 
+                  label={t.luckySpin} 
+                  active={activeTab === 'luckySpin'} 
+                  onClick={() => setActiveTab('luckySpin')} 
+                  darkMode={darkMode}
+                />
+              )}
+
+              <SidebarLink 
+                icon={<Wallet className="w-4 h-4" />} 
+                label={t.wallet} 
+                active={activeTab === 'wallet'} 
+                onClick={() => setActiveTab('wallet')} 
+                darkMode={darkMode}
+              />
+
+              {cmsSettings.features.referrals && (
+                <SidebarLink 
+                  icon={<Users className="w-4 h-4" />} 
+                  label={t.referral} 
+                  active={activeTab === 'referral'} 
+                  onClick={() => setActiveTab('referral')} 
+                  darkMode={darkMode}
+                />
+              )}
+
+              <SidebarLink 
+                icon={<UserCheck className="w-4 h-4" />} 
+                label={t.profile} 
+                active={activeTab === 'profile'} 
+                onClick={() => setActiveTab('profile')} 
+                darkMode={darkMode}
+              />
+
+            </nav>
+
+            {/* Navigation Group: Admin & Security */}
+            {(userRole !== 'user') && (
+              <div className="mt-6 pt-4 border-t border-slate-800">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400 px-3 mb-2 flex items-center justify-between">
+                  <span>Admin Control</span>
+                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 rounded">{userRole}</span>
+                </p>
+                <nav className="space-y-1">
+                  
+                  <SidebarLink 
+                    icon={<ShieldAlert className="w-4 h-4 text-rose-400" />} 
+                    label={t.fraudCenter} 
+                    badge="AI"
+                    active={activeTab === 'fraudCenter'} 
+                    onClick={() => setActiveTab('fraudCenter')} 
+                    darkMode={darkMode}
+                  />
+
+                  {(userRole === 'superAdmin') && (
+                    <SidebarLink 
+                      icon={<Settings className="w-4 h-4 text-indigo-400" />} 
+                      label={t.adminPanel} 
+                      active={activeTab === 'adminPanel'} 
+                      onClick={() => setActiveTab('adminPanel')} 
+                      darkMode={darkMode}
+                    />
+                  )}
+
+                  <SidebarLink 
+                    icon={<Database className="w-4 h-4 text-cyan-400" />} 
+                    label={t.dbSchema} 
+                    active={activeTab === 'dbSchema'} 
+                    onClick={() => setActiveTab('dbSchema')} 
+                    darkMode={darkMode}
+                  />
+
+                </nav>
+              </div>
+            )}
+          </div>
+
+          {/* Anti-Fraud Live Status Widget */}
+          <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-indigo-950/30 border-indigo-900/50' : 'bg-indigo-50 border-indigo-200'} relative overflow-hidden`}>
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              <h4 className="text-xs font-bold text-indigo-300">Triple-AI Protection</h4>
+            </div>
+            <p className="text-[11px] text-slate-400 mb-3 leading-relaxed">
+              Real-time protection against VPNs, bot scripts, linear mouse trajectories, and double-spend exploits.
+            </p>
+            <div className="space-y-1.5 text-[10px]">
+              <div className="flex justify-between">
+                <span className="text-slate-400">IP Reputation:</span>
+                <span className="text-emerald-400 font-semibold">100% Clean ({user.country})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Mouse Velocity:</span>
+                <span className="text-indigo-300 font-mono">{aiTelemetry.clickVelocity} px/s</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Double-Spend Lock:</span>
+                <span className="text-emerald-400 font-semibold">ACID Active</span>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+
+        {}
+        <main className="flex-1 min-w-0">
+          
+          {/* USER TAB 1: Dashboard Overview */}
+          {activeTab === 'dashboard' && (
+            <DashboardView 
+              user={user} 
+              setUser={setUser} 
+              t={t} 
+              darkMode={darkMode} 
+              cmsSettings={cmsSettings} 
+              executeAtomicTransaction={executeAtomicTransaction}
+              isProcessingLedger={isProcessingLedger}
+            />
+          )}
+
+          {/* USER TAB 2: CPA Task Hub */}
+          {activeTab === 'cpaTasks' && cmsSettings.features.cpaTasks && (
+            <CpaTasksView 
+              user={user} 
+              darkMode={darkMode} 
+              executeAtomicTransaction={executeAtomicTransaction}
+              isProcessingLedger={isProcessingLedger}
+            />
+          )}
+
+          {/* USER TAB 3: Rewarded Ads */}
+          {activeTab === 'rewardedAds' && cmsSettings.features.rewardedAds && (
+            <RewardedAdsView 
+              user={user} 
+              darkMode={darkMode} 
+              executeAtomicTransaction={executeAtomicTransaction}
+              isProcessingLedger={isProcessingLedger}
+            />
+          )}
+
+          {/* USER TAB 4: Lucky Spin Wheel */}
+          {activeTab === 'luckySpin' && cmsSettings.features.luckySpin && (
+            <LuckySpinView 
+              user={user} 
+              setUser={setUser} 
+              darkMode={darkMode} 
+              executeAtomicTransaction={executeAtomicTransaction}
+            />
+          )}
+
+          {/* USER TAB 5: Wallet & Ledger */}
+          {activeTab === 'wallet' && (
+            <WalletView 
+              user={user} 
+              ledger={ledger} 
+              gateways={gateways} 
+              darkMode={darkMode} 
+              executeAtomicTransaction={executeAtomicTransaction}
+              isProcessingLedger={isProcessingLedger}
+            />
+          )}
+
+          {/* USER TAB 6: Referral Network */}
+          {activeTab === 'referral' && cmsSettings.features.referrals && (
+            <ReferralView user={user} darkMode={darkMode} />
+          )}
+
+          {/* USER TAB 7: Profile & Verification */}
+          {activeTab === 'profile' && (
+            <ProfileView user={user} setUser={setUser} darkMode={darkMode} aiTelemetry={aiTelemetry} />
+          )}
+
+          {/* ADMIN TAB 1: Fraud Operations Center */}
+          {activeTab === 'fraudCenter' && (
+            <FraudCenterView 
+              user={user} 
+              setUser={setUser} 
+              aiTelemetry={aiTelemetry} 
+              darkMode={darkMode} 
+            />
+          )}
+
+          {/* ADMIN TAB 2: Site Settings CMS */}
+          {activeTab === 'adminPanel' && userRole === 'superAdmin' && (
+            <AdminCmsView 
+              cmsSettings={cmsSettings} 
+              setCmsSettings={setCmsSettings} 
+              gateways={gateways}
+              setGateways={setGateways}
+              darkMode={darkMode} 
+            />
+          )}
+
+          {/* ADMIN TAB 3: Relational Database Schema */}
+          {activeTab === 'dbSchema' && (
+            <DbSchemaView darkMode={darkMode} />
+          )}
+
+        </main>
+
+      </div>
+
+    </div>
+  );
+}
+
+function SidebarLink({ icon, label, badge, active, onClick, darkMode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+        active 
+          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+          : darkMode 
+          ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white' 
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+      }`}
+    >
+      <div className="flex items-center gap-2.5">
+        {icon}
+        <span>{label}</span>
+      </div>
+      {badge && (
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function DashboardView({ user, setUser, t, darkMode, cmsSettings, executeAtomicTransaction, isProcessingLedger }) {
+  
+  const handleDailyClaim = () => {
+    if (user.dailyClaimed) return;
+    executeAtomicTransaction('CREDIT', 'Daily Check-in Reward', 1.00);
+    setUser(prev => ({ ...prev, points: prev.points + 50, dailyClaimed: true }));
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Top Banner Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Balance Card */}
+        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm relative overflow-hidden`}>
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <p className="text-xs font-medium text-slate-400">{t.balance}</p>
+              <h3 className="text-2xl font-black text-emerald-400 mt-1">${user.balance.toFixed(2)}</h3>
+            </div>
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <DollarSign className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-[11px] text-slate-400 flex items-center gap-1">
+            <span className="text-emerald-400 font-semibold flex items-center">
+              <ArrowUpRight className="w-3 h-3" /> +12.4%
+            </span>
+            <span>from yesterday</span>
+          </div>
+        </div>
+
+        {/* Reward Points */}
+        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <p className="text-xs font-medium text-slate-400">{t.points}</p>
+              <h3 className="text-2xl font-black text-indigo-400 mt-1">{user.points.toLocaleString()} PTS</h3>
+            </div>
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <Sparkles className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400">1,000 PTS = $1.00 Cash Conversion</p>
+        </div>
+
+        {/* AI Fraud Score */}
+        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <p className="text-xs font-medium text-slate-400">{t.fraudScore}</p>
+              <h3 className={`text-2xl font-black mt-1 ${user.fraudScore < 25 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {user.fraudScore}%
+              </h3>
+            </div>
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-emerald-400 font-medium">✓ Safe for Instant Auto-Payouts</p>
+        </div>
+
+        {/* Verification Status */}
+        <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <p className="text-xs font-medium text-slate-400">{t.trustLevel}</p>
+              <h3 className="text-lg font-bold text-amber-400 mt-1 flex items-center gap-1.5">
+                {user.verificationBadge}
+              </h3>
+            </div>
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <UserCheck className="w-5 h-5" />
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400">KYC Status: Verified Badge</p>
+        </div>
+
+      </div>
+
+      {/* Daily Reward Box */}
+      {cmsSettings.features.dailyBonus && (
+        <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-gradient-to-r from-indigo-950/80 to-purple-950/80 border-indigo-800/50' : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200'} flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg`}>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-2xl text-indigo-400 shadow-inner">
+              🎁
+            </div>
+            <div>
+              <h3 className="font-bold text-base">{t.dailyCheckin}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Claim your daily streak reward: <strong>$1.00 + 50 PTS</strong></p>
+            </div>
+          </div>
+          <button
+            onClick={handleDailyClaim}
+            disabled={user.dailyClaimed || isProcessingLedger}
+            className={`px-6 py-3 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center gap-2 ${
+              user.dailyClaimed 
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' 
+                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30 active:scale-95'
+            }`}
+          >
+            {user.dailyClaimed ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Bonus Claimed Today</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                <span>{isProcessingLedger ? 'Processing Ledger...' : t.claimReward}</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Task Quick-Start Section */}
+      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold text-base">Recommended Quick Micro-Tasks</h3>
+            <p className="text-xs text-slate-400">Protected by Triple-AI Anti-Bot Verification Engine</p>
+          </div>
+          <span className="text-xs text-indigo-400 font-semibold cursor-pointer hover:underline">View All Tasks →</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                CPA
+              </div>
+              <div>
+                <h4 className="font-bold text-xs">App Installation & Sign Up</h4>
+                <p className="text-[11px] text-slate-400">Financial App • 2 mins completion time</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-black text-emerald-400 block">+$2.50</span>
+              <span className="text-[10px] text-slate-400">12 Spots Left</span>
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex items-center justify-between`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                SUR
+              </div>
+              <div>
+                <h4 className="font-bold text-xs">E-Commerce Feedback Survey</h4>
+                <p className="text-[11px] text-slate-400">Consumer Feedback • 3 mins</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-black text-indigo-400 block">+$1.80</span>
+              <span className="text-[10px] text-slate-400">High Approval</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+function CpaTasksView({ user, darkMode, executeAtomicTransaction, isProcessingLedger }) {
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [proofText, setProofText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const tasks = [
+    { id: 101, title: "Download & Register FinTech App", reward: 3.50, network: "AdGate Media", time: "3 mins", instructions: "Install app, verify phone number, upload screenshot proof." },
+    { id: 102, title: "Complete Crypto Exchange Survey", reward: 1.75, network: "CPAGrip", time: "5 mins", instructions: "Answer 10 short questions regarding crypto preferences." },
+    { id: 103, title: "Subscribe to Premium Tech Newsletter", reward: 0.90, network: "Offertoro", time: "1 min", instructions: "Submit work email and click confirmation link." },
+    { id: 104, title: "Test E-Commerce Checkout Flow", reward: 4.20, network: "Lootably", time: "6 mins", instructions: "Create test account and submit order ID string." },
+  ];
+
+  const handleSubmitProof = async () => {
+    if (!proofText.trim()) return;
+    setSubmitting(true);
+    await new Promise(res => setTimeout(res, 1200)); // Server side API key validation simulation
+    await executeAtomicTransaction('CREDIT', `CPA Task #${selectedTask.id}`, selectedTask.reward);
+    setSubmitting(false);
+    setSelectedTask(null);
+    setProofText("");
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-lg font-bold">CPA Offerwall & Micro-Tasks</h2>
+            <p className="text-xs text-slate-400">All CPA API keys are encrypted server-side to prevent client tamper.</p>
+          </div>
+          <div className="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
+            Proxy API Shielded
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tasks.map(task => (
+            <div key={task.id} className={`p-5 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col justify-between gap-4 hover:border-indigo-500/40 transition-all`}>
+              <div>
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    {task.network}
+                  </span>
+                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                    ⏱️ {task.time}
+                  </span>
+                </div>
+                <h3 className="font-bold text-sm">{task.title}</h3>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-2">{task.instructions}</p>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t border-slate-800/50">
+                <span className="text-base font-black text-emerald-400">${task.reward.toFixed(2)}</span>
+                <button
+                  onClick={() => setSelectedTask(task)}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all"
+                >
+                  Start Task
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Task Proof Submission Modal */}
+      {selectedTask && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className={`max-w-md w-full p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-2xl space-y-4`}>
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-base">Submit Proof: {selectedTask.title}</h3>
+              <button onClick={() => setSelectedTask(null)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-lg bg-indigo-500/10 text-indigo-300 text-xs">
+              <strong>Instructions:</strong> {selectedTask.instructions}
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-400 block mb-1">Upload Confirmation Code or Order ID</label>
+              <textarea
+                value={proofText}
+                onChange={(e) => setProofText(e.target.value)}
+                placeholder="Paste transaction code, screenshot URL or reference string here..."
+                className={`w-full h-24 p-3 rounded-xl border text-xs outline-none focus:border-indigo-500 ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'}`}
+              />
+            </div>
+
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-xs font-bold text-emerald-400">Payout: ${selectedTask.reward.toFixed(2)}</span>
+              <button
+                onClick={handleSubmitProof}
+                disabled={submitting || !proofText.trim() || isProcessingLedger}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-bold text-xs transition-all shadow-md"
+              >
+                {submitting ? 'Verifying with CPA API...' : 'Submit Proof'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+function RewardedAdsView({ user, darkMode, executeAtomicTransaction, isProcessingLedger }) {
+  const [adState, setAdState] = useState('idle'); // 'idle', 'playing', 'captcha', 'rewarded'
+  const [countdown, setCountdown] = useState(10);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+  const startAdVideo = () => {
+    setAdState('playing');
+    setCountdown(10);
+  };
+
+  useEffect(() => {
+    let timer;
+    if (adState === 'playing' && countdown > 0) {
+      timer = setInterval(() => setCountdown(c => c - 1), 1000);
+    } else if (adState === 'playing' && countdown === 0) {
+      setAdState('captcha');
+    }
+    return () => clearInterval(timer);
+  }, [adState, countdown]);
+
+  const handleVerifyCaptcha = () => {
+    if (captchaAnswer === '7') {
+      executeAtomicTransaction('CREDIT', 'Rewarded Video Ad #109', 0.25);
+      setAdState('rewarded');
+    } else {
+      alert("Incorrect Captcha! Fraud Sentinel Flagged Fake Click Attempt.");
+    }
+  };
+
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
+      
+      <div>
+        <h2 className="text-lg font-bold">Rewarded Video Ads</h2>
+        <p className="text-xs text-slate-400">Watch 10-second sponsor video ads to earn direct balance credits.</p>
+      </div>
+
+      <div className={`p-8 rounded-2xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[260px]`}>
+        
+        {adState === 'idle' && (
+          <div className="space-y-4 max-w-sm">
+            <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto text-2xl">
+              🎬
+            </div>
+            <h3 className="font-bold text-base">High-CPM Tech Ad Stream</h3>
+            <p className="text-xs text-slate-400">Reward: <strong>$0.25 USD</strong> per completed view.</p>
+            <button
+              onClick={startAdVideo}
+              disabled={isProcessingLedger}
+              className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all"
+            >
+              Watch Video Ad
+            </button>
+          </div>
+        )}
+
+        {adState === 'playing' && (
+          <div className="space-y-4">
+            <div className="w-16 h-16 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin flex items-center justify-center mx-auto">
+              <span className="text-sm font-bold">{countdown}s</span>
+            </div>
+            <h3 className="font-bold text-sm">Streaming Sponsor Video...</h3>
+            <p className="text-xs text-slate-400">Do not close this tab. Anti-bot overlay verification active.</p>
+          </div>
+        )}
+
+        {adState === 'captcha' && (
+          <div className="space-y-4 max-w-xs">
+            <h3 className="font-bold text-sm text-amber-400">Human Verification Check</h3>
+            <p className="text-xs text-slate-400">Solve simple math captcha to claim reward: <strong>4 + 3 = ?</strong></p>
+            <input
+              type="number"
+              value={captchaAnswer}
+              onChange={(e) => setCaptchaAnswer(e.target.value)}
+              placeholder="Enter answer"
+              className={`w-full p-2.5 rounded-xl border text-center text-sm font-bold outline-none ${darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300'}`}
+            />
+            <button
+              onClick={handleVerifyCaptcha}
+              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+            >
+              Verify & Claim $0.25
+            </button>
+          </div>
+        )}
+
+        {adState === 'rewarded' && (
+          <div className="space-y-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
+              ✓
+            </div>
+            <h3 className="font-bold text-base text-emerald-400">+$0.25 Added to Ledger!</h3>
+            <p className="text-xs text-slate-400">ACID double-entry ledger lock released successfully.</p>
+            <button
+              onClick={() => setAdState('idle')}
+              className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold"
+            >
+              Watch Next Ad
+            </button>
+          </div>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+function LuckySpinView({ user, setUser, darkMode, executeAtomicTransaction }) {
+  const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [spinResult, setSpinResult] = useState(null);
+
+  const prizes = [
+    { label: "$0.10", val: 0.10, color: "#6366f1" },
+    { label: "$0.50", val: 0.50, color: "#10b981" },
+    { label: "$1.00", val: 1.00, color: "#f59e0b" },
+    { label: "$0.05", val: 0.05, color: "#ec4899" },
+    { label: "100 PTS", val: 0.10, color: "#8b5cf6" },
+    { label: "JACKPOT $5", val: 5.00, color: "#ef4444" },
+  ];
+
+  const handleSpin = async () => {
+    if (spinning) return;
+    setSpinning(true);
+    setSpinResult(null);
+
+    const randomDeg = 1440 + Math.floor(Math.random() * 360);
+    setRotation(randomDeg);
+
+    setTimeout(async () => {
+      setSpinning(false);
+      const prizeIndex = Math.floor(Math.random() * prizes.length);
+      const prize = prizes[prizeIndex];
+      setSpinResult(prize);
+      await executeAtomicTransaction('CREDIT', `Lucky Spin (${prize.label})`, prize.val);
+    }, 3500);
+  };
+
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6 text-center`}>
+      
+      <div>
+        <h2 className="text-lg font-bold">Daily Lucky Spin Wheel</h2>
+        <p className="text-xs text-slate-400">Spin to win instant cash credits or points bonuses.</p>
+      </div>
+
+      <div className="relative w-64 h-64 mx-auto my-4 flex items-center justify-center">
+        {/* Wheel SVG */}
+        <div 
+          className="w-full h-full rounded-full border-4 border-slate-700 shadow-2xl overflow-hidden transition-all duration-[3500ms] cubic-bezier(0.15, 0.9, 0.25, 1)"
+          style={{ transform: `rotate(${rotation}deg)` }}
+        >
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            {prizes.map((p, i) => {
+              const angle = 360 / prizes.length;
+              const startAngle = i * angle;
+              const endAngle = (i + 1) * angle;
+              const x1 = 50 + 50 * Math.cos((Math.PI * startAngle) / 180);
+              const y1 = 50 + 50 * Math.sin((Math.PI * startAngle) / 180);
+              const x2 = 50 + 50 * Math.cos((Math.PI * endAngle) / 180);
+              const y2 = 50 + 50 * Math.sin((Math.PI * endAngle) / 180);
+
+              return (
+                <g key={i}>
+                  <path
+                    d={`M50,50 L${x1},${y1} A50,50 0 0,1 ${x2},${y2} Z`}
+                    fill={p.color}
+                  />
+                  <text
+                    x="65"
+                    y="52"
+                    fill="#ffffff"
+                    fontSize="5"
+                    fontWeight="bold"
+                    transform={`rotate(${startAngle + angle / 2}, 50, 50)`}
+                  >
+                    {p.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Wheel Pointer */}
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px] border-t-amber-400 z-10 drop-shadow-md" />
+      </div>
+
+      <button
+        onClick={handleSpin}
+        disabled={spinning}
+        className="px-8 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition-all"
+      >
+        {spinning ? 'Spinning...' : 'SPIN WHEEL NOW'}
+      </button>
+
+      {spinResult && (
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-sm animate-bounce max-w-xs mx-auto">
+          🎉 Congratulations! You won {spinResult.label}!
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+function WalletView({ user, ledger, gateways, darkMode, executeAtomicTransaction, isProcessingLedger }) {
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [selectedGateway, setSelectedGateway] = useState(gateways[0].id);
+  const [accountNo, setAccountNo] = useState("");
+
+  const isBDUser = user.country === 'Bangladesh';
+  const availableGateways = gateways.filter(g => g.active && (isBDUser ? g.region === 'BD' : g.region === 'INT'));
+
+  const handleWithdraw = async (e) => {
+    e.preventDefault();
+    const amountVal = parseFloat(withdrawAmount);
+    if (!amountVal || amountVal > user.balance) {
+      alert("Invalid balance or amount exceeds ledger limits.");
+      return;
+    }
+
+    await executeAtomicTransaction('DEBIT', `Payout via ${selectedGateway}`, amountVal);
+    setWithdrawAmount("");
+    setAccountNo("");
+    alert("Withdrawal request committed to ACID transaction queue!");
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* Wallet Balance Header */}
+      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+        <div>
+          <span className="text-xs text-slate-400 font-medium">Verified Ledger Balance</span>
+          <h2 className="text-3xl font-black text-emerald-400">${user.balance.toFixed(2)} USD</h2>
+          <p className="text-[11px] text-slate-400 mt-0.5">Approx. ৳{(user.balance * 120).toLocaleString()} BDT</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+            ACID Ledger Syncing
+          </span>
+        </div>
+      </div>
+
+      {/* Adaptive Payment Form */}
+      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-base">Request Withdrawal</h3>
+          <span className="text-xs text-slate-400">
+            Detected Region: <strong>{user.country} ({isBDUser ? 'bKash/Nagad Only' : 'Global Crypto/Payeer'})</strong>
+          </span>
+        </div>
+
+        <form onSubmit={handleWithdraw} className="space-y-4">
+          
+          {/* Gateway Selector */}
+          <div>
+            <label className="text-xs font-semibold text-slate-400 block mb-2">Select Payment Gateway</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableGateways.map(g => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setSelectedGateway(g.id)}
+                  className={`p-3 rounded-xl border text-left flex items-center gap-3 transition-all ${
+                    selectedGateway === g.id 
+                      ? 'border-indigo-500 bg-indigo-500/10 text-white' 
+                      : darkMode ? 'border-slate-800 bg-slate-950 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <span className="text-xl">{g.icon}</span>
+                  <div>
+                    <h4 className="font-bold text-xs leading-none">{g.name}</h4>
+                    <span className="text-[10px] text-slate-400 mt-1 block">Fee: {g.fee}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-slate-400 block mb-1">Withdraw Amount ($ USD)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="Min $5.00"
+                className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-indigo-500 ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-slate-400 block mb-1">Account / Wallet Address</label>
+              <input
+                type="text"
+                value={accountNo}
+                onChange={(e) => setAccountNo(e.target.value)}
+                placeholder={isBDUser ? "017XXXXXXXX" : "T... Address or Email"}
+                className={`w-full p-2.5 rounded-xl border text-xs outline-none focus:border-indigo-500 ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isProcessingLedger || !withdrawAmount || !accountNo}
+            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 transition-all"
+          >
+            {isProcessingLedger ? 'Acquiring Ledger Row Lock...' : 'Confirm Withdrawal Request'}
+          </button>
+
+        </form>
+      </div>
+
+      {/* Financial Ledger Audit Trail Table */}
+      <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
+        <h3 className="font-bold text-base">ACID Double-Entry Ledger Logs</h3>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className={`border-b ${darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+                <th className="p-2.5">TXN Hash</th>
+                <th className="p-2.5">Timestamp</th>
+                <th className="p-2.5">Category</th>
+                <th className="p-2.5">Type</th>
+                <th className="p-2.5">Amount</th>
+                <th className="p-2.5">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/40">
+              {ledger.map(row => (
+                <tr key={row.id} className="hover:bg-slate-800/20">
+                  <td className="p-2.5 font-mono text-indigo-400">{row.id}</td>
+                  <td className="p-2.5 text-slate-400">{row.timestamp}</td>
+                  <td className="p-2.5 font-medium">{row.category}</td>
+                  <td className="p-2.5">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      {row.type}
+                    </span>
+                  </td>
+                  <td className={`p-2.5 font-bold ${row.type === 'CREDIT' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {row.amount}
+                  </td>
+                  <td className="p-2.5">
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-emerald-400" /> {row.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+function ReferralView({ user, darkMode }) {
+  const refLink = `https://taskpulse.pro/ref/${user.id}`;
+
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
+      <div>
+        <h2 className="text-lg font-bold">Referral Tree & Network</h2>
+        <p className="text-xs text-slate-400">Earn 10% lifetime commission on every CPA task completed by your referred network.</p>
+      </div>
+
+      <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex justify-between items-center gap-3`}>
+        <span className="font-mono text-xs text-indigo-400 truncate">{refLink}</span>
+        <button
+          onClick={() => alert("Referral link copied to clipboard!")}
+          className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 shadow-md"
+        >
+          Copy Link
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+          <span className="text-xs text-slate-400">Total Referrals</span>
+          <h3 className="text-xl font-bold mt-1">24 Users</h3>
+        </div>
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+          <span className="text-xs text-slate-400">Referral Earnings</span>
+          <h3 className="text-xl font-bold text-emerald-400 mt-1">$48.20</h3>
+        </div>
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+          <span className="text-xs text-slate-400">Fingerprint Checks</span>
+          <h3 className="text-xl font-bold text-indigo-400 mt-1">0 Multi-Accounts</h3>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileView({ user, setUser, darkMode, aiTelemetry }) {
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
+      <div>
+        <h2 className="text-lg font-bold">Profile & Device Fingerprint Details</h2>
+        <p className="text-xs text-slate-400">View security parameters registered for this active account session.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
+          <h3 className="font-bold text-slate-300">Identity Status</h3>
+          <p><strong>Account ID:</strong> {user.id}</p>
+          <p><strong>Name:</strong> {user.name}</p>
+          <p><strong>Email:</strong> {user.email}</p>
+          <p><strong>Verification Badge:</strong> <span className="text-amber-400">{user.verificationBadge}</span></p>
+        </div>
+
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
+          <h3 className="font-bold text-slate-300">Device Fingerprint</h3>
+          <p><strong>IP Address:</strong> {user.ip}</p>
+          <p><strong>Fingerprint Hash:</strong> {user.deviceFingerprint}</p>
+          <p><strong>Proxy / VPN:</strong> {aiTelemetry.proxyDetected ? "Flagged ❌" : "Clean ✓"}</p>
+          <p><strong>Multi-Account Limit:</strong> {aiTelemetry.multiAccountRisk}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FraudCenterView({ user, setUser, aiTelemetry, darkMode }) {
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
+      
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-bold text-rose-400 flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5" /> Triple-AI Fraud Sentinel Dashboard
+          </h2>
+          <p className="text-xs text-slate-400">Monitoring Network Behavior, Mouse Dynamics & Task Completion Vectors</p>
+        </div>
+        <span className="px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold">
+          Active Real-time Telemetry
+        </span>
+      </div>
+
+      {/* AI Agents Breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xs">Agent 1: Network AI</h3>
+            <span className="text-emerald-400 font-bold text-xs">{aiTelemetry.agent1NetworkScore}% Risk</span>
+          </div>
+          <p className="text-[11px] text-slate-400">Analyzes residential vs datacenter IP proxies and ASN reputation.</p>
+        </div>
+
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xs">Agent 2: Mouse AI</h3>
+            <span className="text-amber-400 font-bold text-xs">{aiTelemetry.agent2BehaviorScore}% Risk</span>
+          </div>
+          <p className="text-[11px] text-slate-400">Detects linear mouse paths, rapid automated scripts and click speeds.</p>
+        </div>
+
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} space-y-2`}>
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xs">Agent 3: Task Pattern AI</h3>
+            <span className="text-emerald-400 font-bold text-xs">{aiTelemetry.agent3PatternScore}% Risk</span>
+          </div>
+          <p className="text-[11px] text-slate-400">Evaluates sub-second task submissions and fake screenshot patterns.</p>
+        </div>
+
+      </div>
+
+      {/* Flagged Live Actions */}
+      <div className="space-y-3">
+        <h3 className="font-bold text-sm">Active User Risk Profile ({user.name})</h3>
+        <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+          <div>
+            <h4 className="font-bold text-xs">{user.name} ({user.id})</h4>
+            <p className="text-[11px] text-slate-400">IP: {user.ip} • Device: {user.deviceFingerprint}</p>
+            {user.warnings.map((w, idx) => (
+              <span key={idx} className="inline-block mt-1 mr-2 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">
+                ⚠️ {w}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setUser(u => ({ ...u, banned: !u.banned }))}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                user.banned 
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
+                  : 'bg-rose-600 hover:bg-rose-500 text-white shadow-md'
+              }`}
+            >
+              {user.banned ? 'Unban Account' : 'Force Permanent Ban'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+function AdminCmsView({ cmsSettings, setCmsSettings, gateways, setGateways, darkMode }) {
+  const [newGatewayName, setNewGatewayName] = useState("");
+  const [newGatewayRegion, setNewGatewayRegion] = useState("BD");
+
+  const handleToggleFeature = (featKey) => {
+    setCmsSettings(prev => ({
+      ...prev,
+      features: {
+        ...prev.features,
+        [featKey]: !prev.features[featKey]
+      }
+    }));
+  };
+
+  const handleAddGateway = (e) => {
+    e.preventDefault();
+    if (!newGatewayName.trim()) return;
+    const newG = {
+      id: newGatewayName.toLowerCase().replace(/\s+/g, '-'),
+      name: newGatewayName,
+      region: newGatewayRegion,
+      currency: newGatewayRegion === 'BD' ? 'BDT' : 'USD',
+      rate: newGatewayRegion === 'BD' ? 120 : 1,
+      fee: '1.0%',
+      active: true,
+      icon: '💳'
+    };
+    setGateways(prev => [...prev, newG]);
+    setNewGatewayName("");
+  };
+
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-6`}>
+      
+      <div>
+        <h2 className="text-lg font-bold">Dynamic Site CMS & Feature Customizer</h2>
+        <p className="text-xs text-slate-400">Modify branding, site text, dynamic colors, and toggle platform modules live without code edits.</p>
+      </div>
+
+      {/* Feature Toggles */}
+      <div className="space-y-3">
+        <h3 className="font-bold text-sm">Module & Feature Switches</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {Object.keys(cmsSettings.features).map(featKey => (
+            <button
+              key={featKey}
+              onClick={() => handleToggleFeature(featKey)}
+              className={`p-3 rounded-xl border text-left flex justify-between items-center transition-all ${
+                cmsSettings.features[featKey] 
+                  ? 'border-indigo-500 bg-indigo-500/10 text-white' 
+                  : 'border-slate-800 bg-slate-950 text-slate-500'
+              }`}
+            >
+              <span className="text-xs font-bold capitalize">{featKey}</span>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${cmsSettings.features[featKey] ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                {cmsSettings.features[featKey] ? 'ON' : 'OFF'}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Dynamic Payment Gateways Config */}
+      <div className="space-y-3 pt-4 border-t border-slate-800">
+        <h3 className="font-bold text-sm">Dynamic Payment Gateway Manager</h3>
+        
+        <form onSubmit={handleAddGateway} className="flex gap-2">
+          <input
+            type="text"
+            value={newGatewayName}
+            onChange={(e) => setNewGatewayName(e.target.value)}
+            placeholder="New Gateway Name (e.g. Rocket, Upay)"
+            className={`flex-1 p-2.5 rounded-xl border text-xs outline-none ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
+          />
+          <select
+            value={newGatewayRegion}
+            onChange={(e) => setNewGatewayRegion(e.target.value)}
+            className={`p-2.5 rounded-xl border text-xs outline-none ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}
+          >
+            <option value="BD">Bangladesh (BD)</option>
+            <option value="INT">International (INT)</option>
+          </select>
+          <button
+            type="submit"
+            className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
+          >
+            Add Gateway
+          </button>
+        </form>
+      </div>
+
+    </div>
+  );
+}
+
+function DbSchemaView({ darkMode }) {
+  const sqlDdl = `-- ============================================================
+-- PRODUCTION RELATIONAL DATABASE SCHEMA (PostgreSQL / MySQL)
+-- Includes Foreign Keys, Indexes, Constraints & ACID Integrity Rules
+-- ============================================================
+
+-- 1. Site Dynamic Configuration Table (CMS)
+CREATE TABLE site_settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value JSONB NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Users Table with Device Fingerprinting & Risk Score
+CREATE TABLE users (
+    id VARCHAR(36) PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    country VARCHAR(50) NOT NULL,
+    last_ip VARCHAR(45) NOT NULL,
+    device_fingerprint VARCHAR(128) NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
+    fraud_score INT DEFAULT 0 CHECK (fraud_score BETWEEN 0 AND 100),
+    is_banned BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_device_ip UNIQUE(device_fingerprint, last_ip)
+);
+
+-- 3. User Wallets Table (Strict Non-Negative Balance Constraint)
+CREATE TABLE user_wallets (
+    user_id VARCHAR(36) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    balance NUMERIC(15, 4) DEFAULT 0.0000 CHECK (balance >= 0.0000),
+    reward_points INT DEFAULT 0 CHECK (reward_points >= 0),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Financial Ledger Table (ACID Double-Entry Auditing)
+CREATE TABLE financial_ledger (
+    transaction_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL REFERENCES users(id),
+    transaction_type VARCHAR(10) CHECK (transaction_type IN ('CREDIT', 'DEBIT')),
+    category VARCHAR(100) NOT NULL,
+    amount NUMERIC(15, 4) NOT NULL,
+    lock_id VARCHAR(64) NOT NULL,
+    status VARCHAR(20) DEFAULT 'COMMITTED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for Ultra-Fast Anti-Fraud & Transaction Querying
+CREATE INDEX idx_users_ip_fingerprint ON users(last_ip, device_fingerprint);
+CREATE INDEX idx_ledger_user_time ON financial_ledger(user_id, created_at DESC);
+`;
+
+  return (
+    <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Terminal className="w-5 h-5 text-cyan-400" /> Relational Database Schema & DDL
+          </h2>
+          <p className="text-xs text-slate-400">PostgreSQL Schema definition with row lock rules and non-negative financial constraints.</p>
+        </div>
+      </div>
+
+      <pre className={`p-4 rounded-xl text-xs font-mono overflow-x-auto leading-relaxed ${darkMode ? 'bg-slate-950 text-emerald-400 border border-slate-800' : 'bg-slate-900 text-emerald-300'}`}>
+        {sqlDdl}
+      </pre>
+    </div>
+  );
+}
