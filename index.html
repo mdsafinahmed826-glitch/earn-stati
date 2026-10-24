@@ -236,7 +236,7 @@ window.SAFIN_FIREBASE = {
   measurementId: "G-1JG8GHJF7Z"
 };
 /* ===== Admin accounts: put your registered mobile number or email here (lowercase). Those logins get the Admin Panel. ===== */
-window.SAFIN_ADMINS = ["01XXXXXXXXX"];
+window.SAFIN_ADMINS = ["mdsafinahmed826@gmail.com"];
 </script>
 <header class="top-header" id="hdr">
   <div class="hrow">
@@ -454,7 +454,7 @@ function loginForm(){
   return'<div class="hero"><h2>Welcome to '+BRAND+'</h2><p style="opacity:.9;margin-top:4px">'+(reg?'Create a new account':'Login to your account')+'</p></div>'+
   '<div class="card" data-enter="'+(reg?'doreg':'dologin')+'" style="margin:8px">'+
   (reg?'<label class="f">Full name<input type="text" id="rg-name" autocomplete="name"></label><label class="f">Mobile number or email<input type="text" id="rg-id" autocomplete="username"></label><label class="f">Password (min 6)<input type="password" id="rg-pw" autocomplete="new-password"></label><label class="f">Confirm password<input type="password" id="rg-pw2" autocomplete="new-password"></label><button class="btn blk" data-act="doreg">Register</button>':
-  '<label class="f">Mobile number / email / username<input type="text" id="lg-id" autocomplete="username"></label><label class="f">Password<input type="password" id="lg-pw" autocomplete="current-password"></label><button class="btn blk" data-act="dologin">Login</button>')+
+  '<label class="f">email / username<input type="text" id="lg-id" autocomplete="username"></label><label class="f">Password<input type="password" id="lg-pw" autocomplete="current-password"></label><button class="btn blk" data-act="dologin">Login</button>')+
   '<p style="text-align:center;margin-top:14px"><a href="#'+base+'" style="color:var(--brand);font-weight:600">'+(reg?'Already a member? Login':'New here? Register')+'</a></p></div>'
 }
 
