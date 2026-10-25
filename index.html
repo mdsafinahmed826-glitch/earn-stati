@@ -220,6 +220,17 @@ footer .pm span{border:1px solid var(--line);border-radius:4px;padding:3px 8px;f
 .rev{padding:10px 0;border-bottom:1px solid #f0f0f0}
 @media print{.noprint,.top-header,.bnav,footer,#toast,.pbar{display:none!important}body{background:#fff}.rv{opacity:1!important;transform:none!important}#app{padding:0}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.annc{background:#212121;color:#fff;font-size:12px;text-align:center;padding:6px 10px}
+.ban .sl .ovt{text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.dsb{display:flex;align-items:center;gap:12px;background:#fff;margin-top:8px;padding:12px 14px;cursor:pointer;border-left:4px solid var(--brand)}
+.dsb small{display:block;color:var(--grey);font-size:12px}
+.dsb .dsi{font-size:24px}
+.thumbs{display:flex;gap:8px;overflow-x:auto;padding:8px 12px;background:#fff;scrollbar-width:none}
+.thumbs .tb{flex:none;width:56px;height:56px;border-radius:4px;overflow:hidden;border:2px solid transparent;background:#f0f0f0;cursor:pointer}
+.thumbs .tb.on{border-color:var(--brand)}
+.thumbs .tb img{width:100%;height:100%;object-fit:cover}
+.pre{white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -235,8 +246,6 @@ window.SAFIN_FIREBASE = {
   appId: "1:69804884240:web:2e2ea56642c937b15ae595",
   measurementId: "G-1JG8GHJF7Z"
 };
-/* ===== Admin accounts: put your registered mobile number or email here (lowercase). Those logins get the Admin Panel. ===== */
-window.SAFIN_ADMINS = ["mdsafinahmed826@gmail.com"];
 </script>
 <header class="top-header" id="hdr">
   <div class="hrow">
@@ -265,10 +274,8 @@ window.SAFIN_ADMINS = ["mdsafinahmed826@gmail.com"];
 'use strict';
 var CFG=window.SAFIN_FIREBASE;
 var BRAND='SAFIN ENTERPRISE';
-var CATS=['Mart','Fashion','Beauty','Gadgets','Home','Sports','Offers'];
 var DISTRICTS=['Dhaka','Gazipur','Narayanganj','Chattogram','Rajshahi','Khulna','Barishal','Sylhet','Rangpur','Mymensingh','Cumilla','Other'];
 var NEAR=['Dhaka','Gazipur','Narayanganj'];
-var CATI={Mart:['fa-store','#ff6b6b','#fff'],Fashion:['fa-tshirt','#4ecdc4','#fff'],Beauty:['fa-spray-can','#ffe66d','#333'],Gadgets:['fa-gamepad','#1a535c','#fff'],Home:['fa-couch','#7e57c2','#fff'],Sports:['fa-futbol','#42a5f5','#fff'],Offers:['fa-percent','#f85606','#fff']};
 var STAT=['Pending','Confirmed','Packed','Shipped','Out for Delivery','Delivered'];
 var SLBL={'Out for Delivery':'On the way'};
 var METHODS=[['Cash on Delivery','fa-money-bill'],['bKash','fa-mobile-alt'],['Nagad','fa-mobile-alt'],['Rocket','fa-mobile-alt']];
@@ -328,7 +335,12 @@ var stable=function(o){return JSON.stringify(o,function(k,v){return v&&typeof v=
 var reduceMotion=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- state ---------- */
-var S={products:null,users:null,orders:[],cart:[],wish:[],session:null,recent:[],reviews:{},msgs:[],searches:[],coupon:'',coupons:DEFC.slice(),settings:{payNumber:'01XXXXXXXXX',phone:'01XXXXXXXXX',freeShip:1500,nearFee:60,farFee:110}};
+var DEFSET={payNumber:'01XXXXXXXXX',phone:'01XXXXXXXXX',whatsapp:'',email:'',address:'',freeShip:1500,minOrder:0,nearFee:60,farFee:110,districts:null,brandName:'SAFIN ENTERPRISE',brandEmoji:'🛍️',brandColor:'#f85606',announce:'',flashTitle:'Flash Sale',flashHours:8,offerMin:30,showOffers:true,dsEnabled:true,dsDiscount:60,dsNote:''};
+var DEFCATS=[{name:'Mart',emoji:'🛒',bg:'#ff6b6b',fg:'#ffffff'},{name:'Fashion',emoji:'👕',bg:'#4ecdc4',fg:'#ffffff'},{name:'Beauty',emoji:'💄',bg:'#ffe66d',fg:'#333333'},{name:'Gadgets',emoji:'🎧',bg:'#1a535c',fg:'#ffffff'},{name:'Home',emoji:'🛋️',bg:'#7e57c2',fg:'#ffffff'},{name:'Sports',emoji:'⚽',bg:'#42a5f5',fg:'#ffffff'}];
+var DEFFAQ=[{q:'How do I place an order?',a:'Add products to your cart, go to checkout, enter your delivery details and tap Place Order.'},{q:'Which payment methods are accepted?',a:'Cash on Delivery, bKash, Nagad and Rocket.'},{q:'How can I track or cancel my order?',a:'Open My Orders from your account. Orders can be cancelled while they are Pending or Confirmed.'},{q:'Return policy',a:'Unused products can be returned within 7 days of delivery.'}];
+var CATS=[],CATI={};
+var S={products:null,users:null,orders:[],cart:[],wish:[],session:null,recent:[],reviews:{},msgs:[],searches:[],coupon:'',coupons:DEFC.slice(),cdb:{},settings:Object.assign({},DEFSET),cats:null,banners:[],plans:[],pays:null,content:{},dsaccess:null,dsreqs:[],dcart:[]};
+var FV=null;
 var ui={ready:false};
 var db=null,fs=false,unsubOrders=null;
 var pg={};var timers=[];var post=[];var raf=0;var lastCount=-1;
@@ -338,8 +350,9 @@ function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clea
 function P(id){return(S.products||[]).find(function(p){return p.id===id})}
 function disc(p){return p.old>p.price?Math.round((p.old-p.price)/p.old*100):0}
 function svgSrc(emoji,color){var s="<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='"+(color||'#ddd')+"'/><stop offset='1' stop-color='#ffffff'/></linearGradient></defs><rect width='200' height='200' fill='url(#g)'/><text x='100' y='105' font-size='90' text-anchor='middle' dominant-baseline='central'>"+emoji+"</text></svg>";return'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)}
-function im(p){var fb=svgSrc(p.emoji,p.color);return'<img class="im" src="'+esc(p.image||fb)+'" data-fb="'+esc(fb)+'" alt="'+esc(p.name)+'" loading="lazy">'}
-function imI(it){var s=svgSrc(it.emoji,it.color);return'<img class="im" src="'+esc(s)+'" alt="'+esc(it.name)+'">'}
+function pimgs(p){return(p.images&&p.images.length)?p.images:(p.image?[p.image]:[])}
+function im(p,i){var fb=svgSrc(p.emoji||'📦',p.color);return'<img class="im" src="'+esc(pimgs(p)[i||0]||fb)+'" data-fb="'+esc(fb)+'" alt="'+esc(p.name)+'" loading="lazy">'}
+function imI(it){var p=P(it.id);return p?im(p):'<img class="im" src="'+esc(svgSrc(it.emoji||'📦',it.color))+'" alt="'+esc(it.name)+'">'}
 function stars(r){var h='<span class="stars">';for(var i=1;i<=5;i++){h+=r>=i?'<i class="fas fa-star"></i>':(r>=i-.5?'<i class="fas fa-star-half-alt"></i>':'<i class="far fa-star"></i>')}return h+'</span>'}
 function later(f){post.push(f)}
 function empty(ic,t,btn,to){return'<div class="empty"><i class="fas '+ic+'"></i><p>'+t+'</p>'+(btn?'<button class="btn" data-act="go" data-to="'+to+'">'+btn+'</button>':'')+'</div>'}
@@ -358,13 +371,14 @@ async function syncColl(name,items,idf,del){
 }
 function fsSave(k){
   if(!fs)return;
-  if(k==='products'&&S.products)syncColl('products',S.products,function(p){return p.id},true);
-  else if(k==='orders')syncColl('orders',S.orders,function(o){return o.id},false);
-  else if(k==='users')syncColl('users',S.users||[],function(u){return u.id},false);
-  else if(k==='reviews')syncColl('reviews',Object.keys(S.reviews).map(function(id){return{id:id,list:S.reviews[id]}}),function(x){return x.id},false);
-  else if(k==='msgs')syncColl('messages',S.msgs,function(m){return m.id},true);
-  else if(k==='coupons')syncColl('coupons',S.coupons,function(c){return c.code},true);
-  else if(k==='settings')db.collection('settings').doc('main').set(clean(S.settings)).catch(function(e){console.warn(e)});
+  if(k==='users'&&S.session){
+    var u=S.session,ref=db.collection('users').doc(u.id);
+    ref.get().then(function(d){
+      var prof={name:u.name,phone:u.phone||'',address:u.address||'',district:u.district||'',pass:u.pass};
+      if(d.exists)return ref.update(prof);
+      return ref.set(clean(Object.assign({id:u.id,login:u.login,role:'user',joined:u.joined||Date.now()},prof)))
+    }).catch(function(e){console.warn('user sync',e)})
+  }
 }
 function save(k){
   if(k==='session')ls.set('session',S.session?S.session.id:'');
@@ -383,6 +397,8 @@ function calc(dist){
   if(S.coupon){
     c=activeCoupons().find(function(x){return x.code===S.coupon});
     if(!c)err='Invalid coupon';
+    else if(c.exp&&c.exp<Date.now())err='This coupon has expired';
+    else if(c.limit&&(c.used||0)>=c.limit)err='This coupon has reached its usage limit';
     else if(c.min&&sub<c.min)err='Minimum order '+money(c.min)+' required';
     else if(c.type==='pct')d=Math.min(Math.round(sub*c.val/100),c.max||Infinity);
     else if(c.type==='flat')d=c.val;
@@ -391,7 +407,7 @@ function calc(dist){
   if(err){d=0;freeShip=false}
   d=Math.min(d,sub);
   var fee=0;
-  if(S.cart.length&&dist){fee=NEAR.indexOf(dist)>=0?st.nearFee:st.farFee;if(sub-d>=st.freeShip||freeShip)fee=0}
+  if(S.cart.length&&dist){fee=zoneFee(dist);if((st.freeShip>0&&sub-d>=st.freeShip)||freeShip)fee=0}
   return{sub:sub,disc:d,fee:fee,total:sub-d+fee,err:err,count:count}
 }
 function addCart(id,opt,qty){
@@ -411,8 +427,37 @@ function toggleWish(id){
 }
 function trackRecent(id){if(S.recent[0]===id)return;S.recent=[id].concat(S.recent.filter(function(x){return x!==id})).slice(0,12);save('recent')}
 function myOrders(){var u=S.session;return u?S.orders.filter(function(o){return o.uid===u.id}).sort(function(a,b){return b.t-a.t}):[]}
-function isAdmin(){var u=S.session;if(!u)return false;return u.role==='admin'||(window.SAFIN_ADMINS||[]).map(normL).indexOf(u.login)>=0}
+var TD={justForYou:'Just For You',recent:'Recently Viewed',shopMore:'Shop More',loadMore:'Load more',tapApply:'Tap to apply',shopNow:'Shop Now',navHome:'Home',navExplore:'Explore',navCart:'Cart',navAccount:'Account',addToCart:'Add to Cart',buyNow:'Buy Now',placeOrder:'Place Order',checkout:'Checkout',myCart:'My Cart',proceed:'Proceed to Checkout',soldOut:'Sold Out',freeDel:'Free Delivery',writeReview:'Write review',reviews:'Customer reviews',desc:'Description',categories:'Categories'};
+function T(k){var t=S.tx&&S.tx.t;return(t&&t[k])||TD[k]}
+function sec(k){return!(S.tx&&S.tx.sec&&S.tx.sec[k]===false)}
+function isAdmin(){return false}
 function activeCoupons(){return S.coupons.filter(function(c){return c.active!==false})}
+function liveCoupons(){var n=Date.now();return activeCoupons().filter(function(c){return!(c.exp&&c.exp<n)&&!(c.limit&&(c.used||0)>=c.limit)})}
+function offerMin(){return S.settings.offerMin>0?S.settings.offerMin:30}
+function zones(){var d=S.settings.districts;if(d&&d.length)return d;return DISTRICTS.map(function(n){return{n:n,fee:NEAR.indexOf(n)>=0?S.settings.nearFee:S.settings.farFee}})}
+function zoneNames(){return zones().map(function(z){return z.n})}
+function zoneFee(n){var z=zones().find(function(x){return x.n===n});if(z)return z.fee;return NEAR.indexOf(n)>=0?S.settings.nearFee:S.settings.farFee}
+function BR(){return S.settings.brandName||'SAFIN ENTERPRISE'}
+function payList(){
+  var l=S.pays&&S.pays.length?S.pays:[{name:'Cash on Delivery',type:'cod',icon:'fa-money-bill',active:true},{name:'bKash',type:'mfs',icon:'fa-mobile-alt',number:S.settings.payNumber,kind:'Send Money',active:true},{name:'Nagad',type:'mfs',icon:'fa-mobile-alt',number:S.settings.payNumber,kind:'Send Money',active:true},{name:'Rocket',type:'mfs',icon:'fa-mobile-alt',number:S.settings.payNumber,kind:'Send Money',active:true}];
+  return l.filter(function(m){return m.active!==false})
+}
+function rebuildCats(){
+  var src=(S.cats&&S.cats.length?S.cats:DEFCATS).filter(function(c){return c.active!==false}).slice().sort(function(a,b){return(a.order||0)-(b.order||0)});
+  CATS.length=0;CATI={};
+  src.forEach(function(c){CATS.push(c.name);CATI[c.name]=c});
+  if(S.settings.showOffers!==false){CATS.push('Offers');CATI['Offers']={name:'Offers',fa:'fa-percent',bg:'#f85606',fg:'#ffffff'}}
+}
+function catBadge(name){var m=CATI[name]||{bg:'#9e9e9e',fg:'#fff',emoji:'📦'};
+  return'<span class="cc" style="background:'+esc(m.bg||'#9e9e9e')+';color:'+esc(m.fg||'#fff')+';overflow:hidden">'+(m.img?'<img src="'+esc(m.img)+'" style="width:100%;height:100%;object-fit:cover" alt="">':m.fa?'<i class="fas '+m.fa+'"></i>':esc(m.emoji||'📦'))+'</span>'}
+function shade(c,p){var n=parseInt(c.slice(1),16),r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;var f=function(x){return Math.max(0,Math.min(255,x))};return'#'+((1<<24)+(f(r)<<16)+(f(g)<<8)+f(b)).toString(16).slice(1)}
+function applyTheme(){
+  var c=/^#[0-9a-f]{6}$/i.test(S.settings.brandColor||'')?S.settings.brandColor:'#f85606';
+  var r=document.documentElement.style;r.setProperty('--brand',c);r.setProperty('--brand-d',shade(c,-18));
+  document.title=BR();
+  [['home','navHome'],['explore','navExplore'],['cart','navCart'],['account','navAccount']].forEach(function(x){var a=document.querySelector('#bnav a[data-n='+x[0]+']');if(!a)return;for(var i=0;i<a.childNodes.length;i++){var n=a.childNodes[i];if(n.nodeType===3&&n.nodeValue.trim()){n.nodeValue=T(x[1]);break}}});var q=$('#q');if(q)q.placeholder='Search in '+BR();
+  var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',c)
+}
 
 /* ---------- auth ---------- */
 async function sha(s){
@@ -447,14 +492,14 @@ async function doRegister(){
   S.users=S.users||[];S.users.push(u);S.session=u;save('users');save('session');listenOrders();toast('Account created');
   var nx=parse().q.get('next');go(nx||'/account')
 }
-function logout(){S.session=null;save('session');if(unsubOrders){unsubOrders();unsubOrders=null}stopAdmin();if(fs){S.orders=[];S.users=[];S.msgs=[]}toast('Logged out');go('/')}
+function logout(){S.session=null;save('session');stopMine();S.dsaccess=null;S.dsreqs=[];if(fs){S.orders=[];S.users=[];S.msgs=[]}toast('Logged out');go('/')}
 function loginForm(){
   var q=parse().q;var reg=q.get('m')==='reg';var nx=q.get('next');
   var base='/login'+qs({m:reg?'':'reg',next:nx});
-  return'<div class="hero"><h2>Welcome to '+BRAND+'</h2><p style="opacity:.9;margin-top:4px">'+(reg?'Create a new account':'Login to your account')+'</p></div>'+
+  return'<div class="hero"><h2>Welcome to '+BR()+'</h2><p style="opacity:.9;margin-top:4px">'+(reg?'Create a new account':'Login to your account')+'</p></div>'+
   '<div class="card" data-enter="'+(reg?'doreg':'dologin')+'" style="margin:8px">'+
   (reg?'<label class="f">Full name<input type="text" id="rg-name" autocomplete="name"></label><label class="f">Mobile number or email<input type="text" id="rg-id" autocomplete="username"></label><label class="f">Password (min 6)<input type="password" id="rg-pw" autocomplete="new-password"></label><label class="f">Confirm password<input type="password" id="rg-pw2" autocomplete="new-password"></label><button class="btn blk" data-act="doreg">Register</button>':
-  '<label class="f">email / username<input type="text" id="lg-id" autocomplete="username"></label><label class="f">Password<input type="password" id="lg-pw" autocomplete="current-password"></label><button class="btn blk" data-act="dologin">Login</button>')+
+  '<label class="f">Mobile number / email / username<input type="text" id="lg-id" autocomplete="username"></label><label class="f">Password<input type="password" id="lg-pw" autocomplete="current-password"></label><button class="btn blk" data-act="dologin">Login</button>')+
   '<p style="text-align:center;margin-top:14px"><a href="#'+base+'" style="color:var(--brand);font-weight:600">'+(reg?'Already a member? Login':'New here? Register')+'</a></p></div>'
 }
 
@@ -462,7 +507,7 @@ function loginForm(){
 async function placeOrder(){
   var u=S.session;if(!u){toast('Please login to checkout');go('/login?next=/checkout');return}
   var c=pg.co||{};var name=(c.name||'').trim(),phone=(c.phone||'').replace(/[\s-]/g,''),dist=c.district||'',addr=(c.address||'').trim();
-  var mIdx=c.method||0;var method=METHODS[mIdx][0];
+  var ms=payList();var m=ms[c.method||0]||ms[0];if(!m){toast('No payment method is available');return}
   if(!name){toast('Enter your full name');return}
   if(!isBD(phone)){toast('Enter a valid Bangladeshi mobile number');return}
   if(!dist){toast('Select your district');return}
@@ -470,36 +515,51 @@ async function placeOrder(){
   var lines=S.cart.filter(function(l){return P(l.id)});
   if(!lines.length){toast('Your cart is empty');return}
   var t=calc(dist);if(t.err){toast(t.err);return}
+  if(S.settings.minOrder>0&&t.sub-t.disc<S.settings.minOrder){toast('Minimum order is '+money(S.settings.minOrder));return}
   var trx='',sender='';
-  if(mIdx>0){
+  if(m.type!=='cod'){
     sender=(c.sender||'').replace(/[\s-]/g,'');trx=(c.trx||'').trim().toUpperCase();
-    if(!isBD(sender)){toast('Enter your '+method+' number');return}
+    if(!isBD(sender)){toast('Enter your '+m.name+' number');return}
     if(trx.length<6){toast('Enter a valid transaction ID');return}
     var used=S.orders.some(function(o){return o.pay&&o.pay.trx&&o.pay.trx===trx});
-    if(!used&&fs){try{var s=await db.collection('orders').where('pay.trx','==',trx).limit(1).get();used=!s.empty}catch(e){}}
+    if(!used&&fs){try{var s1=await db.collection('orders').where('pay.trx','==',trx).limit(1).get();used=!s1.empty;if(!used){var s2=await db.collection('dsrequests').where('trx','==',trx).limit(1).get();used=!s2.empty}}catch(e){}}
     if(used){toast('This transaction ID was already used');return}
   }
   var tot={};lines.forEach(function(l){tot[l.id]=(tot[l.id]||0)+l.qty});
   for(var id in tot){var p=P(id);if(tot[id]>p.stock){toast(p.name+': only '+p.stock+' left');return}}
   var now=Date.now();
   var o={id:'SE'+now.toString(36).toUpperCase().slice(-6)+pad2(Math.floor(Math.random()*100)),uid:u.id,t:now,status:'Pending',hist:[{s:'Pending',t:now}],
-    items:lines.map(function(l){var p=P(l.id);return{id:p.id,name:p.name,price:p.price,qty:l.qty,opt:l.opt||null,emoji:p.emoji,color:p.color}}),
+    items:lines.map(function(l){var p=P(l.id);return{id:p.id,name:p.name,price:p.price,qty:l.qty,opt:l.opt||null,emoji:p.emoji||'📦',color:p.color||'#e0e0e0'}}),
     ship:{name:name,phone:phone,district:dist,address:addr,note:(c.note||'').trim()},
-    pay:{method:method,trx:trx,sender:sender,status:mIdx?'Verification pending':'Unpaid (COD)'},
+    pay:{method:m.name,trx:trx,sender:sender,status:m.type!=='cod'?'Verification pending':'Unpaid (COD)'},
     sub:t.sub,disc:t.disc,coupon:S.coupon||'',ship_fee:t.fee,total:t.total};
+  if(fs){
+    try{
+      var b=db.batch();b.set(db.collection('orders').doc(o.id),clean(o));
+      for(var id3 in tot)b.update(db.collection('products').doc(id3),{stock:FV.increment(-tot[id3])});
+      if(S.coupon&&S.cdb[S.coupon])b.update(db.collection('coupons').doc(S.coupon),{used:FV.increment(1)});
+      await b.commit()
+    }catch(e){console.warn(e);toast('Order failed: '+(e.message||'try again'));return}
+  }
   for(var id2 in tot){P(id2).stock-=tot[id2]}
   S.orders.unshift(o);
   u.name=name;u.phone=phone;u.district=dist;u.address=addr;ensureUser(u);
   S.cart=[];S.coupon='';pg.co=null;
-  commit('products','orders','users','cart','coupon');
+  if(fs)commit('users','cart','coupon');else commit('products','orders','users','cart','coupon');
   go('/order/'+o.id+'?new=1')
 }
 function cancelOrder(id){
   var o=S.orders.find(function(x){return x.id===id});if(!o||!S.session||o.uid!==S.session.id)return;
   if(o.status!=='Pending'&&o.status!=='Confirmed')return;
   if(!confirm('Cancel this order?'))return;
+  var hist=(o.hist||[]).concat([{s:'Cancelled',t:Date.now()}]);
+  if(fs){
+    var b=db.batch();b.update(db.collection('orders').doc(o.id),{status:'Cancelled',hist:hist});
+    o.items.forEach(function(it){if(P(it.id))b.update(db.collection('products').doc(it.id),{stock:FV.increment(it.qty)})});
+    b.commit().then(function(){toast('Order cancelled')}).catch(function(e){console.warn(e);toast('Could not cancel the order')});return
+  }
   o.items.forEach(function(it){var p=P(it.id);if(p)p.stock+=it.qty});
-  o.status='Cancelled';o.hist=(o.hist||[]).concat([{s:'Cancelled',t:Date.now()}]);
+  o.status='Cancelled';o.hist=hist;
   commit('products','orders');toast('Order cancelled')
 }
 function reorder(id){
@@ -512,9 +572,9 @@ function reorder(id){
 function card(p){
   var d=disc(p),w=S.wish.indexOf(p.id)>=0,so=p.stock<=0;
   return'<div class="pc rv" data-act="open" data-id="'+p.id+'"><div class="pi">'+im(p)+(d?'<span class="db">-'+d+'%</span>':'')+
-  '<button class="hb2 '+(w?'on':'')+'" data-act="wish" data-id="'+p.id+'" aria-label="Wishlist"><i class="'+(w?'fas':'far')+' fa-heart"></i></button>'+(so?'<div class="so">Sold Out</div>':'')+'</div>'+
+  '<button class="hb2 '+(w?'on':'')+'" data-act="wish" data-id="'+p.id+'" aria-label="Wishlist"><i class="'+(w?'fas':'far')+' fa-heart"></i></button>'+(so?'<div class="so">'+esc(T('soldOut'))+'</div>':'')+'</div>'+
   '<div class="pb"><div class="pt">'+esc(p.name)+'</div><div class="pr"><span class="pp">'+money(p.price)+'</span>'+(p.old>p.price?'<span class="po">'+money(p.old)+'</span>':'')+'</div>'+
-  '<div class="rt">'+stars(p.rating)+' <span>('+p.rc+')</span></div>'+(p.price>=S.settings.freeShip?'<span class="fd">Free Delivery</span>':'')+'</div>'+
+  '<div class="rt">'+stars(p.rating)+' <span>('+p.rc+')</span></div>'+((S.settings.freeShip>0&&p.price>=S.settings.freeShip)?'<span class="fd">'+esc(T('freeDel'))+'</span>':'')+'</div>'+
   (so?'':'<button class="qa" data-act="qadd" data-id="'+p.id+'" aria-label="Add to cart"><i class="fas fa-cart-plus"></i></button>')+'</div>'
 }
 function hlist(arr){
@@ -524,31 +584,47 @@ function skeleton(){return'<div class="sk" style="height:160px"></div><div class
 
 /* ---------- pages ---------- */
 var pages={};
+function bannerList(){
+  var b=S.banners&&S.banners.length?S.banners.filter(function(x){return x.active!==false}):null;
+  if(b)return b;
+  return BAN.map(function(x){return{bg:x[0],title:x[1],sub:x[2],emoji:x[3],link:x[4],btn:T('shopNow')}})
+}
+function banStyle(b){
+  if(b.img)return'background:url('+esc(b.img)+') center/cover no-repeat';
+  return'background:'+(b.bg||'linear-gradient(120deg,'+esc(b.c1||'#f85606')+','+esc(b.c2||'#ff9a3c')+')')
+}
 pages.home=function(){
   var fl=S.products.filter(function(p){return p.flash&&p.stock>0});
   var rc=S.recent.map(P).filter(Boolean).slice(0,8);
-  var n=Math.min(pg.jfy,S.products.length);
-  var h='<div class="ban"><div class="tr" id="bt">'+BAN.map(function(b){return'<div class="sl" style="background:'+b[0]+'" data-act="go" data-to="'+b[4]+'"><div><h3>'+b[1]+'</h3><p>'+b[2]+'</p><span class="pill">Shop Now</span></div><div class="em">'+b[3]+'</div></div>'}).join('')+'</div><div class="bd">'+BAN.map(function(_,i){return'<i class="'+(i===0?'on':'')+'"></i>'}).join('')+'</div></div>';
-  h+='<div class="cats">'+CATS.map(function(c){var m=CATI[c];return'<a href="#/list?cat='+c+'"><span class="cc" style="background:'+m[1]+';color:'+m[2]+'"><i class="fas '+m[0]+'"></i></span>'+c+'</a>'}).join('')+'</div>';
-  if(activeCoupons().length)h+='<div class="vch">'+activeCoupons().map(function(c){return'<div class="v" data-act="applyc" data-c="'+esc(c.code)+'"><b>'+esc(c.code)+'</b><div>'+esc(c.note||'')+'</div><u>Tap to apply</u></div>'}).join('')+'</div>';
-  if(fl.length){
-    h+='<div class="fs rv"><div class="fsh"><i class="fas fa-bolt" style="color:var(--brand)"></i><span class="t">Flash Sale</span><div class="cd"><b id="cd-h">00</b>:<b id="cd-m">00</b>:<b id="cd-s">00</b></div><a class="more" href="#/list?cat=Offers">Shop More &gt;</a></div>'+hlist(fl)+'</div>';
-    later(function(){var upd=function(){var e=Math.ceil(Date.now()/28800000)*28800000,r=Math.max(0,e-Date.now());var a=$('#cd-h');if(!a)return;a.textContent=pad2(Math.floor(r/3600000));$('#cd-m').textContent=pad2(Math.floor(r%3600000/60000));$('#cd-s').textContent=pad2(Math.floor(r%60000/1000))};upd();timers.push(setInterval(upd,1000))});
+  var n=Math.min(pg.jfy,S.products.length);var bans=bannerList();var st=S.settings;
+  var h='';
+  if(st.announce)h+='<div class="annc">'+esc(st.announce)+'</div>';
+  if(bans.length){
+    h+='<div class="ban"><div class="tr" id="bt">'+bans.map(function(b){return'<div class="sl" style="'+banStyle(b)+'" data-act="go" data-to="'+esc(b.link||'/')+'">'+(b.title?'<div'+(b.img?' class="ovt"':'')+'><h3>'+esc(b.title)+'</h3><p>'+esc(b.sub||'')+'</p>'+(b.btn?'<span class="pill">'+esc(b.btn)+'</span>':'')+'</div>':'<div></div>')+(!b.img&&b.emoji?'<div class="em">'+esc(b.emoji)+'</div>':'')+'</div>'}).join('')+'</div>'+(bans.length>1?'<div class="bd">'+bans.map(function(_,i){return'<i class="'+(i===0?'on':'')+'"></i>'}).join('')+'</div>':'')+'</div>'
   }
-  if(rc.length)h+='<div class="fs rv"><div class="fsh"><i class="fas fa-history" style="color:var(--brand)"></i><span class="t" style="color:var(--text)">Recently Viewed</span></div>'+hlist(rc)+'</div>';
-  h+='<div class="h2">Just For You</div><div class="grid">'+S.products.slice(0,n).map(card).join('')+'</div>';
-  if(n<S.products.length)h+='<div style="text-align:center;padding:14px"><button class="btn line" data-act="more">Load more</button></div>';
-  later(function(){var tr=$('#bt');if(!tr)return;var i=0,ds=document.querySelectorAll('.bd i');timers.push(setInterval(function(){i=(i+1)%BAN.length;tr.style.transform='translateX(-'+i*100+'%)';ds.forEach(function(d,j){d.classList.toggle('on',j===i)})},3500))});
+  if(sec('cats'))h+='<div class="cats">'+CATS.map(function(c){return'<a href="#/list?cat='+encodeURIComponent(c)+'">'+catBadge(c)+esc(c)+'</a>'}).join('')+'</div>';
+  if(st.dsEnabled!==false&&sec('ds')){var ok=!!(S.session&&dsAcc());h+='<div class="dsb" data-act="go" data-to="/dropship"><span class="dsi">'+(ok?'🔓':'🔒')+'</span><div class="sp"><b>Dropshipping</b><small>'+(ok?'Unlocked — start selling':'Locked · buy a plan to unlock')+'</small></div><i class="fas fa-chevron-right muted"></i></div>'}
+  var lc=liveCoupons();
+  if(lc.length&&sec('vouchers'))h+='<div class="vch">'+lc.map(function(c){return'<div class="v" data-act="applyc" data-c="'+esc(c.code)+'"><b>'+esc(c.code)+'</b><div>'+esc(c.note||'')+'</div><u>'+esc(T('tapApply'))+'</u></div>'}).join('')+'</div>';
+  if(fl.length&&sec('flash')){
+    h+='<div class="fs rv"><div class="fsh"><i class="fas fa-bolt" style="color:var(--brand)"></i><span class="t">'+esc(st.flashTitle||'Flash Sale')+'</span><div class="cd"><b id="cd-h">00</b>:<b id="cd-m">00</b>:<b id="cd-s">00</b></div><a class="more" href="#/list?cat=Offers">'+esc(T('shopMore'))+' &gt;</a></div>'+hlist(fl)+'</div>';
+    later(function(){var hr=Math.max(1,Number(st.flashHours)||8)*3600000;var upd=function(){var e=Math.ceil(Date.now()/hr)*hr,r=Math.max(0,e-Date.now());var a=$('#cd-h');if(!a)return;a.textContent=pad2(Math.floor(r/3600000));$('#cd-m').textContent=pad2(Math.floor(r%3600000/60000));$('#cd-s').textContent=pad2(Math.floor(r%60000/1000))};upd();timers.push(setInterval(upd,1000))});
+  }
+  if(rc.length&&sec('recent'))h+='<div class="fs rv"><div class="fsh"><i class="fas fa-history" style="color:var(--brand)"></i><span class="t" style="color:var(--text)">'+esc(T('recent'))+'</span></div>'+hlist(rc)+'</div>';
+  h+='<div class="h2">'+esc(T('justForYou'))+'</div><div class="grid">'+S.products.slice(0,n).map(card).join('')+'</div>';
+  if(!S.products.length)h+=empty('fa-box-open','No products yet');
+  if(n<S.products.length)h+='<div style="text-align:center;padding:14px"><button class="btn line" data-act="more">'+esc(T('loadMore'))+'</button></div>';
+  later(function(){var tr=$('#bt');if(!tr||bans.length<2)return;var i=0,ds=document.querySelectorAll('.bd i');timers.push(setInterval(function(){i=(i+1)%bans.length;tr.style.transform='translateX(-'+i*100+'%)';ds.forEach(function(d,j){d.classList.toggle('on',j===i)})},3500))});
   return h
 };
 pages.explore=function(){
-  var cnt=function(c){return c==='Offers'?S.products.filter(function(p){return disc(p)>=30}).length:S.products.filter(function(p){return p.cat===c}).length};
-  return'<div class="h2">Categories</div><div class="ex">'+CATS.map(function(c){var m=CATI[c];return'<a class="rv" href="#/list?cat='+c+'"><div class="cc" style="background:'+m[1]+';color:'+m[2]+'"><i class="fas '+m[0]+'"></i></div><b>'+c+'</b><br><small>'+cnt(c)+' items</small></a>'}).join('')+
+  var cnt=function(c){return c==='Offers'?S.products.filter(function(p){return disc(p)>=offerMin()}).length:S.products.filter(function(p){return p.cat===c}).length};
+  return'<div class="h2">'+esc(T('categories'))+'</div><div class="ex">'+CATS.map(function(c){return'<a class="rv" href="#/list?cat='+encodeURIComponent(c)+'">'+catBadge(c)+'<b>'+esc(c)+'</b><br><small>'+cnt(c)+' items</small></a>'}).join('')+
   '<a class="rv" href="#/list"><div class="cc" style="background:#9e9e9e;color:#fff"><i class="fas fa-th-large"></i></div><b>All Products</b><br><small>'+S.products.length+' items</small></a></div>'
 };
 function listFilter(q){
   var a=S.products.slice();var cat=q.get('cat'),term=(q.get('q')||'').toLowerCase().trim();
-  if(cat==='Offers'||q.get('offer'))a=a.filter(function(p){return disc(p)>=30});else if(cat)a=a.filter(function(p){return p.cat===cat});
+  if(cat==='Offers'||q.get('offer'))a=a.filter(function(p){return disc(p)>=offerMin()});else if(cat)a=a.filter(function(p){return p.cat===cat});
   if(term){var tk=term.split(/\s+/);a=a.filter(function(p){var s=(p.name+' '+p.brand+' '+p.cat).toLowerCase();return tk.every(function(x){return s.indexOf(x)>=0})})}
   if(q.get('min'))a=a.filter(function(p){return p.price>=Number(q.get('min'))});
   if(q.get('max'))a=a.filter(function(p){return p.price<=Number(q.get('max'))});
@@ -568,7 +644,7 @@ pages.list=function(r){
   h+='<div class="bar"><div class="n">'+a.length+' result'+(a.length===1?'':'s')+(term?' for "'+esc(term)+'"':'')+'</div><select class="sm" data-chg="sort">'+[['','Relevance'],['pa','Price: Low to High'],['pd','Price: High to Low'],['new','Newest'],['top','Top Rated'],['disc','Biggest Discount']].map(function(o){return'<option value="'+o[0]+'" '+(sv===o[0]?'selected':'')+'>'+o[1]+'</option>'}).join('')+'</select><button class="btn line sm" data-act="filter"><i class="fas fa-filter"></i> Filter</button></div>';
   if(!a.length)return h+empty('fa-search','No products found','Clear filters','/list');
   h+='<div class="grid" style="margin-top:8px">'+a.slice(0,n).map(card).join('')+'</div>';
-  if(n<a.length)h+='<div style="text-align:center;padding:14px"><button class="btn line" data-act="morel">Load more</button></div>';
+  if(n<a.length)h+='<div style="text-align:center;padding:14px"><button class="btn line" data-act="morel">'+esc(T('loadMore'))+'</button></div>';
   return h
 };
 pages.product=function(r){
@@ -577,30 +653,33 @@ pages.product=function(r){
   later(function(){trackRecent(p.id)});
   var d=disc(p),w=S.wish.indexOf(p.id)>=0,so=p.stock<=0;var rv=S.reviews[p.id]||[];
   if(pg.qty>p.stock)pg.qty=Math.max(1,p.stock);
+  var imgs=pimgs(p);var ix=Math.min(pg.img||0,Math.max(0,imgs.length-1));
   var stg=p.stock>5?'<span class="tag ok">In stock</span>':p.stock>0?'<span class="tag warn">Only '+p.stock+' left</span>':'<span class="tag bad">Out of stock</span>';
-  var st=S.settings;
-  var h='<div class="pimg">'+im(p)+'</div><div class="card"><div class="row" style="align-items:baseline;flex-wrap:wrap"><span class="big">'+money(p.price)+'</span>'+(p.old>p.price?'<span class="po" style="font-size:14px">'+money(p.old)+'</span>':'')+(d?'<span class="tag warn" style="color:var(--brand)">-'+d+'%</span>':'')+'</div>'+
+  var st=S.settings;var fees=zones().map(function(z){return z.fee});var mn=Math.min.apply(null,fees),mx=Math.max.apply(null,fees);
+  var rd=S.content.returnDays==null?7:Number(S.content.returnDays);
+  var h='<div class="pimg">'+im(p,ix)+'</div>'+(imgs.length>1?'<div class="thumbs">'+imgs.map(function(x,i){return'<div class="tb '+(i===ix?'on':'')+'" data-act="pimg" data-i="'+i+'">'+im(p,i)+'</div>'}).join('')+'</div>':'')+
+  '<div class="card"><div class="row" style="align-items:baseline;flex-wrap:wrap"><span class="big">'+money(p.price)+'</span>'+(p.old>p.price?'<span class="po" style="font-size:14px">'+money(p.old)+'</span>':'')+(d?'<span class="tag warn" style="color:var(--brand)">-'+d+'%</span>':'')+'</div>'+
   '<div class="row" style="margin-top:8px;align-items:flex-start"><div style="font-size:15px;flex:1">'+esc(p.name)+'</div><button class="sharebtn" data-act="share" data-id="'+p.id+'" aria-label="Share"><i class="fas fa-share-alt"></i></button><button class="sharebtn" data-act="wish" data-id="'+p.id+'" style="color:'+(w?'#e91e63':'var(--grey)')+'" aria-label="Wishlist"><i class="'+(w?'fas':'far')+' fa-heart"></i></button></div>'+
-  '<div style="margin:6px 0">'+stars(p.rating)+' <span class="muted">'+p.rating.toFixed(1)+' ('+p.rc+' ratings)</span></div><div class="muted">Brand: '+esc(p.brand)+' \u00b7 Category: '+esc(p.cat)+'</div><div style="margin-top:8px">'+stg+'</div></div>';
-  if(p.opts&&p.opts.length)h+='<div class="card"><b>Select option</b><div class="row" style="flex-wrap:wrap;margin-top:8px">'+p.opts.map(function(o){return'<button class="opt '+(pg.opt===o?'on':'')+'" data-act="popt" data-o="'+esc(o)+'">'+esc(o)+'</button>'}).join('')+'</div></div>';
+  '<div style="margin:6px 0">'+stars(p.rating||0)+' <span class="muted">'+(p.rc?Number(p.rating||0).toFixed(1)+' ('+p.rc+' ratings)':'No ratings yet')+'</span></div><div class="muted">Brand: '+esc(p.brand)+' \u00b7 Category: '+esc(p.cat)+'</div><div style="margin-top:8px">'+stg+'</div></div>';
+  if(p.opts&&p.opts.length)h+='<div class="card"><b>Select size / option</b><div class="row" style="flex-wrap:wrap;margin-top:8px">'+p.opts.map(function(o){return'<button class="opt '+(pg.opt===o?'on':'')+'" data-act="popt" data-o="'+esc(o)+'">'+esc(o)+'</button>'}).join('')+'</div></div>';
   if(!so)h+='<div class="card row"><b>Quantity</b><span class="sp"></span><div class="stp"><button data-act="pq" data-d="-1">\u2212</button><span>'+pg.qty+'</span><button data-act="pq" data-d="1">+</button></div></div>';
-  h+='<div class="card"><div class="row"><i class="fas fa-truck" style="color:var(--brand);width:20px"></i>Dhaka area '+money(st.nearFee)+' \u00b7 Other districts '+money(st.farFee)+'</div><div class="row" style="margin-top:8px"><i class="fas fa-gift" style="color:var(--brand);width:20px"></i>Free delivery over '+money(st.freeShip)+'</div><div class="row" style="margin-top:8px"><i class="fas fa-money-bill-wave" style="color:var(--brand);width:20px"></i>Cash on delivery available</div><div class="row" style="margin-top:8px"><i class="fas fa-undo" style="color:var(--brand);width:20px"></i>7 days easy return</div></div>';
-  h+='<div class="card"><b>Description</b><p class="muted" style="margin-top:6px">'+esc(p.desc)+'</p></div>';
-  h+='<div class="card"><div class="row"><b>Reviews ('+rv.length+')</b><span class="sp"></span><button class="btn line sm" data-act="rev" data-id="'+p.id+'">Write review</button></div>'+
-  (rv.length?rv.map(function(x){return'<div class="rev">'+stars(x.rating)+' <b>'+esc(x.name)+'</b> '+(x.verified?'<span class="tag ok">Verified</span>':'')+'<p style="margin:4px 0">'+esc(x.text)+'</p><small class="muted">'+fdate(x.t)+'</small></div>'}).join(''):'<p class="muted" style="margin-top:8px">No reviews yet.</p>')+'</div>';
+  h+='<div class="card"><div class="row"><i class="fas fa-truck" style="color:var(--brand);width:20px"></i>Delivery '+(mn===mx?money(mn):money(mn)+' \u2013 '+money(mx))+' depending on district</div>'+(st.freeShip>0?'<div class="row" style="margin-top:8px"><i class="fas fa-gift" style="color:var(--brand);width:20px"></i>Free delivery over '+money(st.freeShip)+'</div>':'')+(payList().some(function(m){return m.type==='cod'})?'<div class="row" style="margin-top:8px"><i class="fas fa-money-bill-wave" style="color:var(--brand);width:20px"></i>Cash on delivery available</div>':'')+(rd>0?'<div class="row" style="margin-top:8px"><i class="fas fa-undo" style="color:var(--brand);width:20px"></i>'+rd+' days easy return</div>':'')+'</div>';
+  h+='<div class="card"><b>'+esc(T('desc'))+'</b><p class="muted pre" style="margin-top:6px">'+esc(p.desc)+'</p></div>';
+  h+='<div class="card"><div class="row"><b>'+esc(T('reviews'))+' ('+rv.length+')</b><span class="sp"></span><button class="btn line sm" data-act="rev" data-id="'+p.id+'">'+esc(T('writeReview'))+'</button></div>'+
+  (rv.length?rv.map(function(x){return'<div class="rev">'+stars(x.rating)+' <b>'+esc(x.name)+'</b> '+(x.verified?'<span class="tag ok">Verified</span>':'')+'<p style="margin:4px 0">'+esc(x.text)+'</p><small class="muted">'+fdate(x.t)+'</small></div>'}).join(''):'<p class="muted" style="margin-top:8px">No written reviews yet.</p>')+'</div>';
   var rel=S.products.filter(function(x){return x.cat===p.cat&&x.id!==p.id}).slice(0,4);
   if(rel.length)h+='<div class="h2">You may also like</div><div class="grid">'+rel.map(card).join('')+'</div>';
-  h+='<div class="pbar"><button class="btn line" data-act="padd" data-id="'+p.id+'" '+(so?'disabled':'')+'>Add to Cart</button><button class="btn" data-act="pbuy" data-id="'+p.id+'" '+(so?'disabled':'')+'>Buy Now</button></div>';
+  h+='<div class="pbar"><button class="btn line" data-act="padd" data-id="'+p.id+'" '+(so?'disabled':'')+'>'+esc(T('addToCart'))+'</button><button class="btn" data-act="pbuy" data-id="'+p.id+'" '+(so?'disabled':'')+'>'+esc(T('buyNow'))+'</button></div>';
   return h
 };
 pages.cart=function(){
   var lines=S.cart.map(function(l,i){return{l:l,i:i,p:P(l.id)}}).filter(function(x){return x.p});
   if(!lines.length)return empty('fa-shopping-cart','Your cart is empty','Start Shopping','/');
   var t=calc('');
-  var h='<div class="h2">My Cart</div><div class="card">'+lines.map(function(x){var p=x.p;return'<div class="cl"><div class="th" data-act="open" data-id="'+p.id+'">'+im(p)+'</div><div class="in"><div class="nm">'+esc(p.name)+'</div>'+(x.l.opt?'<div class="muted" style="font-size:12px">Option: '+esc(x.l.opt)+'</div>':'')+'<div class="pp" style="margin:3px 0">'+money(p.price)+'</div><div class="row"><div class="stp"><button data-act="cq" data-i="'+x.i+'" data-d="-1">\u2212</button><span>'+x.l.qty+'</span><button data-act="cq" data-i="'+x.i+'" data-d="1">+</button></div><span class="sp"></span><button class="ico" data-act="cmw" data-i="'+x.i+'" aria-label="Move to wishlist"><i class="far fa-heart"></i></button><button class="ico" data-act="crm" data-i="'+x.i+'" aria-label="Remove"><i class="far fa-trash-alt"></i></button></div></div></div>'}).join('')+'</div>';
+  var h='<div class="h2">'+esc(T('myCart'))+'</div><div class="card">'+lines.map(function(x){var p=x.p;return'<div class="cl"><div class="th" data-act="open" data-id="'+p.id+'">'+im(p)+'</div><div class="in"><div class="nm">'+esc(p.name)+'</div>'+(x.l.opt?'<div class="muted" style="font-size:12px">Option: '+esc(x.l.opt)+'</div>':'')+'<div class="pp" style="margin:3px 0">'+money(p.price)+'</div><div class="row"><div class="stp"><button data-act="cq" data-i="'+x.i+'" data-d="-1">\u2212</button><span>'+x.l.qty+'</span><button data-act="cq" data-i="'+x.i+'" data-d="1">+</button></div><span class="sp"></span><button class="ico" data-act="cmw" data-i="'+x.i+'" aria-label="Move to wishlist"><i class="far fa-heart"></i></button><button class="ico" data-act="crm" data-i="'+x.i+'" aria-label="Remove"><i class="far fa-trash-alt"></i></button></div></div></div>'}).join('')+'</div>';
   h+='<div class="card"><div class="row" data-enter="capply"><input type="text" id="cin" placeholder="Coupon code" value="'+esc(S.coupon)+'" style="text-transform:uppercase"><button class="btn sm" data-act="capply">Apply</button></div>';
   if(S.coupon){h+=t.err?'<p style="color:var(--err);margin-top:8px">'+esc(t.err)+' <a data-act="cremove" style="text-decoration:underline;cursor:pointer">remove</a></p>':'<p style="color:var(--ok);margin-top:8px"><i class="fas fa-check-circle"></i> '+esc(S.coupon)+' applied <a data-act="cremove" style="text-decoration:underline;cursor:pointer;color:var(--grey)">remove</a></p>'}
-  h+='</div><div class="card sum"><div class="l"><span>Subtotal ('+t.count+' item'+(t.count===1?'':'s')+')</span><span>'+money(t.sub)+'</span></div><div class="l"><span>Discount</span><span style="color:var(--ok)">- '+money(t.disc)+'</span></div><div class="l"><span>Delivery</span><span class="muted">Calculated at checkout</span></div><div class="l tot"><span>Total</span><b>'+money(t.sub-t.disc)+'</b></div><button class="btn blk" style="margin-top:12px" data-act="checkout">Proceed to Checkout</button></div>';
+  h+='</div><div class="card sum"><div class="l"><span>Subtotal ('+t.count+' item'+(t.count===1?'':'s')+')</span><span>'+money(t.sub)+'</span></div><div class="l"><span>Discount</span><span style="color:var(--ok)">- '+money(t.disc)+'</span></div><div class="l"><span>Delivery</span><span class="muted">Calculated at checkout</span></div><div class="l tot"><span>Total</span><b>'+money(t.sub-t.disc)+'</b></div><button class="btn blk" style="margin-top:12px" data-act="checkout">'+esc(T('proceed'))+'</button></div>';
   return h
 };
 pages.checkout=function(){
@@ -609,14 +688,18 @@ pages.checkout=function(){
   var lines=S.cart.filter(function(l){return P(l.id)});
   if(!lines.length)return empty('fa-shopping-cart','Your cart is empty','Start Shopping','/');
   if(!pg.co)pg.co={name:u.name||'',phone:u.phone||'',district:u.district||'',address:u.address||'',note:'',method:0,sender:'',trx:''};
-  var c=pg.co;var t=calc(c.district);var m=METHODS[c.method||0];
-  var h='<div class="h2">Checkout</div><div class="card"><b>Delivery information</b><div style="margin-top:10px"><label class="f">Full name<input type="text" data-f="name" value="'+esc(c.name)+'"></label><label class="f">Mobile<input type="tel" data-f="phone" placeholder="01XXXXXXXXX" value="'+esc(c.phone)+'"></label><label class="f">District<select data-f="district" data-chg="dist"><option value="">Select district</option>'+DISTRICTS.map(function(d){return'<option '+(c.district===d?'selected':'')+'>'+d+'</option>'}).join('')+'</select></label><label class="f">Full address<textarea rows="2" data-f="address" placeholder="House, road, area, thana">'+esc(c.address)+'</textarea></label><label class="f">Note (optional)<input type="text" data-f="note" value="'+esc(c.note)+'"></label></div></div>';
-  h+='<div class="card"><b>Payment method</b><div style="margin-top:10px">'+METHODS.map(function(x,i){return'<div class="pay '+(c.method===i?'on':'')+'" data-act="pay" data-i="'+i+'"><span class="rd"></span><i class="fas '+x[1]+'" style="color:var(--brand)"></i>'+x[0]+'</div>'}).join('')+'</div>';
-  if(c.method>0)h+='<div class="pnote">Send <b>'+money(t.total)+'</b> via '+m[0]+' (Send Money) to <b>'+esc(S.settings.payNumber)+'</b>, then enter your details below.</div><label class="f">Your '+m[0]+' number<input type="tel" data-f="sender" value="'+esc(c.sender)+'"></label><label class="f">Transaction ID<input type="text" data-f="trx" style="text-transform:uppercase" value="'+esc(c.trx)+'"></label>';
+  var c=pg.co;var t=calc(c.district);var ms=payList();var m=ms[c.method||0]||ms[0];
+  if(!m)return empty('fa-exclamation-circle','No payment method is available right now');
+  var h='<div class="h2">'+esc(T('checkout'))+'</div><div class="card"><b>Delivery information</b><div style="margin-top:10px"><label class="f">Full name<input type="text" data-f="name" value="'+esc(c.name)+'"></label><label class="f">Mobile<input type="tel" data-f="phone" placeholder="01XXXXXXXXX" value="'+esc(c.phone)+'"></label><label class="f">District<select data-f="district" data-chg="dist"><option value="">Select district</option>'+zones().map(function(z){return'<option '+(c.district===z.n?'selected':'')+'>'+esc(z.n)+'</option>'}).join('')+'</select></label><label class="f">Full address<textarea rows="2" data-f="address" placeholder="House, road, area, thana">'+esc(c.address)+'</textarea></label><label class="f">Note (optional)<input type="text" data-f="note" value="'+esc(c.note)+'"></label></div></div>';
+  h+='<div class="card"><b>Payment method</b><div style="margin-top:10px">'+ms.map(function(x,i){return'<div class="pay '+((c.method||0)===i?'on':'')+'" data-act="pay" data-i="'+i+'"><span class="rd"></span><i class="fas '+esc(x.icon||'fa-wallet')+'" style="color:var(--brand)"></i>'+esc(x.name)+'</div>'}).join('')+'</div>';
+  if(m.type==='cod'){if(m.note)h+='<div class="pnote">'+esc(m.note)+'</div>'}
+  else h+='<div class="pnote">Send <b>'+money(t.total)+'</b> via '+esc(m.name)+(m.kind?' ('+esc(m.kind)+')':'')+' to <b>'+esc(m.number||'')+'</b>, then enter your details below.'+(m.note?'<br>'+esc(m.note):'')+'</div><label class="f">Your '+esc(m.name)+' number<input type="tel" data-f="sender" value="'+esc(c.sender)+'"></label><label class="f">Transaction ID<input type="text" data-f="trx" style="text-transform:uppercase" value="'+esc(c.trx)+'"></label>';
   h+='</div><div class="card sum"><b>Order summary</b>'+lines.map(function(l){var p=P(l.id);return'<div class="l"><span>'+esc(p.name)+(l.opt?' ('+esc(l.opt)+')':'')+' \u00d7 '+l.qty+'</span><span>'+money(p.price*l.qty)+'</span></div>'}).join('')+
   '<div class="l" style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><span>Subtotal</span><span>'+money(t.sub)+'</span></div>'+(t.disc?'<div class="l"><span>Discount ('+esc(S.coupon)+')</span><span style="color:var(--ok)">- '+money(t.disc)+'</span></div>':'')+
   '<div class="l"><span>Delivery</span><span>'+(c.district?(t.fee?money(t.fee):'FREE'):'Select district')+'</span></div><div class="l tot"><span>Total</span><b>'+money(t.total)+'</b></div>'+(t.err?'<p style="color:var(--err)">'+esc(t.err)+'</p>':'')+
-  '<button class="btn blk" style="margin-top:12px" data-act="place">Place Order</button><p class="muted" style="font-size:11px;margin-top:8px;text-align:center">By placing your order you agree to our terms and return policy.</p></div>';
+  (S.settings.minOrder>0?'<p class="muted" style="font-size:12px;margin-top:6px">Minimum order '+money(S.settings.minOrder)+'</p>':'')+
+  (S.content.checkoutNote?'<div class="pnote pre" style="margin-top:10px">'+esc(S.content.checkoutNote)+'</div>':'')+
+  '<button class="btn blk" style="margin-top:12px" data-act="place">'+esc(T('placeOrder'))+'</button><p class="muted" style="font-size:11px;margin-top:8px;text-align:center">By placing your order you agree to our '+(S.content.terms?'<a href="#" data-act="terms" onclick="return false" style="color:var(--brand)">terms</a>':'terms')+' and return policy.</p></div>';
   return h
 };
 function tl(o){
@@ -635,7 +718,7 @@ pages.order=function(r){
   }
   if(!o||(o.uid!==S.session.id&&!isAdmin()))return empty('fa-file-invoice','Order not found','My Orders','/orders');
   var h='';
-  if(r.q.get('new')==='1')h+='<div class="ok-card"><svg class="ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 14-16"/></svg><h3 style="color:var(--ok)">Order placed successfully!</h3><p class="muted">Thank you for shopping with '+BRAND+'</p></div>';
+  if(r.q.get('new')==='1')h+='<div class="ok-card"><svg class="ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 14-16"/></svg><h3 style="color:var(--ok)">Order placed successfully!</h3><p class="muted">Thank you for shopping with '+BR()+'</p></div>';
   h+='<div class="card"><div class="row"><b>#'+esc(o.id)+'</b><span class="sp"></span>'+tag(o.status)+'</div><div class="muted" style="margin-top:4px">'+fdate(o.t)+'</div>'+tl(o)+'</div>';
   h+='<div class="card"><b>Items</b>'+o.items.map(function(it){return'<div class="cl"><div class="th">'+imI(it)+'</div><div class="in"><a href="#/product/'+it.id+'" class="nm">'+esc(it.name)+'</a>'+(it.opt?'<div class="muted" style="font-size:12px">Option: '+esc(it.opt)+'</div>':'')+'<div class="muted">'+money(it.price)+' \u00d7 '+it.qty+'</div></div><b>'+money(it.price*it.qty)+'</b></div>'}).join('')+'</div>';
   h+='<div class="card"><b>Delivery address</b><p style="margin-top:6px">'+esc(o.ship.name)+' \u00b7 '+esc(o.ship.phone)+'<br>'+esc(o.ship.address)+', '+esc(o.ship.district)+(o.ship.note?'<br><span class="muted">Note: '+esc(o.ship.note)+'</span>':'')+'</p></div>';
@@ -665,9 +748,12 @@ pages.wishlist=function(){
 };
 pages.account=function(){
   var u=S.session;if(!u)return loginForm();
+  var items=[['fa-box','My Orders','go','/orders'],['fa-heart','My Wishlist','go','/wishlist']];
+  if(S.settings.dsEnabled!==false)items.push([dsAcc()?'fa-unlock':'fa-lock','Dropshipping'+(dsAcc()?'':' (locked)'),'go','/dropship']);
+  items=items.concat([['fa-user-edit','Edit Profile & Address','profile'],['fa-key','Change Password','pwd'],['fa-headset','Help & Support','help']]);
   return'<div class="acc"><div class="av">'+esc((u.name||'?').charAt(0).toUpperCase())+'</div><div><b style="font-size:17px">'+esc(u.name)+'</b><div style="opacity:.9;font-size:12px">'+esc(u.login)+'</div></div></div>'+
   '<div class="stat"><a href="#/orders"><b>'+myOrders().length+'</b>Orders</a><a href="#/wishlist"><b>'+S.wish.length+'</b>Wishlist</a></div>'+
-  [['fa-box','My Orders','go','/orders'],['fa-heart','My Wishlist','go','/wishlist'],['fa-user-edit','Edit Profile & Address','profile'],['fa-key','Change Password','pwd'],['fa-headset','Help & Support','help']].concat(isAdmin()?[['fa-user-shield','Admin Panel','go','/admin']]:[]).map(function(m){return'<div class="mi" data-act="'+m[2]+'" '+(m[3]?'data-to="'+m[3]+'"':'')+'><i class="fas '+m[0]+'"></i><span class="sp">'+m[1]+'</span><i class="fas fa-chevron-right muted"></i></div>'}).join('')+
+  items.map(function(m){return'<div class="mi" data-act="'+m[2]+'" '+(m[3]?'data-to="'+m[3]+'"':'')+'><i class="fas '+m[0]+'"></i><span class="sp">'+m[1]+'</span><i class="fas fa-chevron-right muted"></i></div>'}).join('')+
   '<div class="mi out" data-act="logout"><i class="fas fa-sign-out-alt"></i><span class="sp">Logout</span></div>'
 };
 pages.login=function(){return loginForm()};
@@ -675,13 +761,16 @@ pages.login=function(){return loginForm()};
 /* ---------- sheets ---------- */
 function openSheet(html){$('#sheet').innerHTML='<div class="ov" data-act="ovl"><div class="box">'+html+'</div></div>'}
 function closeSheet(){$('#sheet').innerHTML=''}
+function textSheet(title,text,fallback){
+  openSheet('<h3>'+esc(title)+'</h3><div class="pre muted">'+esc(text||fallback)+'</div><button class="btn blk" style="margin-top:14px" data-act="help">Back to Help</button>')
+}
 function helpSheet(){
-  openSheet('<h3>Help & Support</h3>'+
-  '<details><summary>How do I place an order?</summary><p>Add products to your cart, go to checkout, enter your delivery details and tap Place Order.</p></details>'+
-  '<details><summary>Which payment methods are accepted?</summary><p>Cash on Delivery, bKash, Nagad and Rocket.</p></details>'+
-  '<details><summary>How can I track or cancel my order?</summary><p>Open My Orders from your account. Orders can be cancelled while they are Pending or Confirmed.</p></details>'+
-  '<details><summary>Return policy</summary><p>Unused products can be returned within 7 days of delivery.</p></details>'+
-  '<p style="margin:12px 0"><i class="fas fa-phone" style="color:var(--brand)"></i> <a href="tel:'+esc(S.settings.phone)+'"><b>'+esc(S.settings.phone)+'</b></a></p>'+
+  var c=S.content,st=S.settings,faqs=c.faqs&&c.faqs.length?c.faqs:DEFFAQ;
+  var wa=String(st.whatsapp||'').replace(/[^\d]/g,'');if(wa.length===11)wa='88'+wa;
+  openSheet('<h3>Help & Support</h3>'+(c.helpIntro?'<p class="muted pre" style="margin-bottom:10px">'+esc(c.helpIntro)+'</p>':'')+
+  faqs.map(function(f){return'<details><summary>'+esc(f.q)+'</summary><p class="pre">'+esc(f.a)+'</p></details>'}).join('')+
+  '<div style="margin:12px 0;line-height:1.9">'+(st.phone?'<div><i class="fas fa-phone" style="color:var(--brand);width:20px"></i> <a href="tel:'+esc(st.phone)+'"><b>'+esc(st.phone)+'</b></a></div>':'')+(wa?'<div><i class="fab fa-whatsapp" style="color:#25d366;width:20px"></i> <a href="https://wa.me/'+wa+'" target="_blank" rel="noopener"><b>WhatsApp chat</b></a></div>':'')+(st.email?'<div><i class="fas fa-envelope" style="color:var(--brand);width:20px"></i> <a href="mailto:'+esc(st.email)+'">'+esc(st.email)+'</a></div>':'')+(st.address?'<div><i class="fas fa-map-marker-alt" style="color:var(--brand);width:20px"></i> '+esc(st.address)+'</div>':'')+'</div>'+
+  '<div class="row" style="flex-wrap:wrap;margin-bottom:12px"><button class="btn line sm" data-act="terms">Terms & Conditions</button><button class="btn line sm" data-act="retpol">Return Policy</button></div>'+
   '<label class="f">Name<input type="text" id="hs-name" value="'+esc(S.session?S.session.name:'')+'"></label><label class="f">Phone<input type="tel" id="hs-phone" value="'+esc(S.session?S.session.phone:'')+'"></label><label class="f">Message<textarea id="hs-msg" rows="3"></textarea></label><button class="btn blk" data-act="sendmsg">Send message</button>')
 }
 function filterSheet(){
@@ -695,7 +784,7 @@ function reviewSheet(id){
 }
 function profileSheet(){
   var u=S.session;if(!u)return;
-  openSheet('<h3>Edit Profile</h3><label class="f">Name<input type="text" id="pf-name" value="'+esc(u.name)+'"></label><label class="f">Mobile<input type="tel" id="pf-phone" value="'+esc(u.phone||'')+'"></label><label class="f">District<select id="pf-dist">'+DISTRICTS.map(function(d){return'<option '+(u.district===d?'selected':'')+'>'+d+'</option>'}).join('')+'</select></label><label class="f">Default address<textarea id="pf-addr" rows="2">'+esc(u.address||'')+'</textarea></label><button class="btn blk" data-act="savepf">Save</button>')
+  openSheet('<h3>Edit Profile</h3><label class="f">Name<input type="text" id="pf-name" value="'+esc(u.name)+'"></label><label class="f">Mobile<input type="tel" id="pf-phone" value="'+esc(u.phone||'')+'"></label><label class="f">District<select id="pf-dist">'+zoneNames().map(function(d){return'<option '+(u.district===d?'selected':'')+'>'+d+'</option>'}).join('')+'</select></label><label class="f">Default address<textarea id="pf-addr" rows="2">'+esc(u.address||'')+'</textarea></label><button class="btn blk" data-act="savepf">Save</button>')
 }
 function pwdSheet(){
   openSheet('<h3>Change Password</h3><label class="f">Current password<input type="password" id="pw-cur"></label><label class="f">New password (min 6)<input type="password" id="pw-new"></label><button class="btn blk" data-act="savepw">Update password</button>')
@@ -727,7 +816,7 @@ var A={
   pbuy:function(t){if(addCart(t.dataset.id,pg.opt,pg.qty))go('/checkout')},
   share:function(t){
     var url=location.href,p=P(t.dataset.id);
-    if(navigator.share){navigator.share({title:p?p.name:BRAND,url:url}).catch(function(){})}
+    if(navigator.share){navigator.share({title:p?p.name:BR(),url:url}).catch(function(){})}
     else if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){toast('Link copied')},function(){toast(url)})}
     else toast(url)
   },
@@ -739,7 +828,17 @@ var A={
     var list=S.reviews[id]||[];
     if(list.some(function(x){return x.uid===u.id})){toast('You have already reviewed this product');return}
     var ver=myOrders().some(function(o){return o.status==='Delivered'&&o.items.some(function(i){return i.id===id})});
-    S.reviews[id]=[{uid:u.id,name:u.name,rating:rt,text:text,t:Date.now(),verified:ver}].concat(list);
+    var rev={uid:u.id,name:u.name,rating:rt,text:text,t:Date.now(),verified:ver};
+    if(fs){
+      var pr=db.collection('products').doc(id),rr=db.collection('reviews').doc(id);
+      db.runTransaction(async function(tx){
+        var d=await tx.get(pr);if(!d.exists)return;var x=d.data();var rc=x.rc||0,ra=x.rating||0;
+        tx.update(pr,{rating:Math.round((ra*rc+rt)/(rc+1)*10)/10,rc:rc+1});
+        tx.set(rr,{id:id,list:FV.arrayUnion(rev)},{merge:true})
+      }).then(function(){closeSheet();toast('Thanks for your review!')}).catch(function(e){console.warn(e);toast('Could not save your review')});
+      return
+    }
+    S.reviews[id]=[rev].concat(list);
     p.rating=Math.round((p.rating*p.rc+rt)/(p.rc+1)*10)/10;p.rc+=1;
     closeSheet();commit('reviews','products');toast('Thanks for your review!')
   },
@@ -770,8 +869,9 @@ var A={
   sendmsg:function(){
     var n=$('#hs-name').value.trim(),ph=$('#hs-phone').value.trim(),m=$('#hs-msg').value.trim();
     if(!m){toast('Please write a message');return}
-    S.msgs.push({id:'m'+Date.now(),name:n,phone:ph,text:m,t:Date.now(),uid:S.session?S.session.id:''});
-    save('msgs');closeSheet();toast('Message sent. We will contact you soon.')
+    var msg={id:'m'+Date.now(),name:n,phone:ph,text:m,t:Date.now(),uid:S.session?S.session.id:''};
+    if(fs){db.collection('messages').doc(msg.id).set(clean(msg)).then(function(){closeSheet();toast('Message sent. We will contact you soon.')}).catch(function(){toast('Could not send the message')});return}
+    S.msgs.push(msg);save('msgs');closeSheet();toast('Message sent. We will contact you soon.')
   },
   fclear:function(){var q=parse().q;closeSheet();go('/list'+qs({cat:q.get('cat'),q:q.get('q'),sort:q.get('sort')}))},
   fapply:function(){
@@ -815,180 +915,192 @@ function showSugg(){
 }
 A.sopen=function(t){closeSugg();$('#q').blur();go('/product/'+t.dataset.id)};
 
-/* ---------- admin ---------- */
-var ATABS=[['dash','Dashboard','fa-chart-line'],['orders','Orders','fa-box'],['products','Products','fa-tags'],['coupons','Coupons','fa-ticket-alt'],['users','Users','fa-users'],['msgs','Messages','fa-envelope'],['settings','Settings','fa-cog']];
-var PAYS=['Unpaid (COD)','Verification pending','Paid','Refunded'];
-var ADM={};
-function adm(f){return function(t,e){if(!isAdmin())return;return f(t,e)}}
-function aurl(t,f){return'/admin'+qs({t:t,f:f})}
-function fld(l,id,v,type,cls){return'<label class="f '+(cls||'')+'">'+l+'<input type="'+(type||'text')+'" id="'+id+'" value="'+esc(v)+'"></label>'}
-function abox(n,l,c){return'<div style="flex:1;min-width:130px;background:#fff;border-radius:6px;padding:14px;text-align:center"><b style="display:block;font-size:20px;color:'+c+'">'+n+'</b><span class="muted">'+l+'</span></div>'}
-function aOrder(o){
-  var items=o.items.map(function(i){return esc(i.name)+(i.opt?' ('+esc(i.opt)+')':'')+' ×'+i.qty}).join(', ');
-  var pl=PAYS.indexOf(o.pay.status)<0?PAYS.concat([o.pay.status]):PAYS;
-  return'<div class="card" style="margin:0 0 8px"><div class="row"><a href="#/order/'+esc(o.id)+'"><b>#'+esc(o.id)+'</b></a><span class="sp"></span>'+tag(o.status)+'</div><div class="muted" style="font-size:12px">'+fdate(o.t)+'</div>'+
-  '<div style="margin:6px 0;font-size:13px">'+esc(o.ship.name)+' · <a href="tel:'+esc(o.ship.phone)+'" style="color:var(--brand)">'+esc(o.ship.phone)+'</a> · '+esc(o.ship.district)+'<br><span class="muted">'+items+'</span></div>'+
-  '<div class="row" style="flex-wrap:wrap"><b style="color:var(--brand)">'+money(o.total)+'</b><span class="muted">'+esc(o.pay.method)+(o.pay.trx?' · '+esc(o.pay.trx)+' ('+esc(o.pay.sender)+')':'')+'</span></div>'+
-  '<div class="row" style="margin-top:8px;flex-wrap:wrap"><select class="sm" data-chg="ostatus" data-id="'+esc(o.id)+'">'+STAT.concat(['Cancelled']).map(function(s){return'<option value="'+s+'" '+(o.status===s?'selected':'')+'>'+esc(SLBL[s]||s)+'</option>'}).join('')+'</select><select class="sm" data-chg="opay" data-id="'+esc(o.id)+'">'+pl.map(function(s){return'<option '+(o.pay.status===s?'selected':'')+'>'+esc(s)+'</option>'}).join('')+'</select></div></div>'
+/* ---------- extra actions ---------- */
+A.pimg=function(t){pg.img=Number(t.dataset.i);emit()};
+A.terms=function(){textSheet('Terms & Conditions',S.content.terms,'No terms have been published yet.')};
+A.retpol=function(){textSheet('Return Policy',S.content.returnPolicy,'Unused products can be returned within '+(S.content.returnDays==null?7:S.content.returnDays)+' days of delivery.')};
+
+/* ---------- dropshipping ---------- */
+function dsAcc(){var a=S.dsaccess;return a&&a.active!==false&&a.expires>Date.now()?a:null}
+function dsDisc(){var d=S.settings.dsDiscount;return d==null?60:Number(d)}
+function dsCost(p){return Math.max(1,p.price-dsDisc())}
+function dsMax(p){return p.maxSell>0?p.maxSell:Math.max(p.old||0,p.price)}
+function dsCalc(dist){
+  var cost=0,sell=0,count=0;
+  S.dcart.forEach(function(l){var p=P(l.id);if(!p)return;cost+=dsCost(p)*l.qty;sell+=l.sell*l.qty;count+=l.qty});
+  var fee=(S.dcart.length&&dist)?zoneFee(dist):0;
+  return{cost:cost,sell:sell,fee:fee,collect:sell+fee,profit:sell-cost,count:count}
 }
-function setStatus(id,s){
-  var o=S.orders.find(function(x){return x.id===id});if(!o||o.status===s)return;
-  if(s==='Cancelled'){o.items.forEach(function(it){var p=P(it.id);if(p)p.stock+=it.qty})}
-  else if(o.status==='Cancelled'){
-    for(var i=0;i<o.items.length;i++){var it=o.items[i],p=P(it.id);if(p&&p.stock<it.qty){toast(p.name+': only '+p.stock+' left');emit();return}}
-    o.items.forEach(function(it){var p=P(it.id);if(p)p.stock-=it.qty})
-  }
-  o.status=s;o.hist=(o.hist||[]).concat([{s:s,t:Date.now()}]);
-  if(s==='Delivered'&&o.pay.status==='Unpaid (COD)')o.pay.status='Paid';
-  commit('orders','products');toast('Status updated')
-}
-pages.admin=function(r){
-  if(!S.session)return loginForm();
-  if(!isAdmin())return empty('fa-user-lock','Admin access only','Go Home','/');
-  var t=r.q.get('t')||'dash';
-  var h='<div class="h2">Admin Panel</div><div class="chips">'+ATABS.map(function(x){return'<a class="chip '+(t===x[0]?'on':'')+'" href="#'+aurl(x[0])+'"><i class="fas '+x[2]+'"></i> '+x[1]+'</a>'}).join('')+'</div>';
-  var f=ADM[t];return h+(f?f(r):'')
-};
-ADM.dash=function(){
-  var o=S.orders,live=o.filter(function(x){return x.status!=='Cancelled'});
-  var rev=live.reduce(function(a,x){return a+x.total},0);
-  var pend=o.filter(function(x){return x.status==='Pending'}).length;
-  var low=S.products.filter(function(p){return p.stock<=5});
-  var h='<div class="row" style="flex-wrap:wrap;padding:8px">'+abox(o.length,'Total orders','var(--brand)')+abox(pend,'Pending','#e65100')+abox(money(rev),'Revenue','var(--ok)')+abox(S.products.length,'Products','#1565c0')+abox(low.length,'Low / out of stock','var(--err)')+abox((S.users||[]).length,'Users','#7e57c2')+abox(S.msgs.length,'Messages','#455a64')+'</div>';
-  var rec=o.slice().sort(function(a,b){return b.t-a.t}).slice(0,5);
-  h+='<div class="h2">Recent orders</div><div style="padding:0 8px">'+(rec.length?rec.map(aOrder).join(''):'<p class="muted" style="padding:10px">No orders yet.</p>')+'</div>';
-  if(low.length)h+='<div class="h2">Low stock</div><div class="card">'+low.map(function(p){return'<div class="row" style="padding:4px 0"><span class="sp">'+esc(p.name)+'</span><span class="tag '+(p.stock?'warn':'bad')+'">'+(p.stock?p.stock+' left':'Out of stock')+'</span></div>'}).join('')+'</div>';
+function planCard(p,off){return'<div class="card" style="margin:8px;border:1px solid var(--line);border-radius:8px"><div class="row"><b style="font-size:16px">'+esc(p.name)+'</b><span class="sp"></span><span class="big" style="font-size:20px">'+money(p.price)+'</span></div><div class="muted" style="margin:4px 0">'+p.days+' days access</div>'+(p.desc?'<p class="pre" style="margin-bottom:8px">'+esc(p.desc)+'</p>':'')+'<button class="btn blk" data-act="dsbuy" data-id="'+esc(p.id)+'" '+(off?'disabled':'')+'>Buy this plan</button></div>'}
+function dsLocked(){
+  var u=S.session,rq=S.dsreqs&&S.dsreqs[0],pend=!!(rq&&rq.status==='pending'),ac=S.dsaccess;
+  var h='<div class="hero" style="background:linear-gradient(120deg,#37474f,#78909c)"><div style="font-size:44px">🔒</div><h2>Dropshipping is locked</h2><p style="opacity:.95;margin-top:6px">'+esc(S.settings.dsNote||'Buy a plan, get approved by admin, then sell our products at your own price.')+'</p></div>';
+  h+='<div class="card"><b>How it works</b><ol style="margin:8px 0 0 18px;line-height:1.7"><li>Buy a subscription plan and send the payment.</li><li>Admin checks it and approves — dropshipping unlocks.</li><li>Choose products. You pay '+money(dsDisc())+' less than the regular price (automatic).</li><li>Set your own selling price (up to the allowed maximum), enter your customer’s address — we deliver.</li></ol></div>';
+  if(!u)h+='<div class="card" style="text-align:center"><p style="margin-bottom:10px">Login first to buy a plan</p><button class="btn blk" data-act="go" data-to="/login?next=/dropship">Login / Register</button></div>';
+  else if(pend)h+='<div class="pnote" style="margin:8px"><b>Waiting for approval</b><br>Your request for '+esc(rq.planName)+' (TrxID '+esc(rq.trx)+') is being checked. This page unlocks automatically when admin approves.</div>';
+  else if(rq&&rq.status==='rejected')h+='<div class="cxl" style="margin:8px">Your last request was rejected'+(rq.note?': '+esc(rq.note):'')+'. You can try again.</div>';
+  else if(ac&&ac.active===false)h+='<div class="cxl" style="margin:8px">Your dropshipping access was turned off. Contact support.</div>';
+  else if(ac&&ac.expires<=Date.now())h+='<div class="cxl" style="margin:8px">Your plan has expired. Buy a plan to unlock again.</div>';
+  h+='<div class="h2">Plans</div>';
+  h+=S.plans.length?S.plans.map(function(p){return planCard(p,pend)}).join(''):'<div class="empty"><p>No plans are available yet. Please contact support.</p></div>';
   return h
+}
+pages.dropship=function(r){
+  if(S.settings.dsEnabled===false)return empty('fa-lock','Dropshipping is not available right now','Go Home','/');
+  var a=S.session?dsAcc():null;
+  if(!a)return dsLocked();
+  var v=r.q.get('v')||'shop';
+  var left=Math.max(1,Math.ceil((a.expires-Date.now())/864e5));
+  var nc=S.dcart.reduce(function(x,l){return x+l.qty},0);
+  var h='<div class="hero" style="background:linear-gradient(120deg,#2e7d32,#66bb6a)"><div style="font-size:30px">🔓</div><h2>Dropshipping</h2><p style="opacity:.95">'+esc(a.planName||'Plan')+' · '+left+' day'+(left===1?'':'s')+' left <a data-act="dsplans" style="text-decoration:underline;cursor:pointer;margin-left:6px">Extend</a></p></div>';
+  h+='<div class="chips">'+[['shop','Products'],['cart','Cart ('+nc+')'],['orders','My orders']].map(function(x){return'<a class="chip '+(v===x[0]?'on':'')+'" href="#/dropship?v='+x[0]+'">'+x[1]+'</a>'}).join('')+'</div>';
+  return h+(v==='cart'?dsCartView():v==='orders'?dsOrdersView():dsShop(r))
 };
-ADM.orders=function(r){
-  var f=r.q.get('f')||'';var all=S.orders.slice().sort(function(a,b){return b.t-a.t});
-  var list=f?all.filter(function(x){return x.status===f}):all;
-  var cnt=function(s){return all.filter(function(x){return x.status===s}).length};
-  var h='<div class="chips"><a class="chip '+(!f?'on':'')+'" href="#'+aurl('orders')+'">All ('+all.length+')</a>'+STAT.concat(['Cancelled']).map(function(s){return'<a class="chip '+(f===s?'on':'')+'" href="#'+aurl('orders',s)+'">'+esc(SLBL[s]||s)+' ('+cnt(s)+')</a>'}).join('')+'</div><div style="padding:8px">';
-  return h+(list.length?list.map(aOrder).join(''):'<p class="muted" style="text-align:center;padding:24px">No orders</p>')+'</div>'
+function dsShop(r){
+  var q=(r.q.get('q')||'').toLowerCase().trim(),cat=r.q.get('cat')||'';
+  var list=S.products.filter(function(p){return p.dropship!==false&&p.stock>0&&(!cat||p.cat===cat)&&(!q||(p.name+' '+p.brand).toLowerCase().indexOf(q)>=0)});
+  var h='<div class="card"><div class="row" data-enter="dsq"><input type="text" id="dsq" placeholder="Search products" value="'+esc(r.q.get('q')||'')+'"><button class="btn sm" data-act="dsq">Search</button></div></div><div class="chips"><a class="chip '+(!cat?'on':'')+'" href="#/dropship?v=shop">All</a>'+CATS.filter(function(c){return c!=='Offers'}).map(function(c){return'<a class="chip '+(cat===c?'on':'')+'" href="#/dropship?v=shop&cat='+encodeURIComponent(c)+'">'+esc(c)+'</a>'}).join('')+'</div>';
+  if(!list.length)return h+empty('fa-box-open','No products found');
+  return h+'<div class="grid" style="margin-top:8px">'+list.slice(0,60).map(function(p){return'<div class="pc rv" data-act="dsadd" data-id="'+p.id+'"><div class="pi">'+im(p)+'</div><div class="pb"><div class="pt">'+esc(p.name)+'</div><div class="pr"><span class="pp">'+money(dsCost(p))+'</span><span class="po">'+money(p.price)+'</span></div><div class="rt">Sell up to '+money(dsMax(p))+'</div></div></div>'}).join('')+'</div>'
+}
+function dsAddSheet(p){
+  var a=pg.dsa,c=dsCost(p),mx=dsMax(p);
+  var def=a.sell||Math.min(mx,Math.max(c,p.price));
+  openSheet('<h3>'+esc(p.name)+'</h3><div class="muted" style="margin-bottom:8px">Your cost <b style="color:var(--brand)">'+money(c)+'</b> · Max selling price <b>'+money(mx)+'</b> · Stock '+p.stock+'</div>'+
+  (p.opts&&p.opts.length?'<b>Select size / option</b><div class="row" style="flex-wrap:wrap;margin:8px 0">'+p.opts.map(function(o){return'<button class="opt '+(a.opt===o?'on':'')+'" data-act="dsopt" data-o="'+esc(o)+'">'+esc(o)+'</button>'}).join('')+'</div>':'')+
+  '<div class="row" style="margin:8px 0"><b>Quantity</b><span class="sp"></span><div class="stp"><button data-act="dsqty" data-d="-1">\u2212</button><span>'+a.qty+'</span><button data-act="dsqty" data-d="1">+</button></div></div>'+
+  '<label class="f">Your selling price per item (৳)<input type="number" id="ds-sell" value="'+def+'"></label><div id="ds-profit" class="pnote">Profit per item: <b>'+money(def-c)+'</b></div><button class="btn blk" data-act="dsaddok">Add to dropship cart</button>')
+}
+function dsCartView(){
+  var lines=S.dcart.map(function(l,i){return{l:l,i:i,p:P(l.id)}}).filter(function(x){return x.p});
+  if(!lines.length)return empty('fa-shopping-basket','Your dropship cart is empty','Browse products','/dropship?v=shop');
+  if(!pg.dco)pg.dco={name:'',phone:'',district:'',address:'',note:''};
+  var c=pg.dco,t=dsCalc(c.district);
+  var h='<div class="card">'+lines.map(function(x){var p=x.p;return'<div class="cl"><div class="th">'+im(p)+'</div><div class="in"><div class="nm">'+esc(p.name)+'</div>'+(x.l.opt?'<div class="muted" style="font-size:12px">Option: '+esc(x.l.opt)+'</div>':'')+'<div class="muted" style="font-size:12px">Your cost '+money(dsCost(p))+' · max '+money(dsMax(p))+'</div><div class="row" style="margin-top:4px;flex-wrap:wrap"><span class="muted">Sell ৳</span><input type="number" style="width:90px" value="'+x.l.sell+'" data-chg="dssell" data-i="'+x.i+'"><div class="stp"><button data-act="dscq" data-i="'+x.i+'" data-d="-1">\u2212</button><span>'+x.l.qty+'</span><button data-act="dscq" data-i="'+x.i+'" data-d="1">+</button></div><button class="ico" data-act="dscrm" data-i="'+x.i+'" aria-label="Remove"><i class="far fa-trash-alt"></i></button></div></div></div>'}).join('')+'</div>';
+  h+='<div class="card"><b>Your customer’s delivery details</b><div style="margin-top:10px"><label class="f">Customer name<input type="text" data-g="name" value="'+esc(c.name)+'"></label><label class="f">Customer mobile<input type="tel" data-g="phone" placeholder="01XXXXXXXXX" value="'+esc(c.phone)+'"></label><label class="f">District<select data-chg="dsdist"><option value="">Select district</option>'+zones().map(function(z){return'<option '+(c.district===z.n?'selected':'')+'>'+esc(z.n)+'</option>'}).join('')+'</select></label><label class="f">Full address<textarea rows="2" data-g="address">'+esc(c.address)+'</textarea></label><label class="f">Note (optional)<input type="text" data-g="note" value="'+esc(c.note)+'"></label></div></div>';
+  h+='<div class="card sum"><div class="l"><span>Items value (customer price)</span><span>'+money(t.sell)+'</span></div><div class="l"><span>Delivery charge (paid by customer)</span><span>'+(c.district?money(t.fee):'Select district')+'</span></div><div class="l tot"><span>Customer pays on delivery (COD)</span><b>'+money(t.collect)+'</b></div><div class="l"><span>Your cost</span><span>'+money(t.cost)+'</span></div><div class="l"><span>Your profit</span><b style="color:var(--ok)">'+money(t.profit)+'</b></div><button class="btn blk" style="margin-top:12px" data-act="dsplace">Place dropship order</button></div>';
+  return h
+}
+function dsOrdersView(){
+  var l=myOrders().filter(function(o){return o.ds});
+  if(!l.length)return empty('fa-box-open','No dropship orders yet','Browse products','/dropship?v=shop');
+  var got=l.filter(function(o){return o.status==='Delivered'}).reduce(function(a,o){return a+(o.profit||0)},0);
+  var wait=l.filter(function(o){return o.status!=='Delivered'&&o.status!=='Cancelled'}).reduce(function(a,o){return a+(o.profit||0)},0);
+  return'<div class="stat"><a><b>'+money(got)+'</b>Delivered profit</a><a><b>'+money(wait)+'</b>In progress</a></div>'+l.map(function(o){return'<div class="oc rv" data-act="go" data-to="/order/'+o.id+'"><div class="row"><b>#'+esc(o.id)+'</b><span class="sp"></span>'+tag(o.status)+'</div><div class="muted" style="font-size:12px">'+fdate(o.t)+' · '+esc(o.ship.name)+' · '+esc(o.ship.district)+'</div><div class="row" style="margin-top:6px"><span class="muted">COD '+money(o.total)+'</span><span class="sp"></span><b style="color:var(--ok)">Profit '+money(o.profit||0)+'</b></div></div>'}).join('')
+}
+function dsBuySheet(){
+  var b=pg.dsb,p=b.plan,ms=payList().filter(function(m){return m.type!=='cod'});
+  if(!ms.length){openSheet('<h3>Payment unavailable</h3><p class="muted">No online payment method is available. Please contact support.</p>');return}
+  var m=ms[b.m]||ms[0];
+  openSheet('<h3>Buy '+esc(p.name)+' — '+money(p.price)+'</h3><b>Payment method</b><div style="margin:8px 0">'+ms.map(function(x,i){return'<div class="pay '+(b.m===i?'on':'')+'" data-act="dsmeth" data-i="'+i+'"><span class="rd"></span><i class="fas '+esc(x.icon||'fa-mobile-alt')+'" style="color:var(--brand)"></i>'+esc(x.name)+'</div>'}).join('')+'</div><div class="pnote">Send <b>'+money(p.price)+'</b> via '+esc(m.name)+(m.kind?' ('+esc(m.kind)+')':'')+' to <b>'+esc(m.number||'')+'</b>, then enter the details below.'+(m.note?'<br>'+esc(m.note):'')+'</div><label class="f">Your '+esc(m.name)+' number<input type="tel" id="dsb-sender"></label><label class="f">Transaction ID<input type="text" id="dsb-trx" style="text-transform:uppercase"></label><button class="btn blk" data-act="dssubmit">Submit for approval</button>')
+}
+A.dsplans=function(){openSheet('<h3>Plans</h3>'+(S.plans.length?S.plans.map(function(p){return planCard(p,false)}).join(''):'<p class="muted">No plans available.</p>'))};
+A.dsbuy=function(t){
+  if(!S.session){toast('Please login first');go('/login?next=/dropship');return}
+  var p=S.plans.find(function(x){return x.id===t.dataset.id});if(!p)return;
+  pg.dsb={plan:p,m:0};dsBuySheet()
 };
-ADM.products=function(){
-  return'<div class="bar"><div class="n">'+S.products.length+' products</div><button class="btn sm" data-act="aprod" data-id="">+ Add product</button></div><div style="padding:8px">'+
-  S.products.map(function(p){return'<div class="card row" style="margin:0 0 8px"><div class="ath">'+im(p)+'</div><div class="sp" style="min-width:0"><div style="font-size:13px">'+esc(p.name)+'</div><div class="muted" style="font-size:12px">'+esc(p.cat)+' · '+money(p.price)+' · Stock: <b style="color:'+(p.stock<=5?'var(--err)':'inherit')+'">'+p.stock+'</b></div></div><button class="ico" data-act="aprod" data-id="'+esc(p.id)+'" aria-label="Edit"><i class="fas fa-edit"></i></button><button class="ico" data-act="adelp" data-id="'+esc(p.id)+'" style="color:var(--err)" aria-label="Delete"><i class="far fa-trash-alt"></i></button></div>'}).join('')+'</div>'
+A.dsmeth=function(t){pg.dsb.m=Number(t.dataset.i);dsBuySheet()};
+A.dssubmit=async function(){
+  var u=S.session,b=pg.dsb;if(!u||!b)return;
+  if(!fs){toast('Internet connection is required');return}
+  var ms=payList().filter(function(m){return m.type!=='cod'}),m=ms[b.m]||ms[0];
+  var sender=$('#dsb-sender').value.replace(/[\s-]/g,''),trx=$('#dsb-trx').value.trim().toUpperCase();
+  if(!isBD(sender)){toast('Enter your '+m.name+' number');return}
+  if(trx.length<6){toast('Enter a valid transaction ID');return}
+  try{
+    var a1=await db.collection('orders').where('pay.trx','==',trx).limit(1).get();
+    var a2=await db.collection('dsrequests').where('trx','==',trx).limit(1).get();
+    if(!a1.empty||!a2.empty){toast('This transaction ID was already used');return}
+    var id='R'+Date.now().toString(36).toUpperCase();
+    await db.collection('dsrequests').doc(id).set({id:id,uid:u.id,name:u.name,phone:u.phone||u.login,planId:b.plan.id,planName:b.plan.name,price:b.plan.price,days:b.plan.days,method:m.name,trx:trx,sender:sender,status:'pending',t:Date.now()});
+    closeSheet();toast('Request sent. Admin will approve it soon.')
+  }catch(e){console.warn(e);toast('Could not send the request')}
 };
-A.aprod=adm(function(t){
-  var p=t.dataset.id?P(t.dataset.id):null;
-  var v=p||{name:'',cat:'Mart',brand:'',price:'',old:'',stock:'',emoji:'📦',color:'#e0e0e0',image:'',flash:false,opts:[],desc:''};
-  openSheet('<h3>'+(p?'Edit product':'Add product')+'</h3>'+fld('Name','ap-name',v.name)+
-  '<label class="f">Category<select id="ap-cat">'+CATS.filter(function(c){return c!=='Offers'}).map(function(c){return'<option '+(v.cat===c?'selected':'')+'>'+c+'</option>'}).join('')+'</select></label>'+
-  fld('Brand','ap-brand',v.brand)+'<div class="row">'+fld('Price','ap-price',v.price,'number','sp')+fld('Old price','ap-old',v.old,'number','sp')+fld('Stock','ap-stock',v.stock,'number','sp')+'</div>'+
-  '<div class="row">'+fld('Emoji','ap-emoji',v.emoji,'text','sp')+fld('Colour (hex)','ap-color',v.color,'text','sp')+'</div>'+
-  fld('Image URL (optional)','ap-image',v.image||'')+fld('Options (comma separated)','ap-opts',(v.opts||[]).join(', '))+
-  '<label class="f">Description<textarea id="ap-desc" rows="3">'+esc(v.desc)+'</textarea></label>'+
-  '<label class="row" style="margin-bottom:14px"><input type="checkbox" id="ap-flash" '+(v.flash?'checked':'')+'> Show in Flash Sale</label>'+
-  '<button class="btn blk" data-act="aprodsave" data-id="'+(p?esc(p.id):'')+'">Save</button>')
-});
-A.aprodsave=adm(function(t){
-  var id=t.dataset.id;var g=function(k){return $('#ap-'+k).value.trim()};
-  var name=g('name'),price=Number(g('price')),old=Number(g('old'))||0,stock=Math.max(0,Math.floor(Number(g('stock'))||0));
-  if(!name){toast('Enter product name');return}
-  if(!(price>0)){toast('Enter a valid price');return}
-  var opts=g('opts')?g('opts').split(',').map(function(s){return s.trim()}).filter(Boolean):[];
-  var obj={name:name,cat:$('#ap-cat').value,brand:g('brand')||'Generic',price:price,old:old,stock:stock,emoji:g('emoji')||'📦',color:g('color')||'#e0e0e0',image:g('image'),flash:$('#ap-flash').checked,opts:opts,desc:g('desc')};
-  if(id){var p=P(id);if(!p)return;Object.assign(p,obj)}
-  else{obj.id='p'+Date.now();obj.rating=0;obj.rc=0;obj.added=Date.now();S.products.unshift(obj)}
-  closeSheet();commit('products');toast('Product saved')
-});
-A.adelp=adm(function(t){
-  var p=P(t.dataset.id);if(!p)return;
-  if(!confirm('Delete "'+p.name+'"?'))return;
-  S.products=S.products.filter(function(x){return x.id!==p.id});
-  commit('products');toast('Product deleted')
-});
-ADM.coupons=function(){
-  var tx=function(c){return c.type==='pct'?c.val+'%':c.type==='flat'?money(c.val):'Free shipping'};
-  return'<div class="bar"><div class="n">'+S.coupons.length+' coupons</div><button class="btn sm" data-act="acoup" data-c="">+ Add coupon</button></div><div style="padding:8px">'+
-  S.coupons.map(function(c){var on=c.active!==false;return'<div class="card row" style="margin:0 0 8px"><div class="sp"><b style="color:var(--brand)">'+esc(c.code)+'</b> <span class="tag '+(on?'ok':'bad')+'">'+(on?'Active':'Off')+'</span><div class="muted" style="font-size:12px">'+esc(c.note||'')+' · '+tx(c)+(c.min?' · min '+money(c.min):'')+'</div></div><button class="ico" data-act="acoup" data-c="'+esc(c.code)+'" aria-label="Edit"><i class="fas fa-edit"></i></button><button class="ico" data-act="atogc" data-c="'+esc(c.code)+'" aria-label="Toggle"><i class="fas fa-power-off"></i></button><button class="ico" data-act="adelc" data-c="'+esc(c.code)+'" style="color:var(--err)" aria-label="Delete"><i class="far fa-trash-alt"></i></button></div>'}).join('')+'</div>'
+A.dsq=function(){go('/dropship?v=shop'+(($('#dsq').value||'').trim()?'&q='+encodeURIComponent($('#dsq').value.trim()):''))};
+A.dsadd=function(t){var p=P(t.dataset.id);if(!p)return;pg.dsa={id:p.id,opt:null,qty:1,sell:0};dsAddSheet(p)};
+function dsKeep(){var e=$('#ds-sell');if(e&&pg.dsa)pg.dsa.sell=Number(e.value)||0}
+A.dsopt=function(t){dsKeep();pg.dsa.opt=pg.dsa.opt===t.dataset.o?null:t.dataset.o;dsAddSheet(P(pg.dsa.id))};
+A.dsqty=function(t){dsKeep();var p=P(pg.dsa.id);pg.dsa.qty=Math.max(1,Math.min(p.stock,pg.dsa.qty+Number(t.dataset.d)));dsAddSheet(p)};
+A.dsaddok=function(){
+  var a=pg.dsa;if(!a)return;var p=P(a.id);if(!p)return;dsKeep();
+  var c=dsCost(p),mx=dsMax(p),v=Math.round(a.sell);
+  if(p.opts&&p.opts.length&&!a.opt){toast('Please select an option');return}
+  if(!(v>=c)){toast('Selling price cannot be below your cost '+money(c));return}
+  if(v>mx){toast('Maximum selling price is '+money(mx));return}
+  var have=S.dcart.filter(function(x){return x.id===p.id}).reduce(function(z,x){return z+x.qty},0);
+  if(have+a.qty>p.stock){toast('Only '+p.stock+' in stock');return}
+  var l=S.dcart.find(function(x){return x.id===p.id&&(x.opt||null)===(a.opt||null)});
+  if(l){l.qty+=a.qty;l.sell=v}else S.dcart.push({id:p.id,qty:a.qty,opt:a.opt||null,sell:v});
+  save('dcart');closeSheet();toast('Added to dropship cart');emit()
 };
-A.acoup=adm(function(t){
-  var c=t.dataset.c?S.coupons.find(function(x){return x.code===t.dataset.c}):null;
-  var v=c||{code:'',type:'pct',val:'',max:'',min:'',note:''};
-  openSheet('<h3>'+(c?'Edit coupon':'Add coupon')+'</h3>'+(c?'<p style="margin-bottom:10px"><b>'+esc(c.code)+'</b></p>':fld('Code','ac-code',v.code))+
-  '<label class="f">Type<select id="ac-type">'+[['pct','Percentage (%)'],['flat','Flat amount'],['ship','Free shipping']].map(function(o){return'<option value="'+o[0]+'" '+(v.type===o[0]?'selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></label>'+
-  '<div class="row">'+fld('Value','ac-val',v.val,'number','sp')+fld('Max discount','ac-max',v.max||'','number','sp')+fld('Min order','ac-min',v.min||'','number','sp')+'</div>'+fld('Note','ac-note',v.note||'')+
-  '<button class="btn blk" data-act="acoupsave" data-c="'+(c?esc(c.code):'')+'">Save</button>')
-});
-A.acoupsave=adm(function(t){
-  var ex=t.dataset.c;var code=ex||$('#ac-code').value.trim().toUpperCase();
-  if(!/^[A-Z0-9_-]{3,20}$/.test(code)){toast('Enter a valid code (3-20 letters/numbers)');return}
-  if(!ex&&S.coupons.some(function(x){return x.code===code})){toast('Coupon already exists');return}
-  var type=$('#ac-type').value,val=Number($('#ac-val').value)||0;
-  if(type==='pct'&&!(val>0&&val<=100)){toast('Percentage must be 1-100');return}
-  if(type==='flat'&&!(val>0)){toast('Enter a valid amount');return}
-  var old=ex?S.coupons.find(function(x){return x.code===ex}):null;
-  var c={code:code,type:type,val:type==='ship'?0:val,max:Number($('#ac-max').value)||0,min:Number($('#ac-min').value)||0,note:$('#ac-note').value.trim(),active:old?old.active!==false:true};
-  if(old)S.coupons[S.coupons.indexOf(old)]=c;else S.coupons.push(c);
-  closeSheet();commit('coupons');toast('Coupon saved')
-});
-A.atogc=adm(function(t){
-  var i=S.coupons.findIndex(function(x){return x.code===t.dataset.c});if(i<0)return;var c=S.coupons[i];
-  S.coupons[i]=Object.assign({},c,{active:c.active===false});commit('coupons');toast(S.coupons[i].active?'Coupon activated':'Coupon turned off')
-});
-A.adelc=adm(function(t){
-  if(!confirm('Delete coupon '+t.dataset.c+'?'))return;
-  S.coupons=S.coupons.filter(function(x){return x.code!==t.dataset.c});commit('coupons');toast('Coupon deleted')
-});
-ADM.users=function(){
-  var us=(S.users||[]).slice().sort(function(a,b){return(b.joined||0)-(a.joined||0)});
-  var cnt=function(id){return S.orders.filter(function(o){return o.uid===id}).length};
-  if(!us.length)return'<p class="muted" style="text-align:center;padding:24px">No users</p>';
-  return'<div style="padding:8px">'+us.map(function(u){var ad=u.role==='admin';var me=S.session&&S.session.id===u.id;return'<div class="card row" style="margin:0 0 8px"><div class="av" style="width:40px;height:40px;font-size:17px;background:#fff4ee">'+esc((u.name||'?').charAt(0).toUpperCase())+'</div><div class="sp" style="min-width:0"><b>'+esc(u.name)+'</b> '+(ad?'<span class="tag info">Admin</span>':'')+'<div class="muted" style="font-size:12px">'+esc(u.login)+' · '+cnt(u.id)+' orders · joined '+(u.joined?new Date(u.joined).toLocaleDateString('en-GB'):'-')+'</div></div>'+(me?'':'<button class="btn line sm" data-act="arole" data-id="'+esc(u.id)+'">'+(ad?'Remove admin':'Make admin')+'</button>')+'</div>'}).join('')+'</div>'
+A.dscq=function(t){var l=S.dcart[Number(t.dataset.i)];if(!l)return;var p=P(l.id);if(!p)return;var n=l.qty+Number(t.dataset.d);if(n<1)return;
+  var others=S.dcart.filter(function(x){return x!==l&&x.id===l.id}).reduce(function(z,x){return z+x.qty},0);
+  if(n+others>p.stock){toast('Only '+p.stock+' in stock');return}l.qty=n;save('dcart');emit()};
+A.dscrm=function(t){S.dcart.splice(Number(t.dataset.i),1);save('dcart');emit()};
+CH.dssell=function(t){var l=S.dcart[Number(t.dataset.i)];if(!l)return;var p=P(l.id);if(!p)return;var v=Math.round(Number(t.value)||0),c=dsCost(p),mx=dsMax(p);
+  if(v<c){toast('Minimum selling price is '+money(c));v=c}if(v>mx){toast('Maximum selling price is '+money(mx));v=mx}
+  l.sell=v;save('dcart');t.blur();emit()};
+CH.dsdist=function(t){if(!pg.dco)pg.dco={};pg.dco.district=t.value;emit()};
+A.dsplace=async function(){
+  var u=S.session,a=dsAcc();
+  if(!u||!a){toast('Dropshipping is locked');go('/dropship');return}
+  if(!fs){toast('Internet connection is required');return}
+  var c=pg.dco||{},name=(c.name||'').trim(),phone=(c.phone||'').replace(/[\s-]/g,''),dist=c.district||'',addr=(c.address||'').trim();
+  if(!name){toast('Enter customer name');return}
+  if(!isBD(phone)){toast('Enter a valid customer mobile number');return}
+  if(!dist){toast('Select the district');return}
+  if(addr.length<5){toast('Enter the full address');return}
+  var lines=S.dcart.filter(function(l){return P(l.id)});
+  if(!lines.length){toast('Your dropship cart is empty');return}
+  var tot={};
+  for(var i=0;i<lines.length;i++){var l=lines[i],p=P(l.id),cc=dsCost(p),mx=dsMax(p);
+    if(l.sell<cc||l.sell>mx){toast(p.name+': selling price must be between '+money(cc)+' and '+money(mx));return}
+    tot[l.id]=(tot[l.id]||0)+l.qty}
+  for(var id in tot){var q=P(id);if(tot[id]>q.stock){toast(q.name+': only '+q.stock+' left');return}}
+  var t=dsCalc(dist),now=Date.now();
+  var o={id:'SD'+now.toString(36).toUpperCase().slice(-6)+pad2(Math.floor(Math.random()*100)),uid:u.id,t:now,status:'Pending',hist:[{s:'Pending',t:now}],ds:true,
+    items:lines.map(function(l){var p=P(l.id);return{id:p.id,name:p.name,price:l.sell,cost:dsCost(p),qty:l.qty,opt:l.opt||null,emoji:p.emoji||'📦',color:p.color||'#e0e0e0'}}),
+    ship:{name:name,phone:phone,district:dist,address:addr,note:(c.note||'').trim()},
+    pay:{method:'Dropship COD',trx:'',sender:'',status:'Unpaid (COD)'},
+    sub:t.sell,disc:0,coupon:'',ship_fee:t.fee,total:t.collect,cost:t.cost,profit:t.profit};
+  try{
+    var b=db.batch();b.set(db.collection('orders').doc(o.id),clean(o));
+    for(var id2 in tot)b.update(db.collection('products').doc(id2),{stock:FV.increment(-tot[id2])});
+    await b.commit()
+  }catch(e){console.warn(e);toast('Order failed: '+(e.message||'try again'));return}
+  for(var id3 in tot){P(id3).stock-=tot[id3]}
+  S.orders.unshift(o);S.dcart=[];pg.dco=null;save('dcart');
+  go('/order/'+o.id+'?new=1')
 };
-A.arole=adm(function(t){
-  var u=(S.users||[]).find(function(x){return x.id===t.dataset.id});if(!u||(S.session&&u.id===S.session.id))return;
-  if(!confirm((u.role==='admin'?'Remove admin access from ':'Give admin access to ')+u.name+'?'))return;
-  u.role=u.role==='admin'?'user':'admin';commit('users');toast('Role updated')
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.dataset&&t.dataset.g&&pg.dco)pg.dco[t.dataset.g]=t.value;
+  if(t.id==='ds-sell'&&pg.dsa){var p=P(pg.dsa.id),el=$('#ds-profit');if(p&&el)el.innerHTML='Profit per item: <b>'+money((Number(t.value)||0)-dsCost(p))+'</b>'}
 });
-ADM.msgs=function(){
-  var m=S.msgs.slice().sort(function(a,b){return b.t-a.t});
-  if(!m.length)return'<p class="muted" style="text-align:center;padding:24px">No messages</p>';
-  return'<div style="padding:8px">'+m.map(function(x){return'<div class="card" style="margin:0 0 8px"><div class="row"><b>'+esc(x.name||'Guest')+'</b>'+(x.phone?'<a href="tel:'+esc(x.phone)+'" style="color:var(--brand)">'+esc(x.phone)+'</a>':'')+'<span class="sp"></span><button class="ico" data-act="admsg" data-id="'+esc(x.id)+'" style="color:var(--err)" aria-label="Delete"><i class="far fa-trash-alt"></i></button></div><p style="margin:6px 0">'+esc(x.text)+'</p><small class="muted">'+fdate(x.t)+'</small></div>'}).join('')+'</div>'
-};
-A.admsg=adm(function(t){
-  if(!confirm('Delete this message?'))return;
-  S.msgs=S.msgs.filter(function(x){return x.id!==t.dataset.id});commit('msgs');toast('Message deleted')
-});
-ADM.settings=function(){
-  var s=S.settings;
-  return'<div class="card" style="margin:8px">'+fld('bKash / Nagad / Rocket number (for payments)','st-pay',s.payNumber)+fld('Support phone','st-phone',s.phone)+fld('Free delivery above (৳)','st-free',s.freeShip,'number')+'<div class="row">'+fld('Dhaka area fee','st-near',s.nearFee,'number','sp')+fld('Other districts fee','st-far',s.farFee,'number','sp')+'</div><button class="btn blk" data-act="asave">Save settings</button></div>'
-};
-A.asave=adm(function(){
-  var n=function(id){return Math.max(0,Number($('#'+id).value)||0)};
-  S.settings.payNumber=$('#st-pay').value.trim();S.settings.phone=$('#st-phone').value.trim();
-  S.settings.freeShip=n('st-free');S.settings.nearFee=n('st-near');S.settings.farFee=n('st-far');
-  commit('settings');toast('Settings saved')
-});
-CH.ostatus=function(t){if(!isAdmin())return;setStatus(t.dataset.id,t.value)};
-CH.opay=function(t){
-  if(!isAdmin())return;var o=S.orders.find(function(x){return x.id===t.dataset.id});if(!o)return;
-  o.pay.status=t.value;commit('orders');toast('Payment status updated')
-};
 
 /* ---------- render ---------- */
-function updateChrome(r){
+function updateChrome(r){applyTheme();
   var c=S.cart.reduce(function(a,l){return a+(P(l.id)?l.qty:0)},0);
   ['#hb','#nb'].forEach(function(s){var b=$(s);b.textContent=c;b.style.display=c?'flex':'none';if(lastCount>=0&&c!==lastCount){b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}});
   lastCount=c;
   $('#bk').classList.toggle('hide',r.path==='/');
-  var seg=r.seg[0]||'home';var map={home:'home',explore:'explore',list:'explore',cart:'cart',checkout:'cart',account:'account',login:'account',orders:'account',order:'account',wishlist:'account',admin:'account'};
+  var seg=r.seg[0]||'home';var map={home:'home',explore:'explore',list:'explore',cart:'cart',checkout:'cart',account:'account',login:'account',orders:'account',order:'account',wishlist:'account',admin:'account',dropship:'account'};
   document.querySelectorAll('#bnav a').forEach(function(a){a.classList.toggle('on',a.dataset.n===(map[seg]||''))});
   var qi=$('#q');if(document.activeElement!==qi)qi.value=seg==='list'?(r.q.get('q')||''):'';
   var f=$('#ftr');
-  if(ui.ready){f.style.display='block';f.innerHTML='<b style="font-size:16px">\ud83d\udecd\ufe0f '+BRAND+'</b><p class="muted" style="margin-top:4px">Quality products, honest prices and fast delivery across Bangladesh.</p><div class="cols"><div><h4>Shop</h4><a href="#/">Home</a><a href="#/explore">All categories</a><a href="#/list?cat=Offers">Offers</a></div><div><h4>Support</h4><a href="#/orders">Track order</a><a href="#" data-act="help" onclick="return false">Help &amp; contact</a><a href="tel:'+esc(S.settings.phone)+'">'+esc(S.settings.phone)+'</a></div></div><div class="pm"><span>Cash on Delivery</span><span>bKash</span><span>Nagad</span><span>Rocket</span></div><div class="muted" style="font-size:12px">\u00a9 '+new Date().getFullYear()+' '+BRAND+'. All rights reserved.</div>'}
-  else f.style.display='none'
+  if(ui.ready){
+    var st=S.settings,c=S.content;f.style.display='block';
+    f.innerHTML='<b style="font-size:16px">'+esc(st.brandEmoji||'🛍️')+' '+esc(BR())+'</b><p class="muted pre" style="margin-top:4px">'+esc(c.aboutText||'Quality products, honest prices and fast delivery across Bangladesh.')+'</p><div class="cols"><div><h4>Shop</h4><a href="#/">Home</a><a href="#/explore">All categories</a>'+(st.showOffers!==false?'<a href="#/list?cat=Offers">Offers</a>':'')+(st.dsEnabled!==false?'<a href="#/dropship">Dropshipping</a>':'')+'</div><div><h4>Support</h4><a href="#/orders">Track order</a><a href="#" data-act="help" onclick="return false">Help &amp; contact</a>'+(c.terms?'<a href="#" data-act="terms" onclick="return false">Terms &amp; conditions</a>':'')+(st.phone?'<a href="tel:'+esc(st.phone)+'">'+esc(st.phone)+'</a>':'')+'</div></div><div class="pm">'+payList().map(function(m){return'<span>'+esc(m.name)+'</span>'}).join('')+'</div><div class="muted" style="font-size:12px">'+esc(c.footerText||('\u00a9 '+new Date().getFullYear()+' '+BR()+'. All rights reserved.'))+'</div>'
+  }else f.style.display='none'
 }
 function renderAll(nav){
-  var r=parse();updateChrome(r);
+  rebuildCats();var r=parse();updateChrome(r);
   var ae=document.activeElement;
   if(!nav&&ae&&app.contains(ae)&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return;
   var y=window.scrollY;
   timers.forEach(clearInterval);timers=[];post=[];
-  if(nav){pg={jfy:8,lp:8,opt:null,qty:1,co:null};window.scrollTo(0,0);closeSugg();closeSheet()}
+  if(nav){pg={jfy:8,lp:8,opt:null,qty:1,co:null,dco:null,img:0};window.scrollTo(0,0);closeSugg();closeSheet()}
   var html;
   if(!ui.ready)html=skeleton();
   else{
@@ -1042,43 +1154,38 @@ document.addEventListener('pointerdown',function(e){
 window.addEventListener('hashchange',function(){renderAll(true)});
 
 /* ---------- Firestore listeners ---------- */
-var unsubAdmin=[];
-function stopAdmin(){unsubAdmin.forEach(function(f){try{f()}catch(e){}});unsubAdmin=[]}
-function adminListen(){
-  var LU=last.users||(last.users={}),LM=last.messages||(last.messages={});
-  unsubAdmin.push(db.collection('users').onSnapshot(function(s){S.users=s.docs.map(function(d){var x=d.data();LU[x.id]=stable(x);return x});emit()},function(e){console.warn('users',e)}));
-  unsubAdmin.push(db.collection('messages').onSnapshot(function(s){S.msgs=s.docs.map(function(d){var x=d.data();LM[x.id]=stable(x);return x});emit()},function(e){console.warn('messages',e)}))
-}
-function listenOrders(){stopAdmin();
-  if(unsubOrders){unsubOrders();unsubOrders=null}
-  if(!fs||!S.session)return;
-  var L=last.orders||(last.orders={});if(isAdmin())adminListen();
-  unsubOrders=(isAdmin()?db.collection('orders'):db.collection('orders').where('uid','==',S.session.id)).onSnapshot(function(s){
-    S.orders=s.docs.map(function(d){var x=d.data();L[x.id]=stable(x);return x});emit()
-  },function(e){console.warn('orders',e)})
+var unsubMine=[];
+function stopMine(){unsubMine.forEach(function(f){try{f()}catch(e){}});unsubMine=[]}
+function listenOrders(){
+  stopMine();
+  if(!fs||!S.session)return;var uid=S.session.id;
+  unsubMine.push(db.collection('orders').where('uid','==',uid).onSnapshot(function(sn){S.orders=sn.docs.map(function(d){return d.data()});emit()},function(e){console.warn('orders',e)}));
+  unsubMine.push(db.collection('dsaccess').doc(uid).onSnapshot(function(d){S.dsaccess=d.exists?d.data():null;emit()},function(e){console.warn('dsaccess',e)}));
+  unsubMine.push(db.collection('dsrequests').where('uid','==',uid).onSnapshot(function(sn){S.dsreqs=sn.docs.map(function(d){return d.data()}).sort(function(a,b){return b.t-a.t});emit()},function(e){console.warn('dsrequests',e)}))
 }
 function listeners(){
-  db.collection('products').onSnapshot(function(s){
-    var L=last.products||(last.products={});
-    var arr=s.docs.map(function(d){var x=d.data();L[x.id]=stable(x);return x});
-    if(arr.length){S.products=arr.sort(function(a,b){return(b.added||0)-(a.added||0)});emit()}
+  db.collection('products').onSnapshot(function(sn){
+    S.products=sn.docs.map(function(d){return d.data()}).filter(function(p){return p.active!==false}).sort(function(a,b){return(b.added||0)-(a.added||0)});emit()
   },function(e){console.warn('products',e)});
-  db.collection('reviews').onSnapshot(function(s){
-    var L=last.reviews||(last.reviews={});var o={};
-    s.docs.forEach(function(d){var x=d.data();L[x.id]=stable(x);o[x.id]=x.list||[]});S.reviews=o;emit()
-  },function(e){console.warn('reviews',e)});
-  db.collection('settings').doc('main').onSnapshot(function(d){if(d.exists){S.settings=Object.assign({},S.settings,d.data());emit()}},function(e){console.warn('settings',e)});
-  db.collection('coupons').onSnapshot(function(s){
-    var a=s.docs.map(function(d){return d.data()}).filter(function(c){return c&&c.code});
-    var CL=last.coupons||(last.coupons={});a.forEach(function(c){CL[c.code]=stable(c)});S.coupons=a.length?a:DEFC.slice();emit()
+  db.collection('reviews').onSnapshot(function(sn){var o={};sn.docs.forEach(function(d){var x=d.data();o[x.id]=(x.list||[]).slice().sort(function(a,b){return b.t-a.t})});S.reviews=o;emit()},function(e){console.warn('reviews',e)});
+  db.collection('settings').doc('main').onSnapshot(function(d){S.settings=Object.assign({},DEFSET,d.exists?d.data():{});emit()},function(e){console.warn('settings',e)});
+  db.collection('settings').doc('ui').onSnapshot(function(d){S.tx=d.exists?d.data():null;emit()},function(e){console.warn('ui',e)});
+  db.collection('settings').doc('content').onSnapshot(function(d){S.content=d.exists?d.data():{};emit()},function(e){console.warn('content',e)});
+  db.collection('settings').doc('payments').onSnapshot(function(d){S.pays=d.exists&&d.data().methods?d.data().methods:null;emit()},function(e){console.warn('payments',e)});
+  db.collection('coupons').onSnapshot(function(sn){
+    var a=sn.docs.map(function(d){return d.data()}).filter(function(c){return c&&c.code});
+    S.cdb={};a.forEach(function(c){S.cdb[c.code]=1});S.coupons=a.length?a:DEFC.slice();emit()
   },function(e){console.warn('coupons',e)});
+  db.collection('categories').onSnapshot(function(sn){S.cats=sn.docs.map(function(d){return d.data()});emit()},function(e){console.warn('categories',e)});
+  db.collection('banners').onSnapshot(function(sn){S.banners=sn.docs.map(function(d){return d.data()}).sort(function(a,b){return(a.order||0)-(b.order||0)});emit()},function(e){console.warn('banners',e)});
+  db.collection('dsplans').onSnapshot(function(sn){S.plans=sn.docs.map(function(d){return d.data()}).filter(function(p){return p.active!==false}).sort(function(a,b){return(a.price||0)-(b.price||0)});emit()},function(e){console.warn('dsplans',e)});
   listenOrders()
 }
 
 /* ---------- boot ---------- */
 function withTimeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'))},ms)})])}
 function loadPersonal(){
-  S.cart=jget('cart',[]);S.wish=jget('wish',[]);S.recent=jget('recent',[]);S.searches=jget('searches',[]);S.coupon=ls.get('coupon')||''
+  S.cart=jget('cart',[]);S.wish=jget('wish',[]);S.recent=jget('recent',[]);S.searches=jget('searches',[]);S.dcart=jget('dcart',[]);S.coupon=ls.get('coupon')||''
 }
 function loadLocalData(){
   var p=jget('products',null);if(!p||!p.length){p=seedProducts();ls.set('products',JSON.stringify(p))}
@@ -1092,17 +1199,17 @@ async function boot(){
   var ok=false;
   if(CFG&&JSON.stringify(CFG).indexOf('YOUR_')<0&&window.firebase){
     try{
-      firebase.initializeApp(CFG);db=firebase.firestore();
+      firebase.initializeApp(CFG);db=firebase.firestore();FV=firebase.firestore.FieldValue;
       try{db.settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(e){}
       var snap=await withTimeout(db.collection('products').get(),12000);
-      var L=last.products={};
-      if(snap.empty){
+      var meta=await withTimeout(db.collection('settings').doc('main').get(),12000);
+      if(snap.empty&&!meta.exists){
         var seed=seedProducts();var b=db.batch();
-        seed.forEach(function(p){b.set(db.collection('products').doc(p.id),clean(p));L[p.id]=stable(p)});
+        seed.forEach(function(p){b.set(db.collection('products').doc(p.id),clean(p))});
         b.set(db.collection('settings').doc('main'),clean(S.settings));
         await withTimeout(b.commit(),12000);S.products=seed
       }else{
-        S.products=snap.docs.map(function(d){var x=d.data();L[x.id]=stable(x);return x}).sort(function(a,b){return(b.added||0)-(a.added||0)})
+        S.products=snap.docs.map(function(d){return d.data()}).filter(function(p){return p.active!==false}).sort(function(a,b){return(b.added||0)-(a.added||0)})
       }
       fs=true;ok=true;S.users=[]
     }catch(e){console.warn('Firestore unavailable',e);fs=false;db=null}
